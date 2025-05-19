@@ -7,9 +7,9 @@
 
 enum class Token_Type {
     IDENTIFIER,
-    INTEGER,
+    INT_LIT,
     FLOAT,
-    SEMI,
+    LEFT_ARROW,
     END_OF_FILE,
 };
 

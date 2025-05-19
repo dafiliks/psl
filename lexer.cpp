@@ -21,12 +21,12 @@ Lexer::Lexer(int argc, char** argv)
 
     std::ifstream file{};
     file.open(argv[1]);
-    
+
     if (!file.is_open()) {
         std::cout << "PsL: ERROR: File \"" << argv[1] << "\" could not be opened\n";
         exit(EXIT_FAILURE);
     }
-    
+
     std::string source{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
     m_source = source + '\0';
 
@@ -36,19 +36,27 @@ Lexer::Lexer(int argc, char** argv)
 std::vector<Token> Lexer::lex()
 {
     while (peek() != '\0') {
-        if (peek() == ';') {
-            m_tokens.push_back({Token_Type::SEMI, ";"});
-        } else if (isalnum(peek())) {
+        if (isalpha(peek())) {
             do {
                 m_buffer += eat();
-            } while (!is_separator(peek()));
+            } while (!is_separator(peek()) && isalnum(peek()));
             m_tokens.push_back({Token_Type::IDENTIFIER, m_buffer});
+            m_buffer.clear();
+        } else if (isdigit(peek())) {
+            Token_Type type{Token_Type::INT_LIT};
+            do {
+                m_buffer += eat();
+                if (peek() == '.') {
+                    type = Token_Type::FLOAT;
+                } else if (!isdigit(peek())) break;
+            } while (!is_separator(peek()));
+            m_tokens.push_back({type, m_buffer});
             m_buffer.clear();
         } else {
             eat();
         }
     }
-    
+
     m_tokens.push_back({Token_Type::END_OF_FILE, m_buffer});
     return m_tokens;
 }

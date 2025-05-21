@@ -100,7 +100,7 @@ public:
 
     std::vector<Token> lex();
     char peek(std::size_t dist = 0);
-    char eat(std::size_t dist = 1);
+    char eat();
     void validate_argc_argv(int argc, char** argv);
     std::string source_to_string(char* file_name);
     bool is_separator(char chr) const;
@@ -109,11 +109,17 @@ public:
     void lex_number();
     void lex_string_lit();
     void lex_comment();
+    void print_source_line();
+    void lexer_error(std::string message);
+    void lexer_error_lc(std::string message);
 private:
     std::string m_source{};
+    std::string m_file_name{};
     std::vector<Token> m_tokens{};
     std::size_t m_index{};
     std::string m_buffer{};
+    std::size_t m_line{1};
+    std::size_t m_col{1};
 };
 
 #endif

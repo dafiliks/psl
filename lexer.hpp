@@ -88,9 +88,13 @@ static const std::unordered_map<std::string, Token_Type> value_token_map {
     {"OUTPUT", Token_Type::OUTPUT}
 };
 
+std::string to_string(Token_Type type);
+
 struct Token {
     Token_Type m_type{};
     std::string m_value{};
+    std::size_t m_line{};
+    std::size_t m_col{};
 };
 
 class Lexer {
@@ -109,9 +113,10 @@ public:
     void lex_number();
     void lex_string_lit();
     void lex_comment();
-    void print_source_line();
-    void lexer_error(std::string message);
-    void lexer_error_lc(std::string message);
+
+    std::vector<Token> get_tokens() const;
+    std::string get_file_name() const;
+    std::string get_source() const;
 private:
     std::string m_source{};
     std::string m_file_name{};

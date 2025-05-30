@@ -4,11 +4,11 @@
 
 int main(int argc, char** argv)
 {
-    Lexer lexer{argc, argv};
-    lexer.lex();
+	Lexer lexer{argc, argv};
+	lexer.lex();
 
-    Parser parser{lexer};
-    parser.parse();
+	Parser parser{lexer};
+	parser.parse();
 
-    return 0;
+	return 0;
 }

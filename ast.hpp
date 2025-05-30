@@ -5,29 +5,45 @@
 #include <string>
 #include <memory>
 
-struct IntVarStmt {
-    std::string m_name{};
-    BinOpExpr m_value{};
+struct Expr;
+
+struct VarStmt {
+	std::string m_name{};
+	std::unique_ptr<Expr> m_expr{};
 };
 
 struct Stmt {
-    std::variant<IntVarStmt> m_stmt{};
+	std::variant<VarStmt> m_stmt{};
 };
 
-struct Expr;
+struct IntExpr {
+	int m_value{};
+};
+
+struct FloatExpr {
+	float m_value{};
+};
+
+struct StrExpr {
+	std::string m_value{};
+};
+
+struct AtomExpr {
+	std::variant<IntExpr, FloatExpr, StrExpr> m_atom{};
+};
 
 struct BinOpExpr {
-    std::shared_ptr<Expr> m_lhs{};
-    std::shared_ptr<Expr> m_rhs{};
-    Token_Type m_op{};
+	std::unique_ptr<Expr> m_lhs{};
+	std::unique_ptr<Expr> m_rhs{};
+	Token_Type m_op{};
 };
 
 struct Expr {
-    std::variant<BinOpExpr> m_expr{};
+	std::variant<AtomExpr, BinOpExpr> m_expr{};
 };
 
 struct Program {
-    std::vector<Stmt> m_body{};
+	std::vector<Stmt> m_body{};
 };
 
 #endif

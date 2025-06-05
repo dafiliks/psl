@@ -1,54 +1,19 @@
 #ifndef ERROR_HPP
 #define ERROR_HPP
 
-#include <iostream>
+#include <string>
 
-// TODO: convoluted function, refactor later
-static void show_source_error(std::string source, std::size_t line, std::size_t col)
-{
-	std::size_t line_char_count{std::to_string(line).size()};
-	for (std::size_t i = line_char_count; i < 5; i++) {
-		std::cerr << " ";
-	}
-	std::cerr << line << " | ";
+struct Error {
+    Error(std::string source, std::string m_file_name);
+    Error() = default;
+    ~Error() = default;
 
-	std::size_t start{}, end{};
-	for (std::size_t i = 0; i < line - 1; i++) {
-		start = source.find("\n", start);
-		start++;
-	}
-	end = source.find('\n', start);
+    void show_source_error(std::size_t line, std::size_t col);
+    [[noreturn]] void error(std::string message);
+    [[noreturn]] void error_lc(std::string message, std::size_t line, std::size_t col);
 
-	if (end == std::string::npos) {
-		end = source.find('\0', start);
-	}
-	std::cerr << source.substr(start, end - start) << "\n";
-
-	for (std::size_t i = 5; i < line_char_count; i++) {
-		std::cerr << " ";
-	}
-	std::cerr << "      | ";
-
-	for (std::size_t i = 0; i < col - 1; i++) {
-		std::cerr << " ";
-	}
-	std::cerr << "^\n";
-}
-
-static void error(std::string message)
-{
-	std::cerr << "error: " << message << "\n";
-	exit(EXIT_FAILURE);
-}
-
-static void error_lc(std::string source, std::string file_name, std::string message,
-                     std::size_t line, std::size_t col)
-{
-	std::cerr << file_name << ":"         << line
-	                       << ":"         << col
-	                       << ": error: " << message << "\n";
-	show_source_error(source, line, col);
-	exit(EXIT_FAILURE);
-}
+    std::string m_source{};
+    std::string m_file_name{};
+};
 
 #endif

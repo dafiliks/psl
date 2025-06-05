@@ -23,10 +23,12 @@ public:
 	Token peek(std::size_t dist = 0);
 	Token eat(std::size_t dist = 1);
 	Token try_eat(Token_Type type);
+    Program& get_program();
+    Error get_parse_error() const;
 private:
+    Error m_parse_error{};
+    Program m_program{};
 	std::vector<Token> m_tokens{};
-	std::string m_file_name{};
-	std::string m_source{};
 	std::size_t m_index{};
 };
 

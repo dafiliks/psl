@@ -7,23 +7,20 @@
 #include "ast.hpp"
 
 Parser::Parser(Lexer lexer)
-{
-	m_tokens = lexer.get_tokens();
-	m_file_name = lexer.get_file_name();
-	m_source = lexer.get_source();
-}
+: m_tokens(lexer.get_tokens()),
+  m_parse_error(lexer.get_lex_error()) {}
 
 void Parser::parse()
 {
-	Program program{};
 	while (peek().m_type != Token_Type::END_OF_FILE) {
-		program.m_body.push_back(parse_stmt());
+		m_program.m_body.push_back(parse_stmt());
 	}
 }
 
 Stmt Parser::parse_stmt()
 {
-	if (peek().m_type == Token_Type::IDENTIFIER) {
+	if (peek().m_type == Token_Type::IDENTIFIER ||
+	    peek().m_type == Token_Type::CONSTANT) {
 		return Stmt{parse_vd_or_assignment()};
 	} else {
 		eat();
@@ -33,6 +30,12 @@ Stmt Parser::parse_stmt()
 VarStmt Parser::parse_vd_or_assignment()
 {
 	VarStmt var_stmt{};
+
+	if (peek().m_type == Token_Type::CONSTANT) {
+		var_stmt.m_is_constant = true;
+		eat();
+	}
+
 	var_stmt.m_name = eat().m_value;
 	try_eat(Token_Type::LESS_THAN);
 	try_eat(Token_Type::DASH);
@@ -44,12 +47,15 @@ VarStmt Parser::parse_vd_or_assignment()
 Expr Parser::parse_expr()
 {
 	Expr expr{};
-	if (peek().m_type == Token_Type::INT_LIT ||
-	    peek().m_type == Token_Type::FLOAT) {
-		if (is_bin_op(peek(1).m_type)) {
-			expr.m_expr = parse_bin_op_expr();
-			return expr;
-		}
+	expr.m_type = Token_Type::STRING_LIT;
+	if (peek().m_type == Token_Type::INT_LIT) {
+		expr.m_type = Token_Type::INT_LIT;
+	} else if (peek().m_type == Token_Type::FLOAT) {
+		expr.m_type = Token_Type::FLOAT;
+	}
+	if (is_bin_op(peek(1).m_type)) {
+		expr.m_expr = parse_bin_op_expr();
+		return expr;
 	}
 	expr.m_expr = parse_atom();
 	return expr;
@@ -88,20 +94,20 @@ AtomExpr Parser::parse_atom()
 	case Token_Type::STRING_LIT:
 		return AtomExpr{parse_str_expr()};
 		break;
-	default:
-		break;
 	}
 }
 
+// TODO: fix logic
 BinOpExpr Parser::parse_bin_op_expr()
 {
 	BinOpExpr bin_op_expr{};
-	bin_op_expr.m_lhs = std::make_unique<Expr>(Expr{parse_atom()});
+	bin_op_expr.m_lhs = std::make_unique<Expr>(Expr{parse_atom(), peek(-1).m_type});
 	bin_op_expr.m_op = eat().m_type;
 	if (is_bin_op(peek(1).m_type)) {
-		bin_op_expr.m_rhs = std::make_unique<Expr>(Expr{parse_bin_op_expr()});
+		Token_Type type = peek().m_type;
+		bin_op_expr.m_rhs = std::make_unique<Expr>(Expr{parse_bin_op_expr(), type});
 	} else {
-		bin_op_expr.m_rhs = std::make_unique<Expr>(Expr{parse_atom()});
+		bin_op_expr.m_rhs = std::make_unique<Expr>(Expr{parse_atom(), peek(-1).m_type});
 	}
 	return bin_op_expr;
 }
@@ -131,12 +137,20 @@ Token Parser::eat(std::size_t dist)
 Token Parser::try_eat(Token_Type type)
 {
 	if (peek().m_type != type) {
-		error_lc(m_source,
-	                 m_file_name,
-	                 "expected '" + to_string(type) + "' got '" + to_string(peek().m_type) + "'",
-	                 peek().m_line,
-	                 peek().m_col);
+        m_parse_error.error_lc("expected '" + to_string(type) + "' got '" + to_string(peek().m_type) + "'",
+                               peek().m_line,
+                               peek().m_col);
 	} else {
 		return eat();
 	}
+}
+
+Program& Parser::get_program()
+{
+    return m_program;
+}
+
+Error Parser::get_parse_error() const
+{
+    return m_parse_error;
 }

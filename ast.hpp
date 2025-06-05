@@ -4,12 +4,14 @@
 #include <variant>
 #include <string>
 #include <memory>
+#include "lexer.hpp"
 
 struct Expr;
 
 struct VarStmt {
 	std::string m_name{};
 	std::unique_ptr<Expr> m_expr{};
+	bool m_is_constant{};
 };
 
 struct Stmt {
@@ -40,6 +42,7 @@ struct BinOpExpr {
 
 struct Expr {
 	std::variant<AtomExpr, BinOpExpr> m_expr{};
+	Token_Type m_type{};
 };
 
 struct Program {

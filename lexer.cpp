@@ -2,11 +2,11 @@
 #include <cctype>
 #include <fstream>
 #include <cstring>
-#include <iostream>
 #include <cassert>
 #include "lexer.hpp"
 #include "error.hpp"
 
+// TODO: switch to X macros
 std::string to_string(Token_Type type)
 {
 	switch (type) {
@@ -23,10 +23,10 @@ std::string to_string(Token_Type type)
 		case Token_Type::SQ_C_BRACKET: return "SQ_C_BRACKET";
 		case Token_Type::O_PAREN: return "O_PAREN";
 		case Token_Type::C_PAREN: return "C_PAREN";
-		case Token_Type::PLUS: return "PLUS";
-		case Token_Type::MINUS: return "MINUS";
-		case Token_Type::MULTIPLY: return "MULTIPLY";
-		case Token_Type::DIVIDE: return "DIVIDE";
+		case Token_Type::PLUS: return "+";
+		case Token_Type::MINUS: return "-";
+		case Token_Type::MULTIPLY: return "*";
+		case Token_Type::DIVIDE: return "/";
 		case Token_Type::DIV: return "DIV";
 		case Token_Type::MOD: return "MOD";
 		case Token_Type::AND: return "AND";
@@ -57,6 +57,7 @@ Lexer::Lexer(int argc, char** argv)
 {
 	validate_argc_argv(argc, argv);
 	m_source = source_to_string(argv[1]) + '\0';
+    m_lex_error = Error{m_source, std::string(argv[1])};
 }
 
 std::vector<Token> Lexer::lex()
@@ -77,11 +78,9 @@ std::vector<Token> Lexer::lex()
 		} else if (is_separator(peek())) {
 			eat();
 		} else {
-			error_lc(m_source,
-	                         m_file_name,
-	                         "no matching token found for '" + std::string{peek()} + "'",
-	                         m_line,
-	                         m_col);
+            m_lex_error.error_lc("no matching token found for '" + std::string{peek()} + "'",
+                                 m_line,
+                                 m_col);
 		}
 	}
 	m_tokens.push_back({Token_Type::END_OF_FILE, "", m_line, m_col});
@@ -112,7 +111,7 @@ char Lexer::eat()
 void Lexer::validate_argc_argv(int argc, char** argv)
 {
 	if (argc != 2) {
-		error("wrong number of arguments provided");
+		m_lex_error.error("wrong number of arguments provided");
 	}
 	m_file_name = argv[1];
 	if (argv[1][strlen(argv[1]) - 6] != 'p' ||
@@ -121,7 +120,7 @@ void Lexer::validate_argc_argv(int argc, char** argv)
 	    argv[1][strlen(argv[1]) - 3] != 'u' ||
 	    argv[1][strlen(argv[1]) - 2] != 'd' ||
 	    argv[1][strlen(argv[1]) - 1] != 'o') {
-		error("file lacks '.pseudo' extension");
+		m_lex_error.error("file lacks '.pseudo' extension");
 	}
 }
 
@@ -130,7 +129,7 @@ std::string Lexer::source_to_string(char* file_name)
 	std::ifstream file{};
 	file.open(file_name);
 	if (!file.is_open()) {
-		error("file '" + std::string{file_name} + "' could not be opened");
+		m_lex_error.error("file '" + std::string{file_name} + "' could not be opened");
 	}
 	std::string source{std::istreambuf_iterator<char>(file),
 	                   std::istreambuf_iterator<char>()};
@@ -185,11 +184,11 @@ void Lexer::lex_number()
 
 void Lexer::lex_string_lit()
 {
-	eat();
+	m_buffer += eat();
 	do {
 		m_buffer += eat();
 	} while (peek() != '\0' && peek() != '"');
-	eat();
+	m_buffer += eat();
 	m_tokens.push_back({Token_Type::STRING_LIT, m_buffer, m_line, m_col});
 	m_buffer.clear();
 }
@@ -214,4 +213,9 @@ std::string Lexer::get_file_name() const
 std::string Lexer::get_source() const
 {
 	return m_source;
+}
+
+Error Lexer::get_lex_error() const
+{
+    return m_lex_error;
 }

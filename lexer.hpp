@@ -3,8 +3,8 @@
 
 #include <vector>
 #include <string>
-#include <fstream>
 #include <unordered_map>
+#include "error.hpp"
 
 enum class Token_Type {
 	IDENTIFIER,
@@ -27,6 +27,7 @@ enum class Token_Type {
 	MULTIPLY,
 	DIVIDE,
 	/* keywords */
+	CONSTANT,
 	DIV,
 	MOD,
 	AND,
@@ -48,7 +49,7 @@ enum class Token_Type {
 	RETURN,
 	USER_INPUT,
 	OUTPUT,
-	/* eof */
+	/* extra */
 	END_OF_FILE,
 };
 
@@ -68,6 +69,7 @@ static const std::unordered_map<std::string, Token_Type> value_token_map {
 	{"*", Token_Type::MULTIPLY},
 	{"/", Token_Type::DIVIDE},
 	/* keywords */
+	{"CONSTANT", Token_Type::CONSTANT},
 	{"DIV", Token_Type::DIV},
 	{"MOD", Token_Type::MOD},
 	{"AND", Token_Type::AND},
@@ -120,7 +122,9 @@ public:
 	std::vector<Token> get_tokens() const;
 	std::string get_file_name() const;
 	std::string get_source() const;
+    Error get_lex_error() const;
 private:
+    Error m_lex_error{};
 	std::string m_source{};
 	std::string m_file_name{};
 	std::vector<Token> m_tokens{};

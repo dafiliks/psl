@@ -15,9 +15,9 @@ enum class Token_Type {
 	/* single char tokens */
 	GREATER_THAN,
 	LESS_THAN,
+    UNDERSCORE,
 	EQUALS,
 	EXCLAIMATION,
-	DASH,
 	SQ_O_BRACKET,
 	SQ_C_BRACKET,
 	O_PAREN,
@@ -26,6 +26,7 @@ enum class Token_Type {
 	MINUS,
 	MULTIPLY,
 	DIVIDE,
+    COMMA,
 	/* keywords */
 	CONSTANT,
 	DIV,
@@ -57,9 +58,9 @@ static const std::unordered_map<std::string, Token_Type> value_token_map {
 	/* single char tokens */
 	{">", Token_Type::GREATER_THAN},
 	{"<", Token_Type::LESS_THAN},
+    {"_", Token_Type::UNDERSCORE},
 	{"=", Token_Type::EQUALS},
 	{"!", Token_Type::EXCLAIMATION},
-	{"-", Token_Type::DASH},
 	{"[", Token_Type::SQ_O_BRACKET},
 	{"]", Token_Type::SQ_C_BRACKET},
 	{"(", Token_Type::O_PAREN},
@@ -68,6 +69,7 @@ static const std::unordered_map<std::string, Token_Type> value_token_map {
 	{"-", Token_Type::MINUS},
 	{"*", Token_Type::MULTIPLY},
 	{"/", Token_Type::DIVIDE},
+    {",", Token_Type::COMMA},
 	/* keywords */
 	{"CONSTANT", Token_Type::CONSTANT},
 	{"DIV", Token_Type::DIV},
@@ -113,6 +115,7 @@ public:
 	void validate_argc_argv(int argc, char** argv);
 	std::string source_to_string(char* file_name);
 	bool is_separator(char chr) const;
+    bool is_decimal(char chr) const;
 	bool find_token_vt_map(std::string value);
 	void lex_ident_or_kw();
 	void lex_number();

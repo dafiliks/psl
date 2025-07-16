@@ -1,0 +1,163 @@
+#include <fstream>
+#include <cctype>
+#include <algorithm>
+#include <iostream>
+#include <variant>
+#include "gen.hpp"
+#include "ast.hpp"
+#include "error.hpp"
+#include "parser.hpp"
+
+Generator::Generator(Parser&& parser)
+: m_program(std::move(parser.get_program())), m_gen_error(parser.get_parse_error()),
+  m_output_file(m_gen_error.m_file_name.substr(0, m_gen_error.m_file_name.find(".")) + ".cpp") {}
+
+void Generator::gen()
+{
+	m_output_file << "#include <iostream>\n";
+    m_output_file << "#include <string>\n";
+    m_output_file << "#include <cmath>\n";
+	m_output_file << "int main()\n";
+	m_output_file << "{\n";
+	for (auto& stmt : m_program.m_scope.m_body) {
+		gen_stmt(stmt);
+        m_output_file << ";\n";
+	}
+	m_output_file << "    return 0;\n";
+	m_output_file << "}\n";
+	m_output_file.close();
+}
+
+// TODO: visit with lambdas in the future
+void Generator::gen_stmt(Stmt& stmt)
+{
+	struct StmtVisitor {
+		Generator& gen;
+		void operator()(VarStmt& var_stmt)
+		{
+			gen.m_output_file << "    ";
+
+            if (var_stmt.m_is_reassignment) {
+                gen.m_output_file << var_stmt.m_name << " = ";
+            } else {
+                if (var_stmt.m_is_constant) {
+                    if (std::all_of(var_stmt.m_name.begin(), var_stmt.m_name.end(), [](char c) { return isupper(c); } )) {
+                        gen.m_output_file << "const ";
+                    } else {
+                        gen.m_gen_error.error("identifiers of constant variables should be uppercase");
+                    }
+                }
+
+                if (var_stmt.m_expr->m_type == Data_Type::STRING) {
+                    gen.m_output_file << "std::string " << var_stmt.m_name << " = ";
+                } else if (var_stmt.m_expr->m_type == Data_Type::DOUBLE) {
+                    gen.m_output_file << "double " << var_stmt.m_name << " = ";
+                }
+            }
+
+            gen.gen_expr(*var_stmt.m_expr);
+		}
+        void operator()(OutputStmt& output_stmt)
+        {
+            gen.m_output_file << "    std::cout << ";
+            for (std::size_t i = 0; i < output_stmt.m_args.size(); i++) {
+                gen.gen_expr(output_stmt.m_args[i]);
+                // output `<<` unless printing last expression in `OUTPUT` stmt
+                if (i < output_stmt.m_args.size() - 1)
+                    gen.m_output_file << " << ";
+            }
+        }
+        void operator()(FuncDeclStmt& func_decl_stmt)
+        {
+            std::cout << "mayne wtf do i do rn??";
+        }
+	};
+
+	StmtVisitor stmt_visitor{*this};
+	std::visit(stmt_visitor, stmt.m_stmt);
+}
+
+void Generator::gen_expr(Expr& expr)
+{
+	struct ExprVisitor {
+		Generator& gen;
+        bool is_func_gen;
+		void operator()(AtomExpr atom_expr)
+		{
+			gen.gen_atom_expr(atom_expr);
+		}
+        void operator()(BinOpExpr& bin_op_expr)
+        {
+            Data_Type type1{bin_op_expr.m_lhs->m_type};
+            Data_Type type2{bin_op_expr.m_rhs->m_type};
+	    Data_Type type3{};
+
+            gen.type_check(type1, type2);
+
+            if (type1 == Data_Type::STRING && type2 == Data_Type::STRING) {
+                Operator op{bin_op_expr.m_op};
+                if (op != Operator::PLUS) {
+                    gen.m_gen_error.error("only concatenation can be performed between strings");
+                }
+            }
+
+            gen.gen_expr(*bin_op_expr.m_lhs);
+
+            if (bin_op_expr.m_op == Operator::PLUS) {
+                gen.m_output_file << "+";
+            } else if (bin_op_expr.m_op == Operator::MINUS) {
+                gen.m_output_file << "-";
+            } else if (bin_op_expr.m_op == Operator::MULTIPLY) {
+                gen.m_output_file << "*";
+            } else if (bin_op_expr.m_op == Operator::DIVIDE) {
+                gen.m_output_file << "/";
+            } else if (bin_op_expr.m_op == Operator::DIV) {
+                gen.m_output_file << "DIV";
+            } else if (bin_op_expr.m_op == Operator::MOD) {
+                gen.m_output_file << "MOD";
+            }
+
+            gen.gen_expr(*bin_op_expr.m_rhs);
+        }
+	};
+
+	ExprVisitor expr_visitor{*this};
+	std::visit(expr_visitor, expr.m_expr);
+}
+
+void Generator::gen_atom_expr(AtomExpr atom_expr)
+{
+	struct AtomExprVisitor {
+		Generator& gen;
+		void operator()(StrExpr str_expr)
+		{
+			gen.m_output_file << "std::string(" << str_expr.m_value << ")";
+		}
+		void operator()(IntExpr int_expr)
+		{
+			gen.m_output_file << int_expr.m_value;
+		}
+		void operator()(FloatExpr float_expr)
+		{
+			gen.m_output_file << float_expr.m_value;
+		}
+        void operator()(VarExpr var_expr)
+        {
+            gen.m_output_file << var_expr.m_name;
+        }
+        void operator()(UserInputExpr ui_expr)
+        {
+            gen.m_output_file << "[](){ std::string s; std::getline(std::cin, s); return s; }()";
+        }
+	};	
+
+	AtomExprVisitor atom_expr_visitor{*this};
+	std::visit(atom_expr_visitor, atom_expr.m_atom);
+}
+
+void Generator::type_check(Data_Type type1, Data_Type type2)
+{
+    if (type1 != type2) {
+        m_gen_error.error("type mismatch");
+    }
+}

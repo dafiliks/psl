@@ -15,7 +15,7 @@ public:
 	void gen_expr(Expr& expr);
 	void gen_atom_expr(AtomExpr atom_expr);
 	void gen_bin_op_expr(BinOpExpr& bin_op_expr);
-    void type_check(Token_Type type1, Token_Type type2);
+    void type_check(Data_Type type1, Data_Type type2);
 private:
     Error m_gen_error{};
 	Program m_program{};

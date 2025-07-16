@@ -1,0 +1,1 @@
+/usr/sbin/c++ -g -Wl,--dependency-file=CMakeFiles/psl.dir/link.d CMakeFiles/psl.dir/main.cpp.o CMakeFiles/psl.dir/lexer.cpp.o CMakeFiles/psl.dir/parser.cpp.o CMakeFiles/psl.dir/gen.cpp.o CMakeFiles/psl.dir/error.cpp.o -o psl

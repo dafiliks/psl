@@ -6,52 +6,49 @@
 #include <string>
 #include <memory>
 
-// types
 enum class Data_Type {
-    DOUBLE,
-    STRING
+	DOUBLE,
+	STRING
 };
 
 enum class Operator {
-    PLUS,
-    MINUS,
-    MULTIPLY,
-    DIVIDE,
-    DIV,
-    MOD
+	PLUS,
+	MINUS,
+	MULTIPLY,
+	DIVIDE,
+	DIV,
+	MOD
 };
 
-struct Expr;
-
-struct StrExpr;
-
-struct VarExpr;
-
-struct Scope;
+struct Expr; struct StrExpr; struct VarExpr; struct Scope; struct Body;
 
 struct VarStmt {
 	std::string m_name{};
-	std::unique_ptr<Expr> m_expr{};
+	std::shared_ptr<Expr> m_expr{};
 	bool m_is_constant{};
-    bool m_is_reassignment{};
+	bool m_is_reassignment{};
 };
 
 struct OutputStmt {
-    std::vector<Expr> m_args{};
+	std::vector<Expr> m_args{};
+};
+
+struct Args {
+	std::vector<VarExpr> m_var_exprs{};
 };
 
 struct FuncDeclStmt {
-    std::string m_name{};
-    std::vector<VarExpr> m_args{};
-    std::unique_ptr<Scope> m_scope{};
+	std::string m_name{};
+	Args m_args{};
+	std::shared_ptr<Body> m_body{};
 };
 
 struct Stmt {
 	std::variant<VarStmt, OutputStmt, FuncDeclStmt> m_stmt{};
 };
 
-struct Scope {
-    std::vector<Stmt> m_body{};
+struct Body {
+	std::vector<Stmt> m_stmts{};
 };
 
 struct IntExpr {
@@ -67,7 +64,7 @@ struct StrExpr {
 };
 
 struct VarExpr {
-    std::string m_name{};
+	std::string m_name{};
 };
 
 struct UserInputExpr {};
@@ -77,8 +74,8 @@ struct AtomExpr {
 };
 
 struct BinOpExpr {
-	std::unique_ptr<Expr> m_lhs{};
-	std::unique_ptr<Expr> m_rhs{};
+	std::shared_ptr<Expr> m_lhs{};
+	std::shared_ptr<Expr> m_rhs{};
 	Operator m_op{};
 };
 
@@ -87,8 +84,8 @@ struct Expr {
 	Data_Type m_type{};
 };
 
-struct Program {
-    Scope m_scope{};
+struct AST {
+	Body m_body{};
 };
 
 #endif

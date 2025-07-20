@@ -1,7 +1,9 @@
-add_executable(psl "main.cpp" "lexer.cpp" "parser.cpp" "gen.cpp" "error.cpp")
+add_executable(psl "main.cpp" "frontend/lexer.cpp" "frontend/parser.cpp"
+                   "backend/gen.cpp" "utils/error.cpp"
+                   "utils/cmdargs.cpp" "compiler/compiler.cpp")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET psl PROPERTY CXX_STANDARD 20)
+  set_property(TARGET psl PROPERTY CXX_STANDARD 23)
 endif()
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")

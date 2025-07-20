@@ -1,32 +1,22 @@
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
-#include "lexer.hpp"
-#include "parser.hpp"
-#include "gen.hpp"
+#include <filesystem>
 
-// incomplete for now
-void convert_to_output_target(char** argv) {
-    if (strcmp(argv[2], "-exe") == 0) {
-        std::string output_file{std::string{argv[1]}.substr(0, std::string{argv[1]}.find("."))};
-        std::string command_str{"g++ " + output_file + ".cpp -o " + output_file + " && ./" + output_file};
+#include "frontend/lexer.hpp"
+#include "frontend/parser.hpp"
+#include "backend/gen.hpp"
 
-        system(command_str.c_str());
-    }
-}
+#include "compiler/compiler.hpp"
+#include "utils/cmdargs.hpp"
 
 int main(int argc, char** argv)
 {
-	Lexer lexer{argc, argv};
-	lexer.lex();
+	CmdArgs args{argc, argv};
+	args.handle();
 
-	Parser parser{lexer};
-    parser.parse();
-
-	Generator gen{std::move(parser)};
-	gen.gen();
-
-    convert_to_output_target(argv);
+	Compiler compiler{args};
+	compiler.compile();
 
 	return 0;
 }

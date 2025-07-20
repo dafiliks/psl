@@ -3,6 +3,8 @@
 #include <cmath>
 int main()
 {
-;
-    return 0;
+	double k = 10;
+	k = k*k/k*500;
+	std::cout << k;
+	return 0;
 }

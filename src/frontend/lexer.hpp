@@ -4,7 +4,8 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include "error.hpp"
+
+#include "../utils/error.hpp"
 
 enum class Token_Type {
 	IDENTIFIER,
@@ -15,7 +16,7 @@ enum class Token_Type {
 	/* single char tokens */
 	GREATER_THAN,
 	LESS_THAN,
-    UNDERSCORE,
+	UNDERSCORE,
 	EQUALS,
 	EXCLAIMATION,
 	SQ_O_BRACKET,
@@ -26,7 +27,7 @@ enum class Token_Type {
 	MINUS,
 	MULTIPLY,
 	DIVIDE,
-    COMMA,
+	COMMA,
 	/* keywords */
 	CONSTANT,
 	DIV,
@@ -58,7 +59,7 @@ static const std::unordered_map<std::string, Token_Type> value_token_map {
 	/* single char tokens */
 	{">", Token_Type::GREATER_THAN},
 	{"<", Token_Type::LESS_THAN},
-    {"_", Token_Type::UNDERSCORE},
+	{"_", Token_Type::UNDERSCORE},
 	{"=", Token_Type::EQUALS},
 	{"!", Token_Type::EXCLAIMATION},
 	{"[", Token_Type::SQ_O_BRACKET},
@@ -69,7 +70,7 @@ static const std::unordered_map<std::string, Token_Type> value_token_map {
 	{"-", Token_Type::MINUS},
 	{"*", Token_Type::MULTIPLY},
 	{"/", Token_Type::DIVIDE},
-    {",", Token_Type::COMMA},
+	{",", Token_Type::COMMA},
 	/* keywords */
 	{"CONSTANT", Token_Type::CONSTANT},
 	{"DIV", Token_Type::DIV},
@@ -104,33 +105,35 @@ struct Token {
 	std::size_t m_col{};
 };
 
+#define lex_error_s(a, b, c) Error{a, b, c, m_source}
+#define lex_error_l(a) Error{a}
+
 class Lexer {
 public:
-	Lexer(int argc, char** argv);
-	~Lexer() = default;
+	Lexer() = default;
+	Lexer(const std::string& source);
 
-	std::vector<Token> lex();
-	char peek(std::size_t dist = 0);
-	char eat();
-	void validate_argc_argv(int argc, char** argv);
-	std::string source_to_string(char* file_name);
-	bool is_separator(char chr) const;
-    bool is_decimal(char chr) const;
-	bool find_token_vt_map(std::string value);
+	void lex();
+
+	[[nodiscard]] const std::vector<Token>& get_tokens() const;
+	[[nodiscard]] const std::string& get_source() const;
+
+private:
+	[[nodiscard]] bool find_token_vt_map(const std::string& value);
 	void lex_ident_or_kw();
 	void lex_number();
 	void lex_string_lit();
 	void lex_comment();
 
-	std::vector<Token> get_tokens() const;
-	std::string get_file_name() const;
-	std::string get_source() const;
-    Error get_lex_error() const;
-private:
-    Error m_lex_error{};
-	std::string m_source{};
-	std::string m_file_name{};
+	[[nodiscard]] bool is_separator(char character) const;
+	[[nodiscard]] bool is_decimal(char character) const;
+
+	[[nodiscard]] char peek(std::size_t distance = 0);
+	char eat();
+
+	// private members
 	std::vector<Token> m_tokens{};
+	std::string m_source{};
 	std::size_t m_index{};
 	std::string m_buffer{};
 	std::size_t m_line{1};

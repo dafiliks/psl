@@ -86,82 +86,114 @@ src/CMakeFiles/psl.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/psl.dir/main.cpp.s"
 	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/df/Documents/Programming/psl/src/main.cpp -o CMakeFiles/psl.dir/main.cpp.s
 
-src/CMakeFiles/psl.dir/lexer.cpp.o: src/CMakeFiles/psl.dir/flags.make
-src/CMakeFiles/psl.dir/lexer.cpp.o: /home/df/Documents/Programming/psl/src/lexer.cpp
-src/CMakeFiles/psl.dir/lexer.cpp.o: src/CMakeFiles/psl.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/df/Documents/Programming/psl/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object src/CMakeFiles/psl.dir/lexer.cpp.o"
-	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/psl.dir/lexer.cpp.o -MF CMakeFiles/psl.dir/lexer.cpp.o.d -o CMakeFiles/psl.dir/lexer.cpp.o -c /home/df/Documents/Programming/psl/src/lexer.cpp
+src/CMakeFiles/psl.dir/frontend/lexer.cpp.o: src/CMakeFiles/psl.dir/flags.make
+src/CMakeFiles/psl.dir/frontend/lexer.cpp.o: /home/df/Documents/Programming/psl/src/frontend/lexer.cpp
+src/CMakeFiles/psl.dir/frontend/lexer.cpp.o: src/CMakeFiles/psl.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/df/Documents/Programming/psl/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object src/CMakeFiles/psl.dir/frontend/lexer.cpp.o"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/psl.dir/frontend/lexer.cpp.o -MF CMakeFiles/psl.dir/frontend/lexer.cpp.o.d -o CMakeFiles/psl.dir/frontend/lexer.cpp.o -c /home/df/Documents/Programming/psl/src/frontend/lexer.cpp
 
-src/CMakeFiles/psl.dir/lexer.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/psl.dir/lexer.cpp.i"
-	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/df/Documents/Programming/psl/src/lexer.cpp > CMakeFiles/psl.dir/lexer.cpp.i
+src/CMakeFiles/psl.dir/frontend/lexer.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/psl.dir/frontend/lexer.cpp.i"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/df/Documents/Programming/psl/src/frontend/lexer.cpp > CMakeFiles/psl.dir/frontend/lexer.cpp.i
 
-src/CMakeFiles/psl.dir/lexer.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/psl.dir/lexer.cpp.s"
-	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/df/Documents/Programming/psl/src/lexer.cpp -o CMakeFiles/psl.dir/lexer.cpp.s
+src/CMakeFiles/psl.dir/frontend/lexer.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/psl.dir/frontend/lexer.cpp.s"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/df/Documents/Programming/psl/src/frontend/lexer.cpp -o CMakeFiles/psl.dir/frontend/lexer.cpp.s
 
-src/CMakeFiles/psl.dir/parser.cpp.o: src/CMakeFiles/psl.dir/flags.make
-src/CMakeFiles/psl.dir/parser.cpp.o: /home/df/Documents/Programming/psl/src/parser.cpp
-src/CMakeFiles/psl.dir/parser.cpp.o: src/CMakeFiles/psl.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/df/Documents/Programming/psl/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/CMakeFiles/psl.dir/parser.cpp.o"
-	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/psl.dir/parser.cpp.o -MF CMakeFiles/psl.dir/parser.cpp.o.d -o CMakeFiles/psl.dir/parser.cpp.o -c /home/df/Documents/Programming/psl/src/parser.cpp
+src/CMakeFiles/psl.dir/frontend/parser.cpp.o: src/CMakeFiles/psl.dir/flags.make
+src/CMakeFiles/psl.dir/frontend/parser.cpp.o: /home/df/Documents/Programming/psl/src/frontend/parser.cpp
+src/CMakeFiles/psl.dir/frontend/parser.cpp.o: src/CMakeFiles/psl.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/df/Documents/Programming/psl/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/CMakeFiles/psl.dir/frontend/parser.cpp.o"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/psl.dir/frontend/parser.cpp.o -MF CMakeFiles/psl.dir/frontend/parser.cpp.o.d -o CMakeFiles/psl.dir/frontend/parser.cpp.o -c /home/df/Documents/Programming/psl/src/frontend/parser.cpp
 
-src/CMakeFiles/psl.dir/parser.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/psl.dir/parser.cpp.i"
-	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/df/Documents/Programming/psl/src/parser.cpp > CMakeFiles/psl.dir/parser.cpp.i
+src/CMakeFiles/psl.dir/frontend/parser.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/psl.dir/frontend/parser.cpp.i"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/df/Documents/Programming/psl/src/frontend/parser.cpp > CMakeFiles/psl.dir/frontend/parser.cpp.i
 
-src/CMakeFiles/psl.dir/parser.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/psl.dir/parser.cpp.s"
-	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/df/Documents/Programming/psl/src/parser.cpp -o CMakeFiles/psl.dir/parser.cpp.s
+src/CMakeFiles/psl.dir/frontend/parser.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/psl.dir/frontend/parser.cpp.s"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/df/Documents/Programming/psl/src/frontend/parser.cpp -o CMakeFiles/psl.dir/frontend/parser.cpp.s
 
-src/CMakeFiles/psl.dir/gen.cpp.o: src/CMakeFiles/psl.dir/flags.make
-src/CMakeFiles/psl.dir/gen.cpp.o: /home/df/Documents/Programming/psl/src/gen.cpp
-src/CMakeFiles/psl.dir/gen.cpp.o: src/CMakeFiles/psl.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/df/Documents/Programming/psl/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object src/CMakeFiles/psl.dir/gen.cpp.o"
-	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/psl.dir/gen.cpp.o -MF CMakeFiles/psl.dir/gen.cpp.o.d -o CMakeFiles/psl.dir/gen.cpp.o -c /home/df/Documents/Programming/psl/src/gen.cpp
+src/CMakeFiles/psl.dir/backend/gen.cpp.o: src/CMakeFiles/psl.dir/flags.make
+src/CMakeFiles/psl.dir/backend/gen.cpp.o: /home/df/Documents/Programming/psl/src/backend/gen.cpp
+src/CMakeFiles/psl.dir/backend/gen.cpp.o: src/CMakeFiles/psl.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/df/Documents/Programming/psl/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object src/CMakeFiles/psl.dir/backend/gen.cpp.o"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/psl.dir/backend/gen.cpp.o -MF CMakeFiles/psl.dir/backend/gen.cpp.o.d -o CMakeFiles/psl.dir/backend/gen.cpp.o -c /home/df/Documents/Programming/psl/src/backend/gen.cpp
 
-src/CMakeFiles/psl.dir/gen.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/psl.dir/gen.cpp.i"
-	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/df/Documents/Programming/psl/src/gen.cpp > CMakeFiles/psl.dir/gen.cpp.i
+src/CMakeFiles/psl.dir/backend/gen.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/psl.dir/backend/gen.cpp.i"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/df/Documents/Programming/psl/src/backend/gen.cpp > CMakeFiles/psl.dir/backend/gen.cpp.i
 
-src/CMakeFiles/psl.dir/gen.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/psl.dir/gen.cpp.s"
-	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/df/Documents/Programming/psl/src/gen.cpp -o CMakeFiles/psl.dir/gen.cpp.s
+src/CMakeFiles/psl.dir/backend/gen.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/psl.dir/backend/gen.cpp.s"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/df/Documents/Programming/psl/src/backend/gen.cpp -o CMakeFiles/psl.dir/backend/gen.cpp.s
 
-src/CMakeFiles/psl.dir/error.cpp.o: src/CMakeFiles/psl.dir/flags.make
-src/CMakeFiles/psl.dir/error.cpp.o: /home/df/Documents/Programming/psl/src/error.cpp
-src/CMakeFiles/psl.dir/error.cpp.o: src/CMakeFiles/psl.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/df/Documents/Programming/psl/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object src/CMakeFiles/psl.dir/error.cpp.o"
-	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/psl.dir/error.cpp.o -MF CMakeFiles/psl.dir/error.cpp.o.d -o CMakeFiles/psl.dir/error.cpp.o -c /home/df/Documents/Programming/psl/src/error.cpp
+src/CMakeFiles/psl.dir/utils/error.cpp.o: src/CMakeFiles/psl.dir/flags.make
+src/CMakeFiles/psl.dir/utils/error.cpp.o: /home/df/Documents/Programming/psl/src/utils/error.cpp
+src/CMakeFiles/psl.dir/utils/error.cpp.o: src/CMakeFiles/psl.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/df/Documents/Programming/psl/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object src/CMakeFiles/psl.dir/utils/error.cpp.o"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/psl.dir/utils/error.cpp.o -MF CMakeFiles/psl.dir/utils/error.cpp.o.d -o CMakeFiles/psl.dir/utils/error.cpp.o -c /home/df/Documents/Programming/psl/src/utils/error.cpp
 
-src/CMakeFiles/psl.dir/error.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/psl.dir/error.cpp.i"
-	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/df/Documents/Programming/psl/src/error.cpp > CMakeFiles/psl.dir/error.cpp.i
+src/CMakeFiles/psl.dir/utils/error.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/psl.dir/utils/error.cpp.i"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/df/Documents/Programming/psl/src/utils/error.cpp > CMakeFiles/psl.dir/utils/error.cpp.i
 
-src/CMakeFiles/psl.dir/error.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/psl.dir/error.cpp.s"
-	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/df/Documents/Programming/psl/src/error.cpp -o CMakeFiles/psl.dir/error.cpp.s
+src/CMakeFiles/psl.dir/utils/error.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/psl.dir/utils/error.cpp.s"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/df/Documents/Programming/psl/src/utils/error.cpp -o CMakeFiles/psl.dir/utils/error.cpp.s
+
+src/CMakeFiles/psl.dir/utils/cmdargs.cpp.o: src/CMakeFiles/psl.dir/flags.make
+src/CMakeFiles/psl.dir/utils/cmdargs.cpp.o: /home/df/Documents/Programming/psl/src/utils/cmdargs.cpp
+src/CMakeFiles/psl.dir/utils/cmdargs.cpp.o: src/CMakeFiles/psl.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/df/Documents/Programming/psl/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object src/CMakeFiles/psl.dir/utils/cmdargs.cpp.o"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/psl.dir/utils/cmdargs.cpp.o -MF CMakeFiles/psl.dir/utils/cmdargs.cpp.o.d -o CMakeFiles/psl.dir/utils/cmdargs.cpp.o -c /home/df/Documents/Programming/psl/src/utils/cmdargs.cpp
+
+src/CMakeFiles/psl.dir/utils/cmdargs.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/psl.dir/utils/cmdargs.cpp.i"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/df/Documents/Programming/psl/src/utils/cmdargs.cpp > CMakeFiles/psl.dir/utils/cmdargs.cpp.i
+
+src/CMakeFiles/psl.dir/utils/cmdargs.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/psl.dir/utils/cmdargs.cpp.s"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/df/Documents/Programming/psl/src/utils/cmdargs.cpp -o CMakeFiles/psl.dir/utils/cmdargs.cpp.s
+
+src/CMakeFiles/psl.dir/compiler/compiler.cpp.o: src/CMakeFiles/psl.dir/flags.make
+src/CMakeFiles/psl.dir/compiler/compiler.cpp.o: /home/df/Documents/Programming/psl/src/compiler/compiler.cpp
+src/CMakeFiles/psl.dir/compiler/compiler.cpp.o: src/CMakeFiles/psl.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/df/Documents/Programming/psl/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object src/CMakeFiles/psl.dir/compiler/compiler.cpp.o"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/psl.dir/compiler/compiler.cpp.o -MF CMakeFiles/psl.dir/compiler/compiler.cpp.o.d -o CMakeFiles/psl.dir/compiler/compiler.cpp.o -c /home/df/Documents/Programming/psl/src/compiler/compiler.cpp
+
+src/CMakeFiles/psl.dir/compiler/compiler.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/psl.dir/compiler/compiler.cpp.i"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/df/Documents/Programming/psl/src/compiler/compiler.cpp > CMakeFiles/psl.dir/compiler/compiler.cpp.i
+
+src/CMakeFiles/psl.dir/compiler/compiler.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/psl.dir/compiler/compiler.cpp.s"
+	cd /home/df/Documents/Programming/psl/build/src && /usr/sbin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/df/Documents/Programming/psl/src/compiler/compiler.cpp -o CMakeFiles/psl.dir/compiler/compiler.cpp.s
 
 # Object files for target psl
 psl_OBJECTS = \
 "CMakeFiles/psl.dir/main.cpp.o" \
-"CMakeFiles/psl.dir/lexer.cpp.o" \
-"CMakeFiles/psl.dir/parser.cpp.o" \
-"CMakeFiles/psl.dir/gen.cpp.o" \
-"CMakeFiles/psl.dir/error.cpp.o"
+"CMakeFiles/psl.dir/frontend/lexer.cpp.o" \
+"CMakeFiles/psl.dir/frontend/parser.cpp.o" \
+"CMakeFiles/psl.dir/backend/gen.cpp.o" \
+"CMakeFiles/psl.dir/utils/error.cpp.o" \
+"CMakeFiles/psl.dir/utils/cmdargs.cpp.o" \
+"CMakeFiles/psl.dir/compiler/compiler.cpp.o"
 
 # External object files for target psl
 psl_EXTERNAL_OBJECTS =
 
 src/psl: src/CMakeFiles/psl.dir/main.cpp.o
-src/psl: src/CMakeFiles/psl.dir/lexer.cpp.o
-src/psl: src/CMakeFiles/psl.dir/parser.cpp.o
-src/psl: src/CMakeFiles/psl.dir/gen.cpp.o
-src/psl: src/CMakeFiles/psl.dir/error.cpp.o
+src/psl: src/CMakeFiles/psl.dir/frontend/lexer.cpp.o
+src/psl: src/CMakeFiles/psl.dir/frontend/parser.cpp.o
+src/psl: src/CMakeFiles/psl.dir/backend/gen.cpp.o
+src/psl: src/CMakeFiles/psl.dir/utils/error.cpp.o
+src/psl: src/CMakeFiles/psl.dir/utils/cmdargs.cpp.o
+src/psl: src/CMakeFiles/psl.dir/compiler/compiler.cpp.o
 src/psl: src/CMakeFiles/psl.dir/build.make
 src/psl: src/CMakeFiles/psl.dir/compiler_depend.ts
 src/psl: src/CMakeFiles/psl.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/df/Documents/Programming/psl/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable psl"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/df/Documents/Programming/psl/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX executable psl"
 	cd /home/df/Documents/Programming/psl/build/src && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/psl.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

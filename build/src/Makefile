@@ -130,77 +130,101 @@ psl/fast:
 	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/build
 .PHONY : psl/fast
 
-error.o: error.cpp.o
-.PHONY : error.o
+backend/gen.o: backend/gen.cpp.o
+.PHONY : backend/gen.o
 
 # target to build an object file
-error.cpp.o:
-	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/error.cpp.o
-.PHONY : error.cpp.o
+backend/gen.cpp.o:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/backend/gen.cpp.o
+.PHONY : backend/gen.cpp.o
 
-error.i: error.cpp.i
-.PHONY : error.i
+backend/gen.i: backend/gen.cpp.i
+.PHONY : backend/gen.i
 
 # target to preprocess a source file
-error.cpp.i:
-	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/error.cpp.i
-.PHONY : error.cpp.i
+backend/gen.cpp.i:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/backend/gen.cpp.i
+.PHONY : backend/gen.cpp.i
 
-error.s: error.cpp.s
-.PHONY : error.s
+backend/gen.s: backend/gen.cpp.s
+.PHONY : backend/gen.s
 
 # target to generate assembly for a file
-error.cpp.s:
-	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/error.cpp.s
-.PHONY : error.cpp.s
+backend/gen.cpp.s:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/backend/gen.cpp.s
+.PHONY : backend/gen.cpp.s
 
-gen.o: gen.cpp.o
-.PHONY : gen.o
+compiler/compiler.o: compiler/compiler.cpp.o
+.PHONY : compiler/compiler.o
 
 # target to build an object file
-gen.cpp.o:
-	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/gen.cpp.o
-.PHONY : gen.cpp.o
+compiler/compiler.cpp.o:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/compiler/compiler.cpp.o
+.PHONY : compiler/compiler.cpp.o
 
-gen.i: gen.cpp.i
-.PHONY : gen.i
+compiler/compiler.i: compiler/compiler.cpp.i
+.PHONY : compiler/compiler.i
 
 # target to preprocess a source file
-gen.cpp.i:
-	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/gen.cpp.i
-.PHONY : gen.cpp.i
+compiler/compiler.cpp.i:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/compiler/compiler.cpp.i
+.PHONY : compiler/compiler.cpp.i
 
-gen.s: gen.cpp.s
-.PHONY : gen.s
+compiler/compiler.s: compiler/compiler.cpp.s
+.PHONY : compiler/compiler.s
 
 # target to generate assembly for a file
-gen.cpp.s:
-	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/gen.cpp.s
-.PHONY : gen.cpp.s
+compiler/compiler.cpp.s:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/compiler/compiler.cpp.s
+.PHONY : compiler/compiler.cpp.s
 
-lexer.o: lexer.cpp.o
-.PHONY : lexer.o
+frontend/lexer.o: frontend/lexer.cpp.o
+.PHONY : frontend/lexer.o
 
 # target to build an object file
-lexer.cpp.o:
-	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/lexer.cpp.o
-.PHONY : lexer.cpp.o
+frontend/lexer.cpp.o:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/frontend/lexer.cpp.o
+.PHONY : frontend/lexer.cpp.o
 
-lexer.i: lexer.cpp.i
-.PHONY : lexer.i
+frontend/lexer.i: frontend/lexer.cpp.i
+.PHONY : frontend/lexer.i
 
 # target to preprocess a source file
-lexer.cpp.i:
-	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/lexer.cpp.i
-.PHONY : lexer.cpp.i
+frontend/lexer.cpp.i:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/frontend/lexer.cpp.i
+.PHONY : frontend/lexer.cpp.i
 
-lexer.s: lexer.cpp.s
-.PHONY : lexer.s
+frontend/lexer.s: frontend/lexer.cpp.s
+.PHONY : frontend/lexer.s
 
 # target to generate assembly for a file
-lexer.cpp.s:
-	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/lexer.cpp.s
-.PHONY : lexer.cpp.s
+frontend/lexer.cpp.s:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/frontend/lexer.cpp.s
+.PHONY : frontend/lexer.cpp.s
+
+frontend/parser.o: frontend/parser.cpp.o
+.PHONY : frontend/parser.o
+
+# target to build an object file
+frontend/parser.cpp.o:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/frontend/parser.cpp.o
+.PHONY : frontend/parser.cpp.o
+
+frontend/parser.i: frontend/parser.cpp.i
+.PHONY : frontend/parser.i
+
+# target to preprocess a source file
+frontend/parser.cpp.i:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/frontend/parser.cpp.i
+.PHONY : frontend/parser.cpp.i
+
+frontend/parser.s: frontend/parser.cpp.s
+.PHONY : frontend/parser.s
+
+# target to generate assembly for a file
+frontend/parser.cpp.s:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/frontend/parser.cpp.s
+.PHONY : frontend/parser.cpp.s
 
 main.o: main.cpp.o
 .PHONY : main.o
@@ -226,29 +250,53 @@ main.cpp.s:
 	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/main.cpp.s
 .PHONY : main.cpp.s
 
-parser.o: parser.cpp.o
-.PHONY : parser.o
+utils/cmdargs.o: utils/cmdargs.cpp.o
+.PHONY : utils/cmdargs.o
 
 # target to build an object file
-parser.cpp.o:
-	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/parser.cpp.o
-.PHONY : parser.cpp.o
+utils/cmdargs.cpp.o:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/utils/cmdargs.cpp.o
+.PHONY : utils/cmdargs.cpp.o
 
-parser.i: parser.cpp.i
-.PHONY : parser.i
+utils/cmdargs.i: utils/cmdargs.cpp.i
+.PHONY : utils/cmdargs.i
 
 # target to preprocess a source file
-parser.cpp.i:
-	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/parser.cpp.i
-.PHONY : parser.cpp.i
+utils/cmdargs.cpp.i:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/utils/cmdargs.cpp.i
+.PHONY : utils/cmdargs.cpp.i
 
-parser.s: parser.cpp.s
-.PHONY : parser.s
+utils/cmdargs.s: utils/cmdargs.cpp.s
+.PHONY : utils/cmdargs.s
 
 # target to generate assembly for a file
-parser.cpp.s:
-	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/parser.cpp.s
-.PHONY : parser.cpp.s
+utils/cmdargs.cpp.s:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/utils/cmdargs.cpp.s
+.PHONY : utils/cmdargs.cpp.s
+
+utils/error.o: utils/error.cpp.o
+.PHONY : utils/error.o
+
+# target to build an object file
+utils/error.cpp.o:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/utils/error.cpp.o
+.PHONY : utils/error.cpp.o
+
+utils/error.i: utils/error.cpp.i
+.PHONY : utils/error.i
+
+# target to preprocess a source file
+utils/error.cpp.i:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/utils/error.cpp.i
+.PHONY : utils/error.cpp.i
+
+utils/error.s: utils/error.cpp.s
+.PHONY : utils/error.s
+
+# target to generate assembly for a file
+utils/error.cpp.s:
+	cd /home/df/Documents/Programming/psl/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/psl.dir/build.make src/CMakeFiles/psl.dir/utils/error.cpp.s
+.PHONY : utils/error.cpp.s
 
 # Help Target
 help:
@@ -259,21 +307,27 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... psl"
-	@echo "... error.o"
-	@echo "... error.i"
-	@echo "... error.s"
-	@echo "... gen.o"
-	@echo "... gen.i"
-	@echo "... gen.s"
-	@echo "... lexer.o"
-	@echo "... lexer.i"
-	@echo "... lexer.s"
+	@echo "... backend/gen.o"
+	@echo "... backend/gen.i"
+	@echo "... backend/gen.s"
+	@echo "... compiler/compiler.o"
+	@echo "... compiler/compiler.i"
+	@echo "... compiler/compiler.s"
+	@echo "... frontend/lexer.o"
+	@echo "... frontend/lexer.i"
+	@echo "... frontend/lexer.s"
+	@echo "... frontend/parser.o"
+	@echo "... frontend/parser.i"
+	@echo "... frontend/parser.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
-	@echo "... parser.o"
-	@echo "... parser.i"
-	@echo "... parser.s"
+	@echo "... utils/cmdargs.o"
+	@echo "... utils/cmdargs.i"
+	@echo "... utils/cmdargs.s"
+	@echo "... utils/error.o"
+	@echo "... utils/error.i"
+	@echo "... utils/error.s"
 .PHONY : help
 
 

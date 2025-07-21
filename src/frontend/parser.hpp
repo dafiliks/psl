@@ -2,6 +2,7 @@
 #define PARSER_HPP
 
 #include <vector>
+#include <utility>
 #include "lexer.hpp"
 #include "ast.hpp"
 
@@ -17,6 +18,8 @@ public:
 
 	[[nodiscard]] const AST& get_ast() const;
 	[[nodiscard]] const std::string& get_source() const;
+	[[nodiscard]] const std::vector<VarStmt>& get_existing_vars() const;
+	[[nodiscard]] const std::vector<FuncDeclStmt>& get_existing_funcs() const;
 
 private:
 	[[nodiscard]] Stmt parse_stmt();
@@ -24,11 +27,13 @@ private:
 	[[nodiscard]] OutputStmt parse_output_stmt();
 	[[nodiscard]] FuncDeclStmt parse_func_decl_stmt();
 
-	[[nodiscard]] Args parse_func_decl_args();
+	[[nodiscard]] Params parse_func_decl_params();
+	[[nodiscard]] Args parse_func_call_args();
 	[[nodiscard]] Body parse_body();
 
 	[[nodiscard]] Expr parse_expr();
 	[[nodiscard]] Data_Type deduce_expr_type(Token_Type token_type);
+	[[nodiscard]] FuncCallExpr parse_func_call_expr();
 	[[nodiscard]] BinOpExpr parse_bin_op_expr();
 	[[nodiscard]] AtomExpr parse_atom();
 	[[nodiscard]] IntExpr parse_int_expr();
@@ -41,9 +46,13 @@ private:
 	[[nodiscard]] std::unique_ptr<Expr> parse_rhs(Token token);
 	[[nodiscard]] bool is_bin_op(Token_Type token_type);
 
-	[[nodiscard]] bool is_var_defined(VarStmt& var_stmt);
-	[[nodiscard]] std::size_t get_var_index(VarStmt& var_stmt);
+	[[nodiscard]] bool is_var_defined(const VarStmt& var_stmt);
+	[[nodiscard]] std::size_t get_var_index(const VarStmt& var_stmt);
 	[[nodiscard]] Data_Type existing_vars_lookup(std::string_view name);
+	[[nodiscard]] bool is_func_defined(const FuncCallExpr& func_call_expr);
+	[[nodiscard]] std::size_t get_func_index(const FuncCallExpr& func_call_expr);
+	[[nodiscard]] bool is_args_length_matching(const FuncDeclStmt& func_decl_stmt, const FuncCallExpr& func_call_expr);
+
 
 	[[nodiscard]] Data_Type tt_to_dt(Token_Type token_type);
 	[[nodiscard]] Data_Type tt_to_dt(Token token);
@@ -59,6 +68,8 @@ private:
 	std::size_t m_token_index{};
 	std::string m_source{};
 	std::vector<VarStmt> m_existing_vars{};
+	std::vector<std::size_t> m_var_scope_stack{};
+	std::vector<FuncDeclStmt> m_existing_funcs{};
 };
 
 #endif

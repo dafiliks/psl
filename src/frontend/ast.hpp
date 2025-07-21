@@ -8,7 +8,8 @@
 
 enum class Data_Type {
 	DOUBLE,
-	STRING
+	STRING,
+	NONE
 };
 
 enum class Operator {
@@ -25,22 +26,40 @@ struct Expr; struct StrExpr; struct VarExpr; struct Scope; struct Body;
 struct VarStmt {
 	std::string m_name{};
 	std::shared_ptr<Expr> m_expr{};
+	Data_Type m_original_dt{};
+	Data_Type m_final_dt{};
 	bool m_is_constant{};
 	bool m_is_reassignment{};
 };
 
-struct OutputStmt {
-	std::vector<Expr> m_args{};
+struct Param {
+	std::string m_name{};
+	Data_Type m_type{};
+};
+
+// for matching notation with `Args`
+struct Params {
+	std::vector<Param> m_params{};
 };
 
 struct Args {
-	std::vector<VarExpr> m_var_exprs{};
+	std::vector<Expr> m_exprs{};
+};
+
+struct Return {
+	std::shared_ptr<Expr> m_return_expr{};
+};
+
+struct OutputStmt {
+	Args m_args{};
 };
 
 struct FuncDeclStmt {
 	std::string m_name{};
-	Args m_args{};
+	Params m_params{};
 	std::shared_ptr<Body> m_body{};
+	Return m_return{};
+	bool is_void{true};
 };
 
 struct Stmt {
@@ -79,8 +98,13 @@ struct BinOpExpr {
 	Operator m_op{};
 };
 
+struct FuncCallExpr {
+	std::string m_name{};
+	Args m_args{};
+};
+
 struct Expr {
-	std::variant<AtomExpr, BinOpExpr> m_expr{};
+	std::variant<AtomExpr, BinOpExpr, FuncCallExpr> m_expr{};
 	Data_Type m_type{};
 };
 

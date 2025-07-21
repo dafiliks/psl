@@ -1,5 +1,8 @@
 #include <string>
+#include <iostream>
+#include <print>
 #include <filesystem>
+#include <cstdlib>
 
 #include "compiler.hpp"
 #include "../utils/cmdargs.hpp"
@@ -24,7 +27,7 @@ void Compiler::compile_to_cpp()
 	m_parser.parse();
 
 	m_gen = Generator{m_parser};
-	m_gen.gen();
+	m_gen.gen(std::filesystem::path{m_args.get_source_path()}.replace_extension(std::filesystem::path{".cpp"}));
 }
 
 void Compiler::compile_to_output_target(const std::string_view& cpp_file)

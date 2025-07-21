@@ -13,8 +13,10 @@ Parser::Parser(Lexer& lexer) : m_tokens(lexer.get_tokens()), m_source(lexer.get_
 
 void Parser::parse() { m_ast.m_body = parse_body(); }
 
-[[nodiscard]] const AST& Parser::get_ast()            const { return m_ast; }
-[[nodiscard]] const std::string& Parser::get_source() const { return m_source; }
+[[nodiscard]] const AST& Parser::get_ast()                                  const { return m_ast; }
+[[nodiscard]] const std::string& Parser::get_source()                       const { return m_source; }
+[[nodiscard]] const std::vector<VarStmt>& Parser::get_existing_vars()       const { return m_existing_vars; }
+[[nodiscard]] const std::vector<FuncDeclStmt>& Parser::get_existing_funcs() const { return m_existing_funcs; }
 
 [[nodiscard]] Stmt Parser::parse_stmt()
 {
@@ -45,21 +47,20 @@ void Parser::parse() { m_ast.m_body = parse_body(); }
 	try_eat(Token_Type::LESS_THAN);
 	try_eat(Token_Type::MINUS);
 
-	// store the type of the first atom in expression, so we can compare later
-	Token initial_expr_token = peek();
+	Token initial_expr_token{peek()};
 
 	var_stmt.m_expr = std::make_shared<Expr>(parse_expr());
 
 	if (is_var_defined(var_stmt)) {
-		if (m_existing_vars.at(get_var_index(var_stmt)).m_is_constant == true) {
-			parse_error_l("can't reassign a constant variable");
+		if (m_existing_vars.at(get_var_index(var_stmt)).m_is_constant) {
+			parse_error_l("cannot reassign constants");
 		}
-
-		var_stmt.m_is_reassignment = true;
 
 		if (m_existing_vars.at(get_var_index(var_stmt)).m_expr->m_type != tt_to_dt(initial_expr_token)) {
 			parse_error_l("can't reassign to a different type");
 		}
+
+		var_stmt.m_is_reassignment = true;
 	} else {
 		m_existing_vars.push_back(var_stmt);
 	}
@@ -73,7 +74,7 @@ void Parser::parse() { m_ast.m_body = parse_body(); }
 
 	do {
 		eat();
-		output_stmt.m_args.push_back(parse_expr());
+		output_stmt.m_args.m_exprs.push_back(parse_expr());
 	} while (peek().m_type == Token_Type::COMMA);
 
 	return output_stmt;
@@ -87,38 +88,76 @@ void Parser::parse() { m_ast.m_body = parse_body(); }
 
 	func_decl_stmt.m_name = try_eat(Token_Type::IDENTIFIER).m_value;
 
+	m_var_scope_stack.push_back(m_existing_vars.size());
+
 	try_eat(Token_Type::O_PAREN);
-	func_decl_stmt.m_args = parse_func_decl_args();
+	func_decl_stmt.m_params = parse_func_decl_params();
 	try_eat(Token_Type::C_PAREN);
 
 	func_decl_stmt.m_body = std::make_unique<Body>(parse_body());
 
+	if (peek().m_type == Token_Type::RETURN) {
+		eat();
+		func_decl_stmt.m_return.m_return_expr = std::make_shared<Expr>(parse_expr());
+		func_decl_stmt.is_void = false;
+	}
+
 	try_eat(Token_Type::END_SUB_ROUTINE);
+
+	m_existing_funcs.push_back(func_decl_stmt);
+
+	m_existing_vars.resize(m_var_scope_stack.at(m_var_scope_stack.size() - 1));
 
 	return func_decl_stmt;
 }
 
-[[nodiscard]] Args Parser::parse_func_decl_args()
+[[nodiscard]] Params Parser::parse_func_decl_params()
 {
-	std::vector<VarExpr> args{};
+	std::vector<Param> params{};
 
 	while (peek().m_type != Token_Type::C_PAREN && peek().m_type != Token_Type::END_OF_FILE) {
 		if (peek().m_type == Token_Type::COMMA) {
 			eat();
 		} else if (peek().m_type == Token_Type::IDENTIFIER) {
-			args.push_back(VarExpr{peek().m_value});
+			params.push_back(Param{.m_name = peek().m_value});
+
+			VarStmt var_stmt{};
+
+			var_stmt.m_name = peek().m_value;
+			var_stmt.m_expr = std::make_shared<Expr>(parse_atom());
+			var_stmt.m_expr->m_type = Data_Type::NONE;
+
+			m_existing_vars.push_back(var_stmt);
+
 			eat();
+		}
+	}
+
+	return Params{params};
+}
+
+[[nodiscard]] Args Parser::parse_func_call_args()
+{
+	std::vector<Expr> args{};
+
+	while (peek().m_type != Token_Type::C_PAREN && peek().m_type != Token_Type::END_OF_FILE) {
+		if (peek().m_type == Token_Type::COMMA) {
+			eat();
+		} else {
+			args.push_back(Expr{parse_expr()});
 		}
 	}
 
 	return Args{args};
 }
 
+
 [[nodiscard]] Body Parser::parse_body()
 {
 	std::vector<Stmt> stmts{};
 
-	while (peek().m_type != Token_Type::END_SUB_ROUTINE && peek().m_type != Token_Type::END_OF_FILE) {
+	while (peek().m_type != Token_Type::END_SUB_ROUTINE && peek().m_type != Token_Type::END_OF_FILE &&
+	       peek().m_type != Token_Type::RETURN) {
 		stmts.push_back(parse_stmt());
 	}
 
@@ -129,7 +168,13 @@ void Parser::parse() { m_ast.m_body = parse_body(); }
 {
 	Expr expr{};
 
-	expr.m_type = deduce_expr_type(peek().m_type);
+	// if type can be deduced, deduce it
+	if (peek(1).m_type == Token_Type::O_PAREN) {
+		expr.m_expr = parse_func_call_expr();
+		return expr;
+	} else {
+		expr.m_type = deduce_expr_type(peek().m_type);
+	}
 
 	// in the case of a binary op...
 	if (is_bin_op(peek(1).m_type)) {
@@ -154,6 +199,34 @@ void Parser::parse() { m_ast.m_body = parse_body(); }
 	case (Token_Type::USER_INPUT): return Data_Type::STRING;
 	default:                       parse_error_l("couldn't match expression type");
 	}
+}
+
+[[nodiscard]] FuncCallExpr Parser::parse_func_call_expr()
+{
+	FuncCallExpr func_call_expr{};
+
+	func_call_expr.m_name = try_eat(Token_Type::IDENTIFIER).m_value;
+
+	try_eat(Token_Type::O_PAREN);
+
+	func_call_expr.m_args = parse_func_call_args();
+
+	try_eat(Token_Type::C_PAREN);
+
+	// might be useful one day
+	if (is_func_defined(func_call_expr)) {
+		if (is_args_length_matching(m_existing_funcs.at(get_func_index(func_call_expr)), func_call_expr)) {
+			for (std::size_t i{0}; i < m_existing_funcs.at(get_func_index(func_call_expr)).m_params.m_params.size(); i++) {
+				m_existing_funcs.at(get_func_index(func_call_expr)).m_params.m_params[i].m_type = func_call_expr.m_args.m_exprs[i].m_type;
+			}
+		} else {
+			parse_error_l("argument number doesn't match w/ function definition");
+		}
+	} else {
+		parse_error_l("function wasn't defined but used");
+	}
+
+	return func_call_expr;
 }
 
 [[nodiscard]] BinOpExpr Parser::parse_bin_op_expr()
@@ -220,7 +293,7 @@ void Parser::parse() { m_ast.m_body = parse_body(); }
 	       token_type == Token_Type::MOD;
 }
 
-[[nodiscard]] bool Parser::is_var_defined(VarStmt& var_stmt)
+[[nodiscard]] bool Parser::is_var_defined(const VarStmt& var_stmt)
 {
 	for (auto it{m_existing_vars.rbegin()}; it != m_existing_vars.rend(); it++) {
 		if (it->m_name == var_stmt.m_name) {
@@ -231,8 +304,9 @@ void Parser::parse() { m_ast.m_body = parse_body(); }
 	return false;
 }
 
-[[nodiscard]] std::size_t Parser::get_var_index(VarStmt& var_stmt)
+[[nodiscard]] std::size_t Parser::get_var_index(const VarStmt& var_stmt)
 {
+	// make this cleaner
 	std::size_t i{};
 
 	for (auto it{m_existing_vars.rbegin()}; it != m_existing_vars.rend(); it++, i++) {
@@ -253,6 +327,37 @@ void Parser::parse() { m_ast.m_body = parse_body(); }
 	}
 
 	parse_error_l("couldn't match name with existing variables");
+}
+
+[[nodiscard]] bool Parser::is_func_defined(const FuncCallExpr& func_call_expr)
+{
+	for (auto it{m_existing_funcs.begin()}; it != m_existing_funcs.end(); it++) {
+		if (it->m_name == func_call_expr.m_name) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+[[nodiscard]] std::size_t Parser::get_func_index(const FuncCallExpr& func_call_expr)
+{
+	for (auto it{m_existing_funcs.begin()}; it != m_existing_funcs.end(); it++) {
+		if (it->m_name == func_call_expr.m_name) {
+			return it - m_existing_funcs.begin();
+		}
+	}
+
+	parse_error_l("cannot get an index of a function that doesn't exist");
+}
+
+[[nodiscard]] bool Parser::is_args_length_matching(const FuncDeclStmt& func_decl_stmt, const FuncCallExpr& func_call_expr)
+{
+	if (func_decl_stmt.m_params.m_params.size() == func_call_expr.m_args.m_exprs.size()){
+		return true;
+	}
+
+	return false;
 }
 
 

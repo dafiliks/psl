@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <iostream>
 #include <fstream>
 
 #include "../frontend/lexer.hpp"
@@ -36,7 +37,7 @@ void CmdArgs::validate_args()
 	std::ifstream file{};
 	file.open(file_name);
 	if (!file.is_open()) {
-		//	m_lex_error.error("file '" + std::string{file_name} + "' could not be opened");
+		Error{"file '" + std::string{file_name} + "' could not be opened"};
 	}
 	std::string source{std::istreambuf_iterator<char>(file),
 	                   std::istreambuf_iterator<char>()};

@@ -1,8 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/df/Documents/Programming/psl/build/cmake_install.cmake",
-		"/home/df/Documents/Programming/psl/build/src/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

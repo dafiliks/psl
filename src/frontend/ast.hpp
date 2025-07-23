@@ -26,8 +26,7 @@ struct Expr; struct StrExpr; struct VarExpr; struct Scope; struct Body;
 struct VarStmt {
 	std::string m_name{};
 	std::shared_ptr<Expr> m_expr{};
-	Data_Type m_original_dt{};
-	Data_Type m_final_dt{};
+	std::shared_ptr<Expr> m_previous_expr{};
 	bool m_is_constant{};
 	bool m_is_reassignment{};
 };
@@ -57,13 +56,20 @@ struct OutputStmt {
 struct FuncDeclStmt {
 	std::string m_name{};
 	Params m_params{};
+	std::size_t m_token_index_start{};
 	std::shared_ptr<Body> m_body{};
 	Return m_return{};
-	bool is_void{true};
+	bool m_is_void{true};
+	bool m_is_called{false};
+};
+
+struct FuncCallStmt {
+	std::string m_name{};
+	Args m_args{};
 };
 
 struct Stmt {
-	std::variant<VarStmt, OutputStmt, FuncDeclStmt> m_stmt{};
+	std::variant<VarStmt, OutputStmt, FuncDeclStmt, FuncCallStmt> m_stmt{};
 };
 
 struct Body {
@@ -88,8 +94,13 @@ struct VarExpr {
 
 struct UserInputExpr {};
 
+struct FuncCallExpr {
+	std::string m_name{};
+	Args m_args{};
+};
+
 struct AtomExpr {
-	std::variant<IntExpr, FloatExpr, StrExpr, VarExpr, UserInputExpr> m_atom{};
+	std::variant<IntExpr, FloatExpr, StrExpr, VarExpr, UserInputExpr, FuncCallExpr> m_atom{};
 };
 
 struct BinOpExpr {
@@ -98,13 +109,8 @@ struct BinOpExpr {
 	Operator m_op{};
 };
 
-struct FuncCallExpr {
-	std::string m_name{};
-	Args m_args{};
-};
-
 struct Expr {
-	std::variant<AtomExpr, BinOpExpr, FuncCallExpr> m_expr{};
+	std::variant<AtomExpr, BinOpExpr> m_expr{};
 	Data_Type m_type{};
 };
 

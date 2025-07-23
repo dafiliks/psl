@@ -34,5 +34,6 @@
 # Extra
 test.pseudo
 /build
+./build
 /main
 /psl

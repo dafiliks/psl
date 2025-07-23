@@ -102,7 +102,7 @@ void Lexer::lex_ident_or_kw()
 {
 	do {
 		m_buffer += eat();
-	} while (!is_separator(peek()) && isalnum(peek()));
+	} while (!is_separator(peek()) && isalnum(peek()) || peek() == '_');
 
 	if (!find_token_vt_map(m_buffer)) {
 		m_tokens.push_back({Token_Type::IDENTIFIER, m_buffer, m_line, m_col});

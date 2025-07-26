@@ -10,9 +10,9 @@
 enum class Token_Type {
 	IDENTIFIER,
 	/* types */
-	INT_LIT,
-	FLOAT,
-	STRING_LIT,
+	INT,
+	REAL,
+	STRING,
 	/* single char tokens */
 	GREATER_THAN,
 	LESS_THAN,
@@ -49,8 +49,18 @@ enum class Token_Type {
 	SUB_ROUTINE,
 	END_SUB_ROUTINE,
 	RETURN,
+	LEN,
+	POSITION,
+	SUBSTRING,
+	STRING_TO_INT,
+	STRING_TO_REAL,
+	INT_TO_STRING,
+	REAL_TO_STRING,
+	CHAR_TO_CODE,
+	CODE_TO_CHAR,
 	USER_INPUT,
 	OUTPUT,
+	RANDOM_INT,
 	/* extra */
 	END_OF_FILE,
 };
@@ -92,8 +102,18 @@ static const std::unordered_map<std::string, Token_Type> value_token_map {
 	{"SUBROUTINE", Token_Type::SUB_ROUTINE},
 	{"ENDSUBROUTINE", Token_Type::END_SUB_ROUTINE},
 	{"RETURN", Token_Type::RETURN},
+	{"LEN", Token_Type::LEN},
+	{"POSITION", Token_Type::POSITION},
+	{"SUBSTRING", Token_Type::SUBSTRING},
+	{"STRING_TO_INT", Token_Type::STRING_TO_INT},
+	{"STRING_TO_REAL", Token_Type::STRING_TO_REAL},
+	{"INT_TO_STRING", Token_Type::INT_TO_STRING},
+	{"REAL_TO_STRING", Token_Type::REAL_TO_STRING},
+	{"CHAR_TO_CODE", Token_Type::CHAR_TO_CODE},
+	{"CODE_TO_CHAR", Token_Type::CODE_TO_CHAR},
 	{"USERINPUT", Token_Type::USER_INPUT},
-	{"OUTPUT", Token_Type::OUTPUT}
+	{"OUTPUT", Token_Type::OUTPUT},
+	{"RANDOM_INT", Token_Type::RANDOM_INT},
 };
 
 std::string to_string(Token_Type type);
@@ -119,6 +139,7 @@ public:
 	[[nodiscard]] const std::string& get_source() const;
 
 private:
+	[[nodiscard]] bool find_token_vt_map(const char value);
 	[[nodiscard]] bool find_token_vt_map(const std::string& value);
 	void lex_ident_or_kw();
 	void lex_number();
@@ -126,7 +147,6 @@ private:
 	void lex_comment();
 
 	[[nodiscard]] bool is_separator(char character) const;
-	[[nodiscard]] bool is_decimal(char character) const;
 
 	[[nodiscard]] char peek(std::size_t distance = 0);
 	char eat();

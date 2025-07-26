@@ -62,8 +62,10 @@ void Generator::gen_stmt(const Stmt& stmt)
 				if (var_stmt.m_expr->m_type == Data_Type::STRING) {
 					gen.require_lib("string");
 					*gen.m_current_stream << "std::string " << var_stmt.m_name << " = ";
-				} else if (var_stmt.m_expr->m_type == Data_Type::DOUBLE) {
+				} else if (var_stmt.m_expr->m_type == Data_Type::REAL) {
 					*gen.m_current_stream << "double " << var_stmt.m_name << " = ";
+				} else if (var_stmt.m_expr->m_type == Data_Type::INT) {
+					*gen.m_current_stream << "int " << var_stmt.m_name << " = ";
 				} else if (var_stmt.m_expr->m_type == Data_Type::NONE) {
 					*gen.m_current_stream << "auto " << var_stmt.m_name << " = ";
 				}
@@ -90,6 +92,8 @@ void Generator::gen_stmt(const Stmt& stmt)
 			gen.change_stream(gen.m_func_stream);
 
 			FuncDeclStmt& table_func_decl_stmt{gen.existing_func_lookup(func_decl_stmt.m_name)};
+
+			gen.check_func_not_redefined(table_func_decl_stmt.m_name);
 
 			if (table_func_decl_stmt.m_is_void) {
 				*gen.m_current_stream << "void ";
@@ -132,6 +136,17 @@ void Generator::gen_stmt(const Stmt& stmt)
 
 			*gen.m_current_stream << ");\n";
 		}
+
+		void operator()(const IfStmt& if_stmt)
+		{
+			*gen.m_current_stream << "	";
+			*gen.m_current_stream << "if (";
+			gen.gen_expr(*if_stmt.m_relational_expr);
+			*gen.m_current_stream << ") {\n";
+			gen.gen_body(*if_stmt.m_body);
+			*gen.m_current_stream << "	";
+			*gen.m_current_stream << "}\n";
+		}
 	};
 
 	StmtVisitor stmt_visitor{*this};
@@ -141,8 +156,11 @@ void Generator::gen_stmt(const Stmt& stmt)
 void Generator::gen_type(const Data_Type& type)
 {
 	switch (type) {
-	case (Data_Type::DOUBLE):
+	case (Data_Type::REAL):
 		*m_current_stream << "double ";
+		break;
+	case (Data_Type::INT):
+		*m_current_stream << "int ";
 		break;
 	case (Data_Type::STRING):
 		*m_current_stream << "std::string ";
@@ -178,6 +196,19 @@ void Generator::gen_expr(const Expr& expr)
 			gen.gen_op(bin_op_expr.m_op);
 			gen.gen_expr(*bin_op_expr.m_rhs);
 		}
+
+		void operator()(const RelationalOpExpr& relational_op_expr)
+		{
+			gen.gen_expr(*relational_op_expr.m_lhs);
+
+			gen.gen_rel_op(relational_op_expr.m_relational_op);
+
+			gen.gen_expr(*relational_op_expr.m_rhs);
+		}
+
+		void operator()(const LogicalExpr& logical_expr)
+		{
+		}
 	};
 
 	ExprVisitor expr_visitor{*this};
@@ -201,7 +232,7 @@ void Generator::gen_atom_expr(const AtomExpr& atom_expr)
 			*gen.m_current_stream << int_expr.m_value;
 		}
 
-		void operator()(const FloatExpr& float_expr)
+		void operator()(const RealExpr& float_expr)
 		{
 			*gen.m_current_stream << float_expr.m_value;
 		}
@@ -231,6 +262,146 @@ void Generator::gen_atom_expr(const AtomExpr& atom_expr)
 
 			*gen.m_current_stream << ")";
 		}
+
+		void operator()(const LenCallExpr& len_call_expr)
+		{
+			*gen.m_current_stream << "(";
+
+			gen.check_expr_is_type(*len_call_expr.m_str_expr, Data_Type::STRING);
+			gen.gen_expr(*len_call_expr.m_str_expr);
+
+			*gen.m_current_stream << ")";
+			*gen.m_current_stream << ".size()";
+		}
+
+		void operator()(const PositionCallExpr& position_call_expr)
+		{
+			*gen.m_current_stream << "(";
+
+			gen.check_expr_is_type(*position_call_expr.m_str_expr, Data_Type::STRING);
+			gen.gen_expr(*position_call_expr.m_str_expr);
+
+			*gen.m_current_stream << ")";
+			*gen.m_current_stream << ".find(";
+
+			gen.check_expr_is_type(*position_call_expr.m_char_expr, Data_Type::CHAR);
+			gen.gen_expr(*position_call_expr.m_char_expr);
+
+			*gen.m_current_stream << ")";
+		}
+
+		void operator()(const SubStrCallExpr& sub_str_call_expr)
+		{
+			*gen.m_current_stream << "(";
+
+			gen.check_expr_is_type(*sub_str_call_expr.m_str_expr, Data_Type::STRING);
+			gen.gen_expr(*sub_str_call_expr.m_str_expr);
+
+			*gen.m_current_stream << ")";
+			*gen.m_current_stream << ".substr(";
+
+			gen.check_expr_is_type(*sub_str_call_expr.m_num1_expr, Data_Type::INT);
+			gen.gen_expr(*sub_str_call_expr.m_num1_expr);
+
+			*gen.m_current_stream << ", ";
+
+			gen.check_expr_is_type(*sub_str_call_expr.m_num2_expr, Data_Type::INT);
+			gen.gen_expr(*sub_str_call_expr.m_num2_expr);
+
+			*gen.m_current_stream << " - 1";
+			*gen.m_current_stream << ")";
+		}
+
+		void operator()(const StrToIntCallExpr& str_to_int_call_expr)
+		{
+			*gen.m_current_stream << "std::stoi(";
+
+			gen.check_expr_is_type(*str_to_int_call_expr.m_str_expr, Data_Type::STRING);
+			gen.gen_expr(*str_to_int_call_expr.m_str_expr);
+
+			*gen.m_current_stream << ")";
+		}
+
+		void operator()(const StrToRealCallExpr& str_to_real_call_expr)
+		{
+			*gen.m_current_stream << "std::stod(";
+
+			gen.check_expr_is_type(*str_to_real_call_expr.m_str_expr, Data_Type::STRING);
+			gen.gen_expr(*str_to_real_call_expr.m_str_expr);
+
+			*gen.m_current_stream << ")";
+		}
+
+		void operator()(const IntToStrCallExpr& int_to_str_call_expr)
+		{
+			*gen.m_current_stream << "std::to_string(";
+
+			gen.check_expr_is_type(*int_to_str_call_expr.m_int_expr, Data_Type::INT);
+			gen.gen_expr(*int_to_str_call_expr.m_int_expr);
+
+			*gen.m_current_stream << ")";
+		}
+
+		void operator()(const RealToStrCallExpr& real_to_str_call_expr)
+		{
+			*gen.m_current_stream << "std::to_string(";
+
+			gen.check_expr_is_type(*real_to_str_call_expr.m_real_expr, Data_Type::REAL);
+			gen.gen_expr(*real_to_str_call_expr.m_real_expr);
+
+			*gen.m_current_stream << ")";
+		}
+
+		void operator()(const CharToCodeCallExpr& char_to_code_call_expr)
+		{
+			*gen.m_current_stream << "static_cast<int>((";
+
+			gen.check_expr_is_type(*char_to_code_call_expr.m_char_expr, Data_Type::CHAR);
+			gen.gen_expr(*char_to_code_call_expr.m_char_expr);
+
+			*gen.m_current_stream << ").at(0)";
+			*gen.m_current_stream << ")";
+		}
+
+		void operator()(const CodeToCharCallExpr& code_to_char_call_expr)
+		{
+			*gen.m_current_stream << "static_cast<char>(";
+
+			gen.check_expr_is_type(*code_to_char_call_expr.m_int_expr, Data_Type::INT);
+			gen.gen_expr(*code_to_char_call_expr.m_int_expr);
+
+			*gen.m_current_stream << ")";
+		}
+
+		void operator()(const RandomIntCallExpr& random_int_call_expr)
+		{
+			gen.require_lib("random");
+
+			if (gen.m_random_int_count < 1) {
+				gen.change_stream(gen.m_func_stream);
+				*gen.m_current_stream << "int RANDOM_INT(int min, int max) {\n";
+				*gen.m_current_stream << "	static std::random_device rd;\n";
+				*gen.m_current_stream << "	static std::mt19937 gen(rd());\n";
+				*gen.m_current_stream << "	std::uniform_int_distribution<int> distrib(min, max);\n";
+				*gen.m_current_stream << "	return distrib(gen);\n";
+				*gen.m_current_stream << "}\n";
+				gen.change_stream(gen.m_main_stream);
+
+				gen.m_random_int_count++;
+			}
+
+			*gen.m_current_stream << "RANDOM_INT(";
+
+			gen.check_expr_is_type(*random_int_call_expr.m_int1_expr, Data_Type::INT);
+			gen.gen_expr(*random_int_call_expr.m_int1_expr);
+
+			*gen.m_current_stream << ", ";
+
+			gen.check_expr_is_type(*random_int_call_expr.m_int2_expr, Data_Type::INT);
+			gen.gen_expr(*random_int_call_expr.m_int2_expr);
+
+			*gen.m_current_stream << ")";
+		}
 	};
 
 	AtomExprVisitor atom_expr_visitor{*this};
@@ -256,7 +427,31 @@ void Generator::gen_op(const Operator& op)
 		*m_current_stream << " DIV ";
 		break;
 	case (Operator::MOD):
-		*m_current_stream << " MOD ";
+		*m_current_stream << " % ";
+	}
+}
+
+void Generator::gen_rel_op(const RelationalOp& rel_op)
+{
+	switch (rel_op) {
+	case (RelationalOp::EQUALS):
+		*m_current_stream << " == ";
+		break;
+	case (RelationalOp::NOT_EQUALS):
+		*m_current_stream << " != ";
+		break;
+	case (RelationalOp::GREATER_THAN):
+		*m_current_stream << " > ";
+		break;
+	case (RelationalOp::LESS_THAN):
+		*m_current_stream << " < ";
+		break;
+	case (RelationalOp::LESS_THAN_OET):
+		*m_current_stream << " <= ";
+		break;
+	case (RelationalOp::GREATER_THAN_OET):
+		*m_current_stream << " >= ";
+		break;
 	}
 }
 
@@ -314,6 +509,10 @@ void Generator::op_check(const Data_Type& type1, const Operator& op, const Data_
 	if (type1 == Data_Type::STRING && type2 == Data_Type::STRING && op != Operator::PLUS) {
 		gen_error_l("only concatenation can be performed between strings");
 	}
+
+	if (type1 == Data_Type::REAL && type2 == Data_Type::REAL && op == Operator::MOD) {
+		gen_error_l("mod can only be performed between ints, not reals");
+	}
 }
 
 void Generator::require_lib(const std::string library)
@@ -365,6 +564,24 @@ void Generator::check_func_defined(const std::string_view name)
 	}
 }
 
+void Generator::check_func_not_redefined(const std::string_view name)
+{
+	std::size_t count{};
+
+	for (const auto& i : m_existing_funcs) {
+		if (i.m_name == name) count++;
+	}
+
+	for (const auto& i : m_reserved_func_names) {
+		if (i == name) count ++;
+	}
+
+	if (count > 1) {
+		gen_error_l("cannot use predefined function name again");
+	}
+}
+
+
 void Generator::check_func_non_void(const std::string_view name)
 {
 	FuncDeclStmt& func_decl_stmt{existing_func_lookup(name)};
@@ -380,6 +597,13 @@ void Generator::check_arg_length_matches(const std::string_view name, const Args
 
 	if (args.m_exprs.size() != func_decl_stmt.m_params.m_params.size()) {
 		gen_error_l("amount of arguments given in function call doesn't match definition");
+	}
+}
+
+void Generator::check_expr_is_type(const Expr& expr, const Data_Type data_type)
+{
+	if (expr.m_type != data_type) {
+		gen_error_l("expr doesn't eval to correct data type");
 	}
 }
 

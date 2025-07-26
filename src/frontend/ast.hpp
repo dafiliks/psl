@@ -7,9 +7,11 @@
 #include <memory>
 
 enum class Data_Type {
-	DOUBLE,
+	REAL,
+	INT,
 	STRING,
-	NONE
+	CHAR,
+	NONE,
 };
 
 enum class Operator {
@@ -18,10 +20,25 @@ enum class Operator {
 	MULTIPLY,
 	DIVIDE,
 	DIV,
-	MOD
+	MOD,
 };
 
-struct Expr; struct StrExpr; struct VarExpr; struct Scope; struct Body;
+enum class RelationalOp {
+	LESS_THAN,
+	GREATER_THAN,
+	EQUALS,
+	NOT_EQUALS,
+	LESS_THAN_OET,
+	GREATER_THAN_OET,
+};
+
+enum class LogicalOp {
+	AND,
+	OR,
+	NOT,
+};
+
+struct Expr; struct StrExpr; struct VarExpr; struct Scope; struct Body; struct RelationalOpExpr;
 
 struct VarStmt {
 	std::string m_name{};
@@ -36,7 +53,6 @@ struct Param {
 	Data_Type m_type{};
 };
 
-// for matching notation with `Args`
 struct Params {
 	std::vector<Param> m_params{};
 };
@@ -68,8 +84,13 @@ struct FuncCallStmt {
 	Args m_args{};
 };
 
+struct IfStmt {
+	std::shared_ptr<Expr> m_relational_expr{};
+	std::shared_ptr<Body> m_body{};
+};
+
 struct Stmt {
-	std::variant<VarStmt, OutputStmt, FuncDeclStmt, FuncCallStmt> m_stmt{};
+	std::variant<VarStmt, OutputStmt, FuncDeclStmt, FuncCallStmt, IfStmt> m_stmt{};
 };
 
 struct Body {
@@ -80,8 +101,8 @@ struct IntExpr {
 	int m_value{};
 };
 
-struct FloatExpr {
-	float m_value{};
+struct RealExpr {
+	double m_value{};
 };
 
 struct StrExpr {
@@ -99,8 +120,55 @@ struct FuncCallExpr {
 	Args m_args{};
 };
 
+struct LenCallExpr {
+	std::shared_ptr<Expr> m_str_expr{};
+};
+
+struct PositionCallExpr {
+	std::shared_ptr<Expr> m_str_expr{};
+	std::shared_ptr<Expr> m_char_expr{};
+};
+
+struct SubStrCallExpr {
+	std::shared_ptr<Expr> m_num1_expr{};
+	std::shared_ptr<Expr> m_num2_expr{};
+	std::shared_ptr<Expr> m_str_expr{};
+};
+
+struct StrToIntCallExpr {
+	std::shared_ptr<Expr> m_str_expr{};
+};
+
+struct StrToRealCallExpr {
+	std::shared_ptr<Expr> m_str_expr{};
+};
+
+struct IntToStrCallExpr {
+	std::shared_ptr<Expr> m_int_expr{};
+};
+
+struct RealToStrCallExpr {
+	std::shared_ptr<Expr> m_real_expr{};
+};
+
+struct CharToCodeCallExpr {
+	std::shared_ptr<Expr> m_char_expr{};
+};
+
+struct CodeToCharCallExpr {
+	std::shared_ptr<Expr> m_int_expr{};
+};
+
+struct RandomIntCallExpr {
+	std::shared_ptr<Expr> m_int1_expr{};
+	std::shared_ptr<Expr> m_int2_expr{};
+};
+
 struct AtomExpr {
-	std::variant<IntExpr, FloatExpr, StrExpr, VarExpr, UserInputExpr, FuncCallExpr> m_atom{};
+	std::variant<IntExpr, RealExpr, StrExpr, VarExpr,
+	             UserInputExpr, FuncCallExpr, LenCallExpr, PositionCallExpr,
+	             SubStrCallExpr, StrToIntCallExpr, StrToRealCallExpr, IntToStrCallExpr,
+                     RealToStrCallExpr, CharToCodeCallExpr, CodeToCharCallExpr, RandomIntCallExpr> m_atom{};
 };
 
 struct BinOpExpr {
@@ -109,8 +177,20 @@ struct BinOpExpr {
 	Operator m_op{};
 };
 
+struct RelationalOpExpr {
+	std::shared_ptr<Expr> m_lhs{};
+	std::shared_ptr<Expr> m_rhs{};
+	RelationalOp m_relational_op{};
+};
+
+struct LogicalExpr {
+	RelationalOpExpr m_lhs{};
+	RelationalOpExpr m_rhs{};
+	LogicalOp m_logical_op{};
+};
+
 struct Expr {
-	std::variant<AtomExpr, BinOpExpr> m_expr{};
+	std::variant<AtomExpr, BinOpExpr, RelationalOpExpr, LogicalExpr> m_expr{};
 	Data_Type m_type{};
 };
 

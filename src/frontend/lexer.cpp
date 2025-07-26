@@ -12,8 +12,9 @@
 {
 	switch (type) {
 		case Token_Type::IDENTIFIER:         return "IDENTIFIER";
-		case Token_Type::FLOAT:              return "FLOAT";
-		case Token_Type::STRING_LIT:         return "STRING_LIT";
+		case Token_Type::REAL:               return "REAL";
+		case Token_Type::INT:                return "INT";
+		case Token_Type::STRING:             return "STRING";
 		case Token_Type::GREATER_THAN:       return "GREATER_THAN";
 		case Token_Type::LESS_THAN:          return "LESS_THAN";
 		case Token_Type::UNDERSCORE:         return "_";
@@ -49,6 +50,7 @@
 		case Token_Type::RETURN:             return "RETURN";
 		case Token_Type::USER_INPUT:         return "USER_INPUT";
 		case Token_Type::OUTPUT:             return "OUTPUT";
+		case Token_Type::RANDOM_INT:         return "RANDOM_INT";
 		case Token_Type::END_OF_FILE:        return "END_OF_FILE";
 		default:                             return "UNKNOWN_TOKEN_TYPE";
 	}
@@ -59,7 +61,7 @@ Lexer::Lexer(const std::string& source) : m_source(source + '\0') {}
 void Lexer::lex()
 {
 	while (peek() != '\0') {
-		if (find_token_vt_map(std::string{peek()})) {
+		if (find_token_vt_map(peek())) {
 			eat();
 		} else if (isalpha(peek())) {
 			lex_ident_or_kw();
@@ -86,6 +88,18 @@ void Lexer::lex()
 [[nodiscard]] const std::vector<Token>& Lexer::get_tokens() const { return m_tokens; }
 [[nodiscard]] const std::string& Lexer::get_source()        const { return m_source; }
 
+[[nodiscard]] bool Lexer::find_token_vt_map(const char value)
+{
+	auto got{value_token_map.find(std::string{value})};
+	if (got != value_token_map.end()) {
+		m_tokens.push_back({got->second, got->first, m_line, m_col});
+		m_buffer.clear();
+		return true;
+	}
+
+	return false;
+}
+
 [[nodiscard]] bool Lexer::find_token_vt_map(const std::string& value)
 {
 	auto got{value_token_map.find(value)};
@@ -97,6 +111,7 @@ void Lexer::lex()
 
 	return false;
 }
+
 
 void Lexer::lex_ident_or_kw()
 {
@@ -112,11 +127,20 @@ void Lexer::lex_ident_or_kw()
 
 void Lexer::lex_number()
 {
+	bool is_decimal{false};
+
 	do {
 		m_buffer += eat();
-	} while (!is_separator(peek()) && is_decimal(peek()));
+		if (peek() == '.') is_decimal = true;
 
-	m_tokens.push_back({Token_Type::FLOAT, m_buffer, m_line, m_col});
+	} while (!is_separator(peek()) && isdigit(peek()) || peek() == '.');
+
+	if (is_decimal) {
+		m_tokens.push_back({Token_Type::REAL, m_buffer, m_line, m_col});
+	} else  {
+		m_tokens.push_back({Token_Type::INT, m_buffer, m_line, m_col});
+	}
+
 	m_buffer.clear();
 }
 
@@ -128,7 +152,7 @@ void Lexer::lex_string_lit()
 	} while (peek() != '\0' && peek() != '"');
 
 	m_buffer += eat();
-	m_tokens.push_back({Token_Type::STRING_LIT, m_buffer, m_line, m_col});
+	m_tokens.push_back({Token_Type::STRING, m_buffer, m_line, m_col});
 	m_buffer.clear();
 }
 
@@ -146,8 +170,6 @@ void Lexer::lex_comment()
 	       character == '\t' ||
 	       character == '\0';
 }
-
-[[nodiscard]] bool Lexer::is_decimal(char character) const { return isdigit(character) || character == '.'; }
 
 [[nodiscard]] char Lexer::peek(std::size_t distance)
 {

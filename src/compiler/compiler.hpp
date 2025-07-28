@@ -8,7 +8,8 @@
 #include "../backend/gen.hpp"
 #include "../utils/cmdargs.hpp"
 
-class Compiler {
+class Compiler
+{
 public:
 	Compiler(CmdArgs args);
 
@@ -16,7 +17,7 @@ public:
 
 private:
 	void compile_to_cpp();
-	void compile_to_output_target(const std::string_view& cpp_file);
+	void compile_to_output_target(const std::string_view &cpp_file);
 
 	// private members
 	CmdArgs m_args;

@@ -7,7 +7,8 @@
 
 #include "../utils/error.hpp"
 
-enum class Token_Type {
+enum class Token_Type
+{
 	IDENTIFIER,
 	/* types */
 	INT,
@@ -41,6 +42,7 @@ enum class Token_Type {
 	END_WHILE,
 	FOR,
 	TO,
+	STEP,
 	END_FOR,
 	IF,
 	THEN,
@@ -65,7 +67,7 @@ enum class Token_Type {
 	END_OF_FILE,
 };
 
-static const std::unordered_map<std::string, Token_Type> value_token_map {
+static const std::unordered_map<std::string, Token_Type> value_token_map{
 	/* single char tokens */
 	{">", Token_Type::GREATER_THAN},
 	{"<", Token_Type::LESS_THAN},
@@ -86,14 +88,15 @@ static const std::unordered_map<std::string, Token_Type> value_token_map {
 	{"DIV", Token_Type::DIV},
 	{"MOD", Token_Type::MOD},
 	{"AND", Token_Type::AND},
-	{"OR" , Token_Type::OR},
+	{"OR", Token_Type::OR},
 	{"NOT", Token_Type::NOT},
 	{"REPEAT", Token_Type::REPEAT},
 	{"UNTIL", Token_Type::UNTIL},
 	{"WHILE", Token_Type::WHILE},
 	{"ENDWHILE", Token_Type::END_WHILE},
 	{"FOR", Token_Type::FOR},
-	{"TO",  Token_Type::TO},
+	{"TO", Token_Type::TO},
+	{"STEP", Token_Type::STEP},
 	{"ENDFOR", Token_Type::END_FOR},
 	{"IF", Token_Type::IF},
 	{"THEN", Token_Type::THEN},
@@ -118,29 +121,33 @@ static const std::unordered_map<std::string, Token_Type> value_token_map {
 
 std::string to_string(Token_Type type);
 
-struct Token {
+struct Token
+{
 	Token_Type m_type{};
 	std::string m_value{};
 	std::size_t m_line{};
 	std::size_t m_col{};
 };
 
-#define lex_error_s(a, b, c) Error{a, b, c, m_source}
-#define lex_error_l(a) Error{a}
+#define lex_error_s(a, b, c) \
+	Error { a, b, c, m_source }
+#define lex_error_l(a) \
+	Error { a }
 
-class Lexer {
+class Lexer
+{
 public:
 	Lexer() = default;
-	Lexer(const std::string& source);
+	Lexer(const std::string &source);
 
 	void lex();
 
-	[[nodiscard]] const std::vector<Token>& get_tokens() const;
-	[[nodiscard]] const std::string& get_source() const;
+	[[nodiscard]] const std::vector<Token> &get_tokens() const;
+	[[nodiscard]] const std::string &get_source() const;
 
 private:
 	[[nodiscard]] bool find_token_vt_map(const char value);
-	[[nodiscard]] bool find_token_vt_map(const std::string& value);
+	[[nodiscard]] bool find_token_vt_map(const std::string &value);
 	void lex_ident_or_kw();
 	void lex_number();
 	void lex_string_lit();

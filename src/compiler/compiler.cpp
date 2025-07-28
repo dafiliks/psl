@@ -30,9 +30,10 @@ void Compiler::compile_to_cpp()
 	m_gen.gen(std::filesystem::path{m_args.get_source_path()}.replace_extension(std::filesystem::path{".cpp"}));
 }
 
-void Compiler::compile_to_output_target(const std::string_view& cpp_file)
+void Compiler::compile_to_output_target(const std::string_view &cpp_file)
 {
-	if (m_args.get_target_output_flag() == "-exe") {
+	if (m_args.get_target_output_flag() == "-exe")
+	{
 		std::string output_file{std::string{cpp_file}.substr(0, std::string{cpp_file}.find("."))};
 		std::string command_str{"g++ " + output_file + ".cpp -o " + output_file + " && ./" + output_file};
 

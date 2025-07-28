@@ -10,7 +10,7 @@
 #include "compiler/compiler.hpp"
 #include "utils/cmdargs.hpp"
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
 	CmdArgs args{argc, argv};
 	args.handle();

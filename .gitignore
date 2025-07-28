@@ -33,6 +33,7 @@
 
 # Extra
 test.pseudo
+.vscode/
 build/
 src/build/
 /main

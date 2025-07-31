@@ -6,8 +6,7 @@
 #include <string>
 #include <memory>
 
-enum class Data_Type
-{
+enum class Data_Type {
 	INT,
 	STRING,
 	REAL,
@@ -15,8 +14,7 @@ enum class Data_Type
 	NONE,
 };
 
-enum class Operator
-{
+enum class Operator {
 	PLUS,
 	MINUS,
 	MULTIPLY,
@@ -31,6 +29,7 @@ enum class Operator
 	GREATER_THAN_OET,
 	AND,
 	OR,
+	NOT,
 };
 
 struct Expr;
@@ -41,43 +40,40 @@ struct Body;
 struct RelationalOpExpr;
 struct AtomExpr;
 
-struct VarStmt
-{
+struct VarStmt {
 	std::string m_name{};
 	std::shared_ptr<Expr> m_expr{};
 	std::shared_ptr<Expr> m_previous_expr{};
 	bool m_is_constant{};
 	bool m_is_reassignment{};
+
+	bool m_is_1d_list{};
+	bool m_is_2d_list{};
 };
 
-struct Param
-{
+
+struct Param {
 	std::string m_name{};
 	Data_Type m_type{};
 };
 
-struct Params
-{
+struct Params {
 	std::vector<Param> m_params{};
 };
 
-struct Args
-{
+struct Args {
 	std::vector<Expr> m_exprs{};
 };
 
-struct Return
-{
+struct Return {
 	std::shared_ptr<Expr> m_return_expr{};
 };
 
-struct OutputStmt
-{
+struct OutputStmt {
 	Args m_args{};
 };
 
-struct FuncDeclStmt
-{
+struct FuncDeclStmt {
 	std::string m_name{};
 	Params m_params{};
 	std::size_t m_token_index_start{};
@@ -87,177 +83,187 @@ struct FuncDeclStmt
 	bool m_is_called{false};
 };
 
-struct FuncCallStmt
-{
+struct FuncCallStmt {
 	std::string m_name{};
 	Args m_args{};
 };
 
-// use inheritance later on
-struct RepeatUntilStmt
-{
+struct RepeatUntilStmt {
 	std::shared_ptr<Expr> m_condition_expr{};
 	std::shared_ptr<Body> m_body{};
 };
 
-struct WhileStmt
-{
+struct WhileStmt {
 	std::shared_ptr<Expr> m_condition_expr{};
 	std::shared_ptr<Body> m_body{};
 };
 
-struct IfStmt
-{
+struct IfStmt {
 	std::shared_ptr<Expr> m_condition_expr{};
 	std::shared_ptr<Body> m_body{};
 };
 
-struct ElseIfStmt
-{
+struct ElseIfStmt {
 	std::shared_ptr<Expr> m_condition_expr{};
 	std::shared_ptr<Body> m_body{};
 };
 
-struct ElseStmt
-{
+struct ElseStmt {
 	std::shared_ptr<Body> m_body{};
 };
 
-struct ForToStmt
-{
+struct ForToStmt {
 	VarStmt m_var_stmt{};
 	std::shared_ptr<Expr> m_boundary{};
 	std::shared_ptr<Expr> m_step{};
 	std::shared_ptr<Body> m_body{};
 };
 
-struct Stmt
-{
-	std::variant<VarStmt, OutputStmt, FuncDeclStmt, FuncCallStmt,
-				 RepeatUntilStmt, WhileStmt, IfStmt, ElseIfStmt, ElseStmt,
-				 ForToStmt>
-		m_stmt{};
+struct ForInStmt {
+	std::string m_declaration{};
+	std::shared_ptr<Expr> m_range{};
+	std::shared_ptr<Body> m_body{};
 };
 
-struct Body
-{
+struct ListAccessStmt {
+	std::string m_name{};
+	std::shared_ptr<Expr> m_row{};
+	std::shared_ptr<Expr> m_col{};
+	std::shared_ptr<Expr> m_expr{};
+};
+
+struct FieldStmt {
+	std::string m_name{};
+	Data_Type m_type{};
+};
+
+struct RecordStmt {
+	std::string m_name{};
+	std::vector<FieldStmt> m_fields{};
+};
+
+struct Stmt {
+	std::variant<VarStmt, OutputStmt, FuncDeclStmt, FuncCallStmt,
+		RepeatUntilStmt, WhileStmt, IfStmt, ElseIfStmt, ElseStmt,
+		ForToStmt, ForInStmt, ListAccessStmt, FieldStmt, RecordStmt> m_stmt{};
+};
+
+struct Body {
 	std::vector<Stmt> m_stmts{};
 };
 
-struct IntExpr
-{
+struct IntExpr {
 	int m_value{};
 };
 
-struct RealExpr
-{
+struct RealExpr {
 	double m_value{};
 };
 
-struct StrExpr
-{
+struct StrExpr {
 	std::string m_value{};
 };
 
-struct VarExpr
-{
+struct VarExpr {
 	std::string m_name{};
 };
 
-struct UserInputExpr
-{
+struct UserInputExpr {
 };
 
-struct FuncCallExpr
-{
+struct FuncCallExpr {
 	std::string m_name{};
 	Args m_args{};
 };
 
-struct LenCallExpr
-{
-	std::shared_ptr<Expr> m_str_expr{};
+struct LenCallExpr {
+	std::shared_ptr<Expr> m_expr{};
 };
 
-struct PositionCallExpr
-{
+struct PositionCallExpr {
 	std::shared_ptr<Expr> m_str_expr{};
 	std::shared_ptr<Expr> m_char_expr{};
 };
 
-struct SubStrCallExpr
-{
+struct SubStrCallExpr {
 	std::shared_ptr<Expr> m_num1_expr{};
 	std::shared_ptr<Expr> m_num2_expr{};
 	std::shared_ptr<Expr> m_str_expr{};
 };
 
-struct StrToIntCallExpr
-{
+struct StrToIntCallExpr {
 	std::shared_ptr<Expr> m_str_expr{};
 };
 
-struct StrToRealCallExpr
-{
+struct StrToRealCallExpr {
 	std::shared_ptr<Expr> m_str_expr{};
 };
 
-struct IntToStrCallExpr
-{
+struct IntToStrCallExpr {
 	std::shared_ptr<Expr> m_int_expr{};
 };
 
-struct RealToStrCallExpr
-{
+struct RealToStrCallExpr {
 	std::shared_ptr<Expr> m_real_expr{};
 };
 
-struct CharToCodeCallExpr
-{
+struct CharToCodeCallExpr {
 	std::shared_ptr<Expr> m_char_expr{};
 };
 
-struct CodeToCharCallExpr
-{
+struct CodeToCharCallExpr {
 	std::shared_ptr<Expr> m_int_expr{};
 };
 
-struct RandomIntCallExpr
-{
+struct RandomIntCallExpr {
 	std::shared_ptr<Expr> m_int1_expr{};
 	std::shared_ptr<Expr> m_int2_expr{};
 };
 
-struct AtomExpr
-{
-	std::variant<IntExpr, RealExpr, StrExpr, VarExpr,
-				 UserInputExpr, FuncCallExpr, LenCallExpr, PositionCallExpr,
-				 SubStrCallExpr, StrToIntCallExpr, StrToRealCallExpr, IntToStrCallExpr,
-				 RealToStrCallExpr, CharToCodeCallExpr, CodeToCharCallExpr, RandomIntCallExpr>
-		m_atom{};
+struct ListAccessExpr {
+	std::string m_name{};
+	std::shared_ptr<Expr> m_row{};
+	std::shared_ptr<Expr> m_col{};
 };
 
-struct BinOpExpr
-{
+struct FieldAccessExpr {
+	std::string m_record_name{};
+	std::string m_field_name{};
+};
+
+struct AtomExpr {
+	std::variant<IntExpr, RealExpr, StrExpr, VarExpr,
+		UserInputExpr, FuncCallExpr, LenCallExpr, PositionCallExpr,
+		SubStrCallExpr, StrToIntCallExpr, StrToRealCallExpr, IntToStrCallExpr,
+		RealToStrCallExpr, CharToCodeCallExpr, CodeToCharCallExpr, RandomIntCallExpr,
+	        ListAccessExpr, FieldAccessExpr> m_atom{};
+};
+
+struct BinOpExpr {
 	std::shared_ptr<Expr> m_lhs{};
 	std::shared_ptr<Expr> m_rhs{};
 	Operator m_op{};
 };
 
-struct UnaryOpExpr
-{
+struct UnaryOpExpr {
 	std::shared_ptr<Expr> m_unary_expr{};
 	Operator m_op{};
 };
 
-struct Expr
-{
-	std::variant<AtomExpr, BinOpExpr, UnaryOpExpr> m_expr{};
+struct ParenExpr {
+	std::shared_ptr<Expr> m_expr{};
+};
+
+struct ListExpr {
+	std::vector<Expr> m_exprs{};
+};
+
+struct Expr {
+	std::variant<AtomExpr, BinOpExpr, UnaryOpExpr, ParenExpr, ListExpr> m_expr{};
 	Data_Type m_type{};
 };
 
-struct AST
-{
+struct AST {
 	Body m_body{};
 };
 

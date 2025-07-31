@@ -68,6 +68,8 @@
 		return "END_WHILE";
 	case Token_Type::FOR:
 		return "FOR";
+	case Token_Type::IN:
+		return "IN";
 	case Token_Type::TO:
 		return "TO";
 	case Token_Type::STEP:

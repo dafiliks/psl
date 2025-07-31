@@ -80,9 +80,25 @@ void Parser::populate_stdlib_funcs()
 	{
 		return Stmt{parse_else_if_stmt()};
 	}
-	else if (peek().m_type == Token_Type::FOR && peek(2).m_type == Token_Type::LESS_THAN)
+	else if (peek().m_type == Token_Type::FOR && peek(2).m_type == Token_Type::IN)
+	{
+		return Stmt{parse_for_in_stmt()};
+	}
+	else if (peek().m_type == Token_Type::FOR && peek(2).m_type != Token_Type::IN)
 	{
 		return Stmt{parse_for_to_stmt()};
+	}
+	else if (peek().m_type == Token_Type::RECORD)
+	{
+		return Stmt{parse_record_stmt()};
+	}
+	else if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type == Token_Type::COLON)
+	{
+		return Stmt{parse_field_stmt()};
+	}
+	else if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type == Token_Type::SQ_O_BRACKET)
+	{
+		return Stmt{parse_list_access_stmt()};
 	}
 	else if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type != Token_Type::O_PAREN)
 	{
@@ -120,6 +136,20 @@ void Parser::populate_stdlib_funcs()
 
 	try_eat(Token_Type::LESS_THAN);
 	try_eat(Token_Type::MINUS);
+
+	if (peek().m_type == Token_Type::SQ_O_BRACKET)
+	{
+		var_stmt.m_is_1d_list = true;
+		if (peek(1).m_type == Token_Type::SQ_O_BRACKET)
+		{
+			var_stmt.m_is_2d_list = true;
+		}
+
+		if (peek(2).m_type == Token_Type::SQ_O_BRACKET)
+		{
+			parse_error_l("cannot have higher dimension arrays than 2d");
+		}
+	}
 
 	var_stmt.m_expr = parse_expr();
 
@@ -277,6 +307,34 @@ void Parser::skip_over_function_body()
 	return else_stmt;
 }
 
+[[nodiscard]] FieldStmt Parser::parse_field_stmt()
+{
+	FieldStmt field_stmt{};
+
+	field_stmt.m_name = try_eat(Token_Type::IDENTIFIER).m_value;
+
+	try_eat(Token_Type::COLON);
+
+	field_stmt.m_type = tt_to_dt(eat().m_type);
+
+	return field_stmt;
+}
+
+[[nodiscard]] RecordStmt Parser::parse_record_stmt()
+{
+	RecordStmt record_stmt{};
+
+	try_eat(Token_Type::RECORD);
+
+	record_stmt.m_name = try_eat(Token_Type::IDENTIFIER).m_value;
+
+	record_stmt.m_fields = parse_fields_until({Token_Type::END_RECORD});
+
+	try_eat(Token_Type::END_RECORD);
+
+	return record_stmt;
+}
+
 [[nodiscard]] ForToStmt Parser::parse_for_to_stmt()
 {
 	ForToStmt for_to_stmt{};
@@ -300,6 +358,61 @@ void Parser::skip_over_function_body()
 	try_eat(Token_Type::END_FOR);
 
 	return for_to_stmt;
+}
+
+// try eat
+[[nodiscard]] ForInStmt Parser::parse_for_in_stmt()
+{
+	ForInStmt for_in_stmt{};
+
+	eat();
+
+	for_in_stmt.m_declaration = eat().m_value;
+
+	try_eat(Token_Type::IN);
+
+	for_in_stmt.m_range = std::make_shared<Expr>(*parse_expr());
+
+	VarStmt var_stmt{};
+	var_stmt.m_name = for_in_stmt.m_declaration;
+	var_stmt.m_expr = std::make_shared<Expr>();
+	var_stmt.m_expr->m_type = for_in_stmt.m_range->m_type;
+	m_existing_vars.push_back(var_stmt);
+
+	for_in_stmt.m_body = std::make_shared<Body>(parse_body_until({Token_Type::END_FOR}));
+
+	try_eat(Token_Type::END_FOR);
+
+	return for_in_stmt;
+}
+
+[[nodiscard]] ListAccessStmt Parser::parse_list_access_stmt()
+{
+	ListAccessStmt list_access_stmt{};
+
+	list_access_stmt.m_name = eat().m_value;
+
+	eat();
+
+	list_access_stmt.m_row = parse_expr();
+
+	try_eat(Token_Type::SQ_C_BRACKET);
+
+	if (existing_vars_lookup(list_access_stmt.m_name).m_is_2d_list && peek().m_type == Token_Type::SQ_O_BRACKET)
+	{
+		try_eat(Token_Type::SQ_O_BRACKET);
+
+		list_access_stmt.m_col = parse_expr();
+
+		try_eat(Token_Type::SQ_C_BRACKET);
+	}
+
+	try_eat(Token_Type::LESS_THAN);
+	try_eat(Token_Type::MINUS);
+
+	list_access_stmt.m_expr = parse_expr();
+
+	return list_access_stmt;
 }
 
 [[nodiscard]] Params Parser::parse_func_decl_params()
@@ -359,54 +472,76 @@ void Parser::skip_over_function_body()
 	return Body{stmts};
 }
 
+[[nodiscard]] std::vector<FieldStmt> Parser::parse_fields_until(std::initializer_list<Token_Type> stop_tokens)
+{
+	std::vector<FieldStmt> fields{};
+
+	while (std::find(stop_tokens.begin(), stop_tokens.end(), peek().m_type) == stop_tokens.end() &&
+		   peek().m_type != Token_Type::END_OF_FILE)
+	{
+		fields.push_back(parse_field_stmt());
+	}
+
+	return fields;
+}
+
 [[nodiscard]] std::unique_ptr<Expr> Parser::parse_expr()
 {
-	/*std::unique_ptr<Expr> expr{std::make_unique<Expr>()};
-
-	std::size_t distance{1};
-
-	if (peek(1).m_type != Token_Type::O_PAREN)
-	{
-		expr->m_type = deduce_expr_type();
-	}
-	else
-	{
-		distance = existing_func_lookup(peek().m_value).m_params.m_params.size() * 2 + 2;
-		m_unresolved_exprs.emplace_back(expr.get(), peek().m_value);
-	}
-
-	std::cout << peek(distance + 1).m_value << "\n";
-
-	if (is_bin_op(peek(distance).m_type))
-	{
-		expr->m_expr = parse_bin_op_expr();
-		return expr;
-	}
-
-	expr->m_expr = parse_atom();
-
-	return expr;*/
-
 	std::unique_ptr<Expr> lhs{std::make_unique<Expr>()};
 
-	if (peek(1).m_type != Token_Type::O_PAREN)
+	if (peek().m_type == Token_Type::SQ_O_BRACKET)
 	{
-		lhs->m_type = deduce_expr_type();
+		ListExpr list_expr{};
+
+		do {
+			eat();
+			list_expr.m_exprs.push_back(*parse_expr());
+		} while (peek().m_type == Token_Type::COMMA);
+
+		*lhs = Expr{list_expr, lhs->m_type};
+
+		try_eat(Token_Type::SQ_C_BRACKET);
+	}
+	else if (peek().m_type == Token_Type::O_PAREN)
+	{
+		eat();
+
+		ParenExpr paren_expr{};
+		paren_expr.m_expr = std::make_shared<Expr>(*parse_expr());
+
+		*lhs = Expr{paren_expr, lhs->m_type};
+
+		try_eat(Token_Type::C_PAREN);
+	}
+	else if (is_unary(peek().m_type))
+	{
+		*lhs = Expr{parse_unary_op_expr(), lhs->m_type};
+	}
+	else if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type == Token_Type::O_PAREN)
+	{
+		m_unresolved_exprs.emplace_back(lhs.get(), peek().m_value);
+		*lhs = Expr{AtomExpr{parse_func_call_expr()}, lhs->m_type};
 	}
 	else
 	{
-		m_unresolved_exprs.emplace_back(lhs.get(), peek().m_value);
+		lhs->m_type = deduce_expr_type(peek());
+		*lhs = Expr{parse_atom(), lhs->m_type};
 	}
-
-	*lhs = Expr{parse_atom(), lhs->m_type};
 
 	while (is_bin_op(peek().m_type))
 	{
 		BinOpExpr bin_op_expr{};
-
 		bin_op_expr.m_lhs = std::make_shared<Expr>(*lhs);
+		bin_op_expr.m_rhs = std::make_shared<Expr>();
+
 		bin_op_expr.m_op = determine_op();
-		bin_op_expr.m_rhs = std::make_shared<Expr>(parse_atom());
+
+		if (is_unary(peek().m_type)) {
+			bin_op_expr.m_rhs = std::make_shared<Expr>(parse_unary_op_expr());
+		} else {
+			bin_op_expr.m_rhs->m_type = deduce_expr_type(peek());
+			bin_op_expr.m_rhs = std::make_shared<Expr>(parse_atom());
+		}
 
 		*lhs = Expr{bin_op_expr, lhs->m_type};
 	}
@@ -414,23 +549,20 @@ void Parser::skip_over_function_body()
 	return lhs;
 }
 
-[[nodiscard]] Data_Type Parser::deduce_expr_type()
+[[nodiscard]] Data_Type Parser::deduce_expr_type(Token token)
 {
-	if (peek().m_type == Token_Type::REAL || peek().m_type == Token_Type::INT || peek().m_type == Token_Type::STRING)
+	if (token.m_type == Token_Type::REAL || token.m_type == Token_Type::INT ||
+	    token.m_type == Token_Type::STRING || token.m_type == Token_Type::NOT)
 	{
-		return tt_to_dt(peek().m_type);
+		return tt_to_dt(token.m_type);
 	}
-	else if (peek().m_type == Token_Type::IDENTIFIER)
+	else if (token.m_type == Token_Type::IDENTIFIER)
 	{
-		return existing_vars_lookup(peek().m_value);
+		return existing_vars_lookup(token.m_value).m_expr->m_type;
 	}
-	else if (peek().m_type == Token_Type::USER_INPUT)
+	else if (token.m_type == Token_Type::USER_INPUT)
 	{
 		return Data_Type::STRING;
-	}
-	else if (peek().m_type == Token_Type::NOT)
-	{
-		return tt_to_dt(peek(1));
 	}
 	else
 	{
@@ -466,6 +598,43 @@ void Parser::deduce_func_decl_param_types_from_stmt(const FuncCallStmt &func_cal
 	}
 }
 
+[[nodiscard]] FieldAccessExpr Parser::parse_field_access_expr()
+{
+	FieldAccessExpr field_access_expr{};
+
+	field_access_expr.m_record_name = try_eat(Token_Type::IDENTIFIER).m_value;
+
+	try_eat(Token_Type::DOT);
+
+	field_access_expr.m_field_name = try_eat(Token_Type::IDENTIFIER).m_value;
+
+	return field_access_expr;
+}
+
+[[nodiscard]] ListAccessExpr Parser::parse_list_access_expr()
+{
+	ListAccessExpr list_access_expr{};
+
+	list_access_expr.m_name = eat().m_value;
+
+	eat();
+
+	list_access_expr.m_row = parse_expr();
+
+	try_eat(Token_Type::SQ_C_BRACKET);
+
+	if (existing_vars_lookup(list_access_expr.m_name).m_is_2d_list && peek().m_type == Token_Type::SQ_O_BRACKET)
+	{
+		try_eat(Token_Type::SQ_O_BRACKET);
+
+		list_access_expr.m_col = parse_expr();
+
+		try_eat(Token_Type::SQ_C_BRACKET);
+	}
+
+	return list_access_expr;
+}
+
 [[nodiscard]] FuncCallExpr Parser::parse_func_call_expr()
 {
 	FuncCallExpr func_call_expr{};
@@ -483,31 +652,15 @@ void Parser::deduce_func_decl_param_types_from_stmt(const FuncCallStmt &func_cal
 	return func_call_expr;
 }
 
-[[nodiscard]] BinOpExpr Parser::parse_bin_op_expr()
+[[nodiscard]] UnaryOpExpr Parser::parse_unary_op_expr()
 {
-	BinOpExpr bin_op_expr{};
+	UnaryOpExpr unary_op_expr{};
 
-	bin_op_expr.m_lhs = parse_lhs();
+	unary_op_expr.m_op = determine_op();
 
-	bin_op_expr.m_op = determine_op();
+	unary_op_expr.m_unary_expr = std::make_shared<Expr>(*parse_expr());
 
-	std::size_t distance{1};
-
-	if (peek(1).m_type == Token_Type::O_PAREN)
-	{
-		distance = existing_func_lookup(peek().m_value).m_params.m_params.size() * 2 + 2;
-	}
-
-	if (is_bin_op(peek(distance).m_type))
-	{
-		bin_op_expr.m_rhs = parse_rhs();
-	}
-	else
-	{
-		bin_op_expr.m_rhs = parse_lhs();
-	}
-
-	return bin_op_expr;
+	return unary_op_expr;
 }
 
 [[nodiscard]] AtomExpr Parser::parse_atom()
@@ -564,6 +717,14 @@ void Parser::deduce_func_decl_param_types_from_stmt(const FuncCallStmt &func_cal
 	{
 		return AtomExpr{parse_random_int_call_expr()};
 	}
+	else if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type == Token_Type::DOT)
+	{
+		return AtomExpr{parse_field_access_expr()};
+	}
+	else if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type == Token_Type::SQ_O_BRACKET)
+	{
+		return AtomExpr{parse_list_access_expr()};
+	}
 	else if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type == Token_Type::O_PAREN)
 	{
 		return AtomExpr{parse_func_call_expr()};
@@ -604,7 +765,7 @@ void Parser::deduce_func_decl_param_types_from_stmt(const FuncCallStmt &func_cal
 	try_eat(Token_Type::LEN);
 	try_eat(Token_Type::O_PAREN);
 
-	len_call_expr.m_str_expr = parse_expr();
+	len_call_expr.m_expr = parse_expr();
 
 	try_eat(Token_Type::C_PAREN);
 
@@ -763,58 +924,6 @@ void Parser::deduce_func_decl_param_types_from_stmt(const FuncCallStmt &func_cal
 	return UserInputExpr{};
 }
 
-[[nodiscard]] std::unique_ptr<Expr> Parser::parse_lhs()
-{
-	Token token{peek()};
-	Token token_ahead{peek(1)};
-
-	if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type != Token_Type::O_PAREN)
-	{
-		return std::make_unique<Expr>(Expr{parse_atom(), existing_vars_lookup(token.m_value)});
-	}
-	else if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type == Token_Type::O_PAREN || is_stdlib(peek().m_value))
-	{
-		m_last_func_call_name = peek().m_value;
-		std::unique_ptr<Expr> expr{std::make_unique<Expr>(Expr{parse_atom()})};
-		m_unresolved_exprs.emplace_back(expr.get(), m_last_func_call_name);
-		return expr;
-	}
-	else if (peek().m_type == Token_Type::NOT)
-	{
-		return std::make_unique<Expr>(Expr{parse_atom(), tt_to_dt(token_ahead)});
-	}
-	else
-	{
-		return std::make_unique<Expr>(Expr{parse_atom(), tt_to_dt(token)});
-	}
-}
-
-[[nodiscard]] std::unique_ptr<Expr> Parser::parse_rhs()
-{
-	Token token{peek()};
-	Token token_ahead{peek(1)};
-
-	if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type != Token_Type::O_PAREN)
-	{
-		return std::make_unique<Expr>(Expr{parse_bin_op_expr(), existing_vars_lookup(token.m_value)});
-	}
-	else if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type == Token_Type::O_PAREN || is_stdlib(peek().m_value))
-	{
-		m_last_func_call_name = peek().m_value;
-		std::unique_ptr<Expr> expr{std::make_unique<Expr>(Expr{parse_bin_op_expr()})};
-		m_unresolved_exprs.emplace_back(expr.get(), m_last_func_call_name);
-		return expr;
-	}
-	else if (peek().m_type == Token_Type::NOT)
-	{
-		return std::make_unique<Expr>(Expr{parse_bin_op_expr(), tt_to_dt(token_ahead)});
-	}
-	else
-	{
-		return std::make_unique<Expr>(Expr{parse_bin_op_expr(), tt_to_dt(token)});
-	}
-}
-
 void Parser::parse_func_body_2nd_pass()
 {
 	for (auto &i : m_existing_funcs)
@@ -952,6 +1061,11 @@ void Parser::parse_unresolved_exprs_2nd_pass()
 		eat();
 		return Operator::OR;
 	}
+	else if (peek().m_type == Token_Type::NOT)
+	{
+		eat();
+		return Operator::NOT;
+	}
 }
 
 [[nodiscard]] bool Parser::is_bin_op(Token_Type token_type)
@@ -968,6 +1082,12 @@ void Parser::parse_unresolved_exprs_2nd_pass()
 		   token_type == Token_Type::EXCLAIMATION ||
 		   token_type == Token_Type::OR ||
 		   token_type == Token_Type::AND;
+}
+
+[[nodiscard]] bool Parser::is_unary(Token_Type token_type)
+{
+	return token_type == Token_Type::NOT ||
+	       token_type == Token_Type::MINUS;
 }
 
 [[nodiscard]] bool Parser::is_stmt(Token_Type token_type)
@@ -1012,13 +1132,13 @@ void Parser::parse_unresolved_exprs_2nd_pass()
 	return false;
 }
 
-[[nodiscard]] Data_Type Parser::existing_vars_lookup(std::string_view name)
+[[nodiscard]] VarStmt Parser::existing_vars_lookup(std::string_view name)
 {
 	for (auto it{m_existing_vars.rbegin()}; it != m_existing_vars.rend(); it++)
 	{
 		if (it->m_name == name)
 		{
-			return it->m_expr->m_type;
+			return *it;
 		}
 	}
 
@@ -1040,15 +1160,15 @@ void Parser::parse_unresolved_exprs_2nd_pass()
 
 [[nodiscard]] Data_Type Parser::tt_to_dt(Token_Type token_type)
 {
-	if (token_type == Token_Type::REAL)
+	if (token_type == Token_Type::REAL || token_type == Token_Type::REAL_TYPE)
 	{
 		return Data_Type::REAL;
 	}
-	else if (token_type == Token_Type::INT)
+	else if (token_type == Token_Type::INT || token_type == Token_Type::INT_TYPE)
 	{
 		return Data_Type::INT;
 	}
-	else if (token_type == Token_Type::STRING)
+	else if (token_type == Token_Type::STRING || token_type == Token_Type::STRING_TYPE)
 	{
 		return Data_Type::STRING;
 	}
@@ -1059,7 +1179,7 @@ void Parser::parse_unresolved_exprs_2nd_pass()
 {
 	if (token.m_type == Token_Type::IDENTIFIER)
 	{
-		return existing_vars_lookup(token.m_value);
+		return existing_vars_lookup(token.m_value).m_expr->m_type;
 	}
 	else
 	{

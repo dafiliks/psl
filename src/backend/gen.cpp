@@ -11,7 +11,7 @@
 #include "../frontend/parser.hpp"
 
 Generator::Generator(Parser &parser) : m_ast(parser.get_ast()), m_source(parser.get_source()),
-									   m_existing_vars(parser.get_existing_vars()), m_existing_funcs(parser.get_existing_funcs()) {}
+                                       m_existing_vars(parser.get_existing_vars()), m_existing_funcs(parser.get_existing_funcs()) {}
 
 void Generator::gen(const std::string &cpp_output_path)
 {
@@ -34,6 +34,7 @@ void Generator::gen(const std::string &cpp_output_path)
 		m_output_file << "\n";
 	}
 
+	m_output_file << m_record_stream.str();
 	m_output_file << m_func_stream.str();
 	m_output_file << m_main_stream.str();
 
@@ -62,23 +63,31 @@ void Generator::gen_stmt(const Stmt &stmt)
 					gen.check_capital_name(var_stmt);
 				}
 
-				if (var_stmt.m_expr->m_type == Data_Type::STRING)
+				if (var_stmt.m_is_1d_list)
 				{
-					gen.require_lib("string");
-					*gen.m_current_stream << "std::string " << var_stmt.m_name << " = ";
+					gen.require_lib("vector");
+					*gen.m_current_stream << "std::vector<";
+
+					if (var_stmt.m_is_2d_list)
+					{
+						*gen.m_current_stream << "std::vector<";
+						gen.gen_type(var_stmt.m_expr->m_type);
+						*gen.m_current_stream << ">";
+					}
+					else
+					{
+						gen.gen_type(var_stmt.m_expr->m_type);
+					}
+
+					*gen.m_current_stream << ">";
+					*gen.m_current_stream << " ";
+				} else {
+					gen.gen_type(var_stmt.m_expr->m_type);
+					*gen.m_current_stream << " ";
 				}
-				else if (var_stmt.m_expr->m_type == Data_Type::REAL)
-				{
-					*gen.m_current_stream << "double " << var_stmt.m_name << " = ";
-				}
-				else if (var_stmt.m_expr->m_type == Data_Type::INT)
-				{
-					*gen.m_current_stream << "int " << var_stmt.m_name << " = ";
-				}
-				else if (var_stmt.m_expr->m_type == Data_Type::NONE)
-				{
-					*gen.m_current_stream << "auto " << var_stmt.m_name << " = ";
-				}
+
+				*gen.m_current_stream << var_stmt.m_name;
+				*gen.m_current_stream << " = ";
 			}
 
 			gen.gen_expr(*var_stmt.m_expr);
@@ -89,7 +98,6 @@ void Generator::gen_stmt(const Stmt &stmt)
 		void operator()(const OutputStmt &output_stmt)
 		{
 			gen.require_lib("iostream");
-			*gen.m_current_stream << "	";
 			*gen.m_current_stream << "std::cout << ";
 			gen.gen_args(output_stmt.m_args, " << ");
 			*gen.m_current_stream << ";";
@@ -109,8 +117,8 @@ void Generator::gen_stmt(const Stmt &stmt)
 			}
 			else
 			{
-				// lookup type in table
 				gen.gen_type(table_func_decl_stmt.m_return.m_return_expr->m_type);
+				*gen.m_current_stream << " ";
 			}
 
 			*gen.m_current_stream << func_decl_stmt.m_name;
@@ -250,6 +258,76 @@ void Generator::gen_stmt(const Stmt &stmt)
 			*gen.m_current_stream << "	";
 			*gen.m_current_stream << "}";
 		}
+
+		void operator()(const ForInStmt& for_in_stmt)
+		{
+			*gen.m_current_stream << "for (const auto& ";
+			*gen.m_current_stream << for_in_stmt.m_declaration;
+
+			*gen.m_current_stream << " : ";
+			*gen.m_current_stream << for_in_stmt.m_range;
+
+			*gen.m_current_stream << ")\n";
+
+			*gen.m_current_stream << "	";
+			*gen.m_current_stream << "{\n";
+
+			gen.gen_body(*for_in_stmt.m_body);
+
+			*gen.m_current_stream << "	";
+			*gen.m_current_stream << "}\n";
+		}
+
+		void operator()(const ListAccessStmt& list_access_stmt)
+		{
+			*gen.m_current_stream << list_access_stmt.m_name;
+			*gen.m_current_stream << "[";
+			gen.gen_expr(*list_access_stmt.m_row);
+			*gen.m_current_stream << "]";
+
+			if (list_access_stmt.m_col)
+			{
+				*gen.m_current_stream << "[";
+				gen.gen_expr(*list_access_stmt.m_col);
+				*gen.m_current_stream << "]";
+			}
+
+			*gen.m_current_stream << " = ";
+
+			gen.gen_expr(*list_access_stmt.m_expr);
+
+			*gen.m_current_stream << ";";
+		}
+
+		void operator()(const FieldStmt& field_stmt)
+		{
+			gen.gen_type(field_stmt.m_type);
+			*gen.m_current_stream << " ";
+			*gen.m_current_stream << field_stmt.m_name;
+			*gen.m_current_stream << ";";
+		}
+
+		void operator()(const RecordStmt& record_stmt)
+		{
+			gen.change_stream(gen.m_record_stream);
+
+			*gen.m_current_stream << "struct ";
+			*gen.m_current_stream << record_stmt.m_name;
+			*gen.m_current_stream << "\n";
+
+			*gen.m_current_stream << "{\n";
+
+			for (const auto& i : record_stmt.m_fields)
+			{
+				*gen.m_current_stream << "	";
+				gen.gen_stmt(Stmt{i});
+				*gen.m_current_stream << "\n";
+			}
+
+			*gen.m_current_stream << "};\n\n";
+
+			gen.change_stream(gen.m_main_stream);
+		}
 	};
 
 	StmtVisitor stmt_visitor{*this};
@@ -261,16 +339,17 @@ void Generator::gen_type(const Data_Type &type)
 	switch (type)
 	{
 	case (Data_Type::REAL):
-		*m_current_stream << "double ";
+		*m_current_stream << "double";
 		break;
 	case (Data_Type::INT):
-		*m_current_stream << "int ";
+		*m_current_stream << "int";
 		break;
 	case (Data_Type::STRING):
-		*m_current_stream << "std::string ";
+		require_lib("string");
+		*m_current_stream << "std::string";
 		break;
 	case (Data_Type::NONE):
-		*m_current_stream << "void ";
+		*m_current_stream << "auto";
 		break;
 	default:
 		gen_error_l("couldn't gen type");
@@ -308,9 +387,31 @@ void Generator::gen_expr(const Expr &expr)
 		void operator()(const UnaryOpExpr &unary_op_expr)
 		{
 			gen.gen_op(unary_op_expr.m_op);
-			*gen.m_current_stream << "(";
 			gen.gen_expr(*unary_op_expr.m_unary_expr);
+		}
+
+		void operator()(const ParenExpr &paren_expr)
+		{
+			*gen.m_current_stream << "(";
+			gen.gen_expr(*paren_expr.m_expr);
 			*gen.m_current_stream << ")";
+		}
+
+		void operator()(const ListExpr& list_expr)
+		{
+			*gen.m_current_stream << "{";
+
+			for (std::size_t i{}; i < list_expr.m_exprs.size(); i++)
+			{
+				gen.gen_expr(list_expr.m_exprs[i]);
+
+				if (i < list_expr.m_exprs.size() - 1)
+				{
+					*gen.m_current_stream << ", ";
+				}
+			}
+
+			*gen.m_current_stream << "}";
 		}
 	};
 
@@ -349,6 +450,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 		void operator()(const UserInputExpr &user_input_expr)
 		{
 			gen.require_lib("string");
+			gen.require_lib("iostream");
 			*gen.m_current_stream << "[](){ std::string s; std::getline(std::cin, s); return s; }()";
 		}
 
@@ -371,8 +473,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 		{
 			*gen.m_current_stream << "(";
 
-			gen.check_expr_is_type(*len_call_expr.m_str_expr, Data_Type::STRING);
-			gen.gen_expr(*len_call_expr.m_str_expr);
+			gen.gen_expr(*len_call_expr.m_expr);
 
 			*gen.m_current_stream << ")";
 			*gen.m_current_stream << ".size()";
@@ -507,6 +608,30 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 
 			*gen.m_current_stream << ")";
 		}
+
+		void operator()(const ListAccessExpr& list_access_expr)
+		{
+			*gen.m_current_stream << list_access_expr.m_name;
+
+			*gen.m_current_stream << "[";
+			gen.gen_expr(*list_access_expr.m_row);
+			*gen.m_current_stream << "]";
+
+			if (list_access_expr.m_col)
+			{
+				*gen.m_current_stream << "[";
+				gen.gen_expr(*list_access_expr.m_col);
+				*gen.m_current_stream << "]";
+			}
+		}
+
+		void operator()(const FieldAccessExpr& field_access_expr)
+		{
+			// TODO: check if field exists and record exists
+			*gen.m_current_stream << field_access_expr.m_record_name;
+			*gen.m_current_stream << ".";
+			*gen.m_current_stream << field_access_expr.m_field_name;
+		}
 	};
 
 	AtomExprVisitor atom_expr_visitor{*this};
@@ -518,46 +643,49 @@ void Generator::gen_op(const Operator &op)
 	switch (op)
 	{
 	case (Operator::PLUS):
-		*m_current_stream << " + ";
+		*m_current_stream << "+";
 		break;
 	case (Operator::MINUS):
-		*m_current_stream << " - ";
+		*m_current_stream << "-";
 		break;
 	case (Operator::MULTIPLY):
-		*m_current_stream << " * ";
+		*m_current_stream << "*";
 		break;
 	case (Operator::DIVIDE):
-		*m_current_stream << " / ";
+		*m_current_stream << "/";
 		break;
 	case (Operator::DIV):
-		*m_current_stream << " DIV ";
+		*m_current_stream << "//";
 		break;
 	case (Operator::MOD):
-		*m_current_stream << " % ";
+		*m_current_stream << "%";
 		break;
 	case (Operator::LESS_THAN):
-		*m_current_stream << " < ";
+		*m_current_stream << "<";
 		break;
 	case (Operator::GREATER_THAN):
-		*m_current_stream << " > ";
+		*m_current_stream << ">";
 		break;
 	case (Operator::EQUALS):
-		*m_current_stream << " == ";
+		*m_current_stream << "==";
 		break;
 	case (Operator::NOT_EQUALS):
-		*m_current_stream << " != ";
+		*m_current_stream << "!=";
 		break;
 	case (Operator::LESS_THAN_OET):
-		*m_current_stream << " <= ";
+		*m_current_stream << "<=";
 		break;
 	case (Operator::GREATER_THAN_OET):
-		*m_current_stream << " >= ";
+		*m_current_stream << ">=";
 		break;
 	case (Operator::OR):
-		*m_current_stream << " || ";
+		*m_current_stream << "||";
 		break;
 	case (Operator::AND):
-		*m_current_stream << " && ";
+		*m_current_stream << "&&";
+		break;
+	case (Operator::NOT):
+		*m_current_stream << "!";
 		break;
 	}
 }
@@ -567,6 +695,7 @@ void Generator::gen_params(const Params &params)
 	for (std::size_t i{0}; i < params.m_params.size(); i++)
 	{
 		gen_type(existing_param_lookup(params.m_params[i].m_name).m_type);
+		*m_current_stream << " ";
 		*m_current_stream << params.m_params[i].m_name;
 
 		if (i < params.m_params.size() - 1)

@@ -80,6 +80,7 @@ private:
 	std::string m_source{};
 
 	std::ostringstream m_lib_stream{};
+	std::ostringstream m_record_stream{};
 	std::ostringstream m_func_stream{};
 	std::ostringstream m_main_stream{};
 

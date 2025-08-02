@@ -24,12 +24,14 @@ public:
 	[[nodiscard]] const std::string& get_source() const;
 	[[nodiscard]] const std::vector<VarStmt>& get_existing_vars() const;
 	[[nodiscard]] const std::vector<FuncDeclStmt>& get_existing_funcs() const;
+	[[nodiscard]] const std::vector<RecordStmt>& get_existing_records() const;
 
 private:
 	void populate_stdlib_funcs();
 
 	[[nodiscard]] Stmt parse_stmt();
 	[[nodiscard]] VarStmt parse_var_stmt();
+	[[nodiscard]] FieldAccessStmt parse_field_access_stmt();
 	[[nodiscard]] OutputStmt parse_output_stmt();
 	[[nodiscard]] FuncDeclStmt parse_func_decl_stmt();
 	[[nodiscard]] FuncCallStmt parse_func_call_stmt();
@@ -48,7 +50,7 @@ private:
 	void skip_over_function_body();
 
 	[[nodiscard]] Params parse_func_decl_params();
-	[[nodiscard]] Args parse_func_call_args();
+	[[nodiscard]] Args parse_args();
 
 	[[nodiscard]] Body parse_body_until(std::initializer_list<Token_Type> stop_tokens);
 	[[nodiscard]] std::vector<FieldStmt> parse_fields_until(std::initializer_list<Token_Type> stop_tokens);
@@ -80,6 +82,7 @@ private:
 
 	[[nodiscard]] VarExpr parse_var_expr();
 	[[nodiscard]] UserInputExpr parse_user_input_expr();
+	[[nodiscard]] ObjectCreationExpr parse_object_creation_expr();
 
 	void parse_func_body_2nd_pass();
 	void parse_unresolved_exprs_2nd_pass();
@@ -88,11 +91,14 @@ private:
 
 	[[nodiscard]] bool is_bin_op(Token_Type token_type);
 	[[nodiscard]] bool is_unary(Token_Type token_type);
+	[[nodiscard]] bool is_record(const std::string_view name);
 	[[nodiscard]] bool is_stmt(Token_Type token_type);
 	[[nodiscard]] bool is_stdlib(const std::string_view name);
 	[[nodiscard]] bool is_var_defined(const VarStmt& var_stmt);
 	[[nodiscard]] VarStmt existing_vars_lookup(std::string_view name);
 	[[nodiscard]] FuncDeclStmt& existing_func_lookup(std::string_view name);
+
+	[[nodiscard]] Data_Type get_field_type_from_access(Token name, Token field);
 
 	[[nodiscard]] Data_Type tt_to_dt(Token_Type token_type);
 	[[nodiscard]] Data_Type tt_to_dt(Token token);
@@ -109,6 +115,7 @@ private:
 
 	std::vector<VarStmt> m_existing_vars{};
 	std::vector<FuncDeclStmt> m_existing_funcs{};
+	std::vector<RecordStmt> m_existing_records{};
 
 	std::vector<std::pair<Expr*, std::string>> m_unresolved_exprs{};
 	std::string m_last_func_call_name{};

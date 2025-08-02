@@ -26,6 +26,7 @@ void Parser::parse()
 [[nodiscard]] const std::string &Parser::get_source() const { return m_source; }
 [[nodiscard]] const std::vector<VarStmt> &Parser::get_existing_vars() const { return m_existing_vars; }
 [[nodiscard]] const std::vector<FuncDeclStmt> &Parser::get_existing_funcs() const { return m_existing_funcs; }
+[[nodiscard]] const std::vector<RecordStmt>& Parser::get_existing_records() const { return m_existing_records; }
 
 void Parser::populate_stdlib_funcs()
 {
@@ -33,10 +34,11 @@ void Parser::populate_stdlib_funcs()
 	{
 		FuncDeclStmt func{};
 		func.m_name = name;
-		for (std::size_t i{0}; i < param_size; i++)
+		for (std::size_t i{}; i < param_size; i++)
 		{
 			func.m_params.m_params.emplace_back("");
 		}
+		func.m_is_void = false;
 		func.m_return.m_return_expr = std::make_unique<Expr>();
 		func.m_return.m_return_expr->m_type = return_type;
 		m_existing_funcs.emplace_back(func);
@@ -71,6 +73,10 @@ void Parser::populate_stdlib_funcs()
 	else if (peek().m_type == Token_Type::IF)
 	{
 		return Stmt{parse_if_stmt()};
+	}
+	else if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type == Token_Type::DOT)
+	{
+		return Stmt{parse_field_access_stmt()};
 	}
 	else if (peek().m_type == Token_Type::ELSE && peek(1).m_type != Token_Type::IF)
 	{
@@ -137,7 +143,11 @@ void Parser::populate_stdlib_funcs()
 	try_eat(Token_Type::LESS_THAN);
 	try_eat(Token_Type::MINUS);
 
-	if (peek().m_type == Token_Type::SQ_O_BRACKET)
+	if (is_record(peek().m_value))
+	{
+		var_stmt.m_record_name = peek().m_value;
+	}
+	else if (peek().m_type == Token_Type::SQ_O_BRACKET)
 	{
 		var_stmt.m_is_1d_list = true;
 		if (peek(1).m_type == Token_Type::SQ_O_BRACKET)
@@ -165,6 +175,24 @@ void Parser::populate_stdlib_funcs()
 	}
 
 	return var_stmt;
+}
+
+[[nodiscard]] FieldAccessStmt Parser::parse_field_access_stmt()
+{
+	FieldAccessStmt field_access_stmt{};
+
+	field_access_stmt.m_name = try_eat(Token_Type::IDENTIFIER).m_value;
+
+	try_eat(Token_Type::DOT);
+
+	field_access_stmt.m_field_name = try_eat(Token_Type::IDENTIFIER).m_value;
+
+	try_eat(Token_Type::LESS_THAN);
+	try_eat(Token_Type::MINUS);
+
+	field_access_stmt.m_expr = std::make_shared<Expr>(*parse_expr());
+
+	return field_access_stmt;
 }
 
 [[nodiscard]] OutputStmt Parser::parse_output_stmt()
@@ -219,7 +247,7 @@ void Parser::skip_over_function_body()
 
 	try_eat(Token_Type::O_PAREN);
 
-	func_call_stmt.m_args = parse_func_call_args();
+	func_call_stmt.m_args = parse_args();
 
 	deduce_func_decl_param_types_from_stmt(func_call_stmt);
 
@@ -332,6 +360,8 @@ void Parser::skip_over_function_body()
 
 	try_eat(Token_Type::END_RECORD);
 
+	m_existing_records.push_back(record_stmt);
+
 	return record_stmt;
 }
 
@@ -360,7 +390,6 @@ void Parser::skip_over_function_body()
 	return for_to_stmt;
 }
 
-// try eat
 [[nodiscard]] ForInStmt Parser::parse_for_in_stmt()
 {
 	ForInStmt for_in_stmt{};
@@ -373,6 +402,8 @@ void Parser::skip_over_function_body()
 
 	for_in_stmt.m_range = std::make_shared<Expr>(*parse_expr());
 
+	m_var_scope_stack.push_back(m_existing_vars.size());
+
 	VarStmt var_stmt{};
 	var_stmt.m_name = for_in_stmt.m_declaration;
 	var_stmt.m_expr = std::make_shared<Expr>();
@@ -382,6 +413,11 @@ void Parser::skip_over_function_body()
 	for_in_stmt.m_body = std::make_shared<Body>(parse_body_until({Token_Type::END_FOR}));
 
 	try_eat(Token_Type::END_FOR);
+
+	m_existing_vars.resize(m_var_scope_stack.back());
+	m_var_scope_stack.pop_back();
+
+	//remove var
 
 	return for_in_stmt;
 }
@@ -420,7 +456,7 @@ void Parser::skip_over_function_body()
 	std::vector<Param> params{};
 
 	while (peek().m_type != Token_Type::C_PAREN &&
-		   peek().m_type != Token_Type::END_OF_FILE)
+	       peek().m_type != Token_Type::END_OF_FILE)
 	{
 		switch (peek().m_type)
 		{
@@ -439,7 +475,7 @@ void Parser::skip_over_function_body()
 	return Params{params};
 }
 
-[[nodiscard]] Args Parser::parse_func_call_args()
+[[nodiscard]] Args Parser::parse_args()
 {
 	std::vector<Expr> args{};
 
@@ -495,6 +531,7 @@ void Parser::skip_over_function_body()
 
 		do {
 			eat();
+			// lhs->m_type = deduce_expr_type(peek());
 			list_expr.m_exprs.push_back(*parse_expr());
 		} while (peek().m_type == Token_Type::COMMA);
 
@@ -517,14 +554,24 @@ void Parser::skip_over_function_body()
 	{
 		*lhs = Expr{parse_unary_op_expr(), lhs->m_type};
 	}
-	else if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type == Token_Type::O_PAREN)
+	else if (is_stdlib(peek().m_value) || peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type == Token_Type::O_PAREN)
 	{
-		m_unresolved_exprs.emplace_back(lhs.get(), peek().m_value);
-		*lhs = Expr{AtomExpr{parse_func_call_expr()}, lhs->m_type};
+		if (is_record(peek().m_value)) {
+			lhs->m_type = Data_Type::USER_DEFINED_TYPE;
+		} else {
+			m_unresolved_exprs.emplace_back(lhs.get(), peek().m_value);
+		}
+
+		*lhs = Expr{parse_atom(), lhs->m_type};
 	}
 	else
 	{
-		lhs->m_type = deduce_expr_type(peek());
+		if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type == Token_Type::DOT)
+		{
+			lhs->m_type = get_field_type_from_access(peek(), peek(2));
+		} else {
+			lhs->m_type = deduce_expr_type(peek());
+		}
 		*lhs = Expr{parse_atom(), lhs->m_type};
 	}
 
@@ -602,7 +649,7 @@ void Parser::deduce_func_decl_param_types_from_stmt(const FuncCallStmt &func_cal
 {
 	FieldAccessExpr field_access_expr{};
 
-	field_access_expr.m_record_name = try_eat(Token_Type::IDENTIFIER).m_value;
+	field_access_expr.m_name = try_eat(Token_Type::IDENTIFIER).m_value;
 
 	try_eat(Token_Type::DOT);
 
@@ -643,7 +690,7 @@ void Parser::deduce_func_decl_param_types_from_stmt(const FuncCallStmt &func_cal
 
 	try_eat(Token_Type::O_PAREN);
 
-	func_call_expr.m_args = parse_func_call_args();
+	func_call_expr.m_args = parse_args();
 
 	deduce_func_decl_param_types_from_expr(func_call_expr);
 
@@ -716,6 +763,10 @@ void Parser::deduce_func_decl_param_types_from_stmt(const FuncCallStmt &func_cal
 	else if (peek().m_type == Token_Type::RANDOM_INT)
 	{
 		return AtomExpr{parse_random_int_call_expr()};
+	}
+	else if (is_record(peek().m_value))
+	{
+		return AtomExpr{parse_object_creation_expr()};
 	}
 	else if (peek().m_type == Token_Type::IDENTIFIER && peek(1).m_type == Token_Type::DOT)
 	{
@@ -924,6 +975,21 @@ void Parser::deduce_func_decl_param_types_from_stmt(const FuncCallStmt &func_cal
 	return UserInputExpr{};
 }
 
+[[nodiscard]] ObjectCreationExpr Parser::parse_object_creation_expr()
+{
+	ObjectCreationExpr object_creation_expr{};
+
+	object_creation_expr.m_record_name = try_eat(Token_Type::IDENTIFIER).m_value;
+
+	try_eat(Token_Type::O_PAREN);
+
+	object_creation_expr.m_args = parse_args();
+
+	try_eat(Token_Type::C_PAREN);
+
+	return object_creation_expr;
+}
+
 void Parser::parse_func_body_2nd_pass()
 {
 	for (auto &i : m_existing_funcs)
@@ -976,10 +1042,6 @@ void Parser::parse_unresolved_exprs_2nd_pass()
 		if (!existing_func_lookup(i.second).m_is_void)
 		{
 			i.first->m_type = existing_func_lookup(i.second).m_return.m_return_expr->m_type;
-		}
-		else
-		{
-			parse_error_l("cannot use void func in expr");
 		}
 	}
 }
@@ -1090,6 +1152,19 @@ void Parser::parse_unresolved_exprs_2nd_pass()
 	       token_type == Token_Type::MINUS;
 }
 
+[[nodiscard]] bool Parser::is_record(const std::string_view name)
+{
+	for (const auto& i : m_existing_records)
+	{
+		if (i.m_name == name)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 [[nodiscard]] bool Parser::is_stmt(Token_Type token_type)
 {
 	return token_type == Token_Type::IF ||
@@ -1114,14 +1189,7 @@ void Parser::parse_unresolved_exprs_2nd_pass()
 
 [[nodiscard]] bool Parser::is_var_defined(const VarStmt &var_stmt)
 {
-	std::size_t stop_index{};
-
-	if (!m_var_scope_stack.empty())
-	{
-		stop_index = m_var_scope_stack.back();
-	}
-
-	for (std::size_t i = m_existing_vars.size(); i-- > stop_index;)
+	for (std::size_t i = m_existing_vars.size(); i < 0; i++)
 	{
 		if (m_existing_vars[i].m_name == var_stmt.m_name)
 		{
@@ -1156,6 +1224,25 @@ void Parser::parse_unresolved_exprs_2nd_pass()
 	}
 
 	parse_error_l("func doesnt exist");
+}
+
+[[nodiscard]] Data_Type Parser::get_field_type_from_access(Token name, Token field)
+{
+	const std::string_view record_name{existing_vars_lookup(name.m_value).m_record_name};
+
+	for (const auto& i : m_existing_records)
+	{
+		if (i.m_name == record_name)
+		{
+			for (const auto& j : i.m_fields)
+			{
+				if (j.m_name == field.m_value)
+				{
+					return j.m_type;
+				}
+			}
+		}
+	}
 }
 
 [[nodiscard]] Data_Type Parser::tt_to_dt(Token_Type token_type)

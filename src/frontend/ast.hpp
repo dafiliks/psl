@@ -12,6 +12,8 @@ enum class Data_Type {
 	REAL,
 	CHAR,
 	NONE,
+	USER_DEFINED_TYPE,
+	UNRESOLVED,
 };
 
 enum class Operator {
@@ -43,12 +45,15 @@ struct AtomExpr;
 struct VarStmt {
 	std::string m_name{};
 	std::shared_ptr<Expr> m_expr{};
-	std::shared_ptr<Expr> m_previous_expr{};
+
+	[[maybe_unused]] std::shared_ptr<Expr> m_previous_expr{};
+
 	bool m_is_constant{};
 	bool m_is_reassignment{};
 
-	bool m_is_1d_list{};
-	bool m_is_2d_list{};
+	[[maybe_unused]] bool m_is_1d_list{};
+	[[maybe_unused]] bool m_is_2d_list{};
+	[[maybe_unused]] std::string m_record_name{};
 };
 
 
@@ -142,10 +147,17 @@ struct RecordStmt {
 	std::vector<FieldStmt> m_fields{};
 };
 
+struct FieldAccessStmt {
+	std::string m_name{};
+	std::string m_field_name{};
+	std::shared_ptr<Expr> m_expr{};
+};
+
 struct Stmt {
 	std::variant<VarStmt, OutputStmt, FuncDeclStmt, FuncCallStmt,
-		RepeatUntilStmt, WhileStmt, IfStmt, ElseIfStmt, ElseStmt,
-		ForToStmt, ForInStmt, ListAccessStmt, FieldStmt, RecordStmt> m_stmt{};
+	             RepeatUntilStmt, WhileStmt, IfStmt, ElseIfStmt, ElseStmt,
+	             ForToStmt, ForInStmt, ListAccessStmt, FieldStmt, RecordStmt,
+	             FieldAccessStmt> m_stmt{};
 };
 
 struct Body {
@@ -227,16 +239,21 @@ struct ListAccessExpr {
 };
 
 struct FieldAccessExpr {
-	std::string m_record_name{};
+	std::string m_name{};
 	std::string m_field_name{};
+};
+
+struct ObjectCreationExpr {
+	std::string m_record_name{};
+	Args m_args{};
 };
 
 struct AtomExpr {
 	std::variant<IntExpr, RealExpr, StrExpr, VarExpr,
-		UserInputExpr, FuncCallExpr, LenCallExpr, PositionCallExpr,
-		SubStrCallExpr, StrToIntCallExpr, StrToRealCallExpr, IntToStrCallExpr,
-		RealToStrCallExpr, CharToCodeCallExpr, CodeToCharCallExpr, RandomIntCallExpr,
-	        ListAccessExpr, FieldAccessExpr> m_atom{};
+	             UserInputExpr, FuncCallExpr, LenCallExpr, PositionCallExpr,
+	             SubStrCallExpr, StrToIntCallExpr, StrToRealCallExpr, IntToStrCallExpr,
+	             RealToStrCallExpr, CharToCodeCallExpr, CodeToCharCallExpr, RandomIntCallExpr,
+	             ListAccessExpr, FieldAccessExpr, ObjectCreationExpr> m_atom{};
 };
 
 struct BinOpExpr {

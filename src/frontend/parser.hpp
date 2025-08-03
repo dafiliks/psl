@@ -55,6 +55,8 @@ private:
 	[[nodiscard]] Body parse_body_until(std::initializer_list<Token_Type> stop_tokens);
 	[[nodiscard]] std::vector<FieldStmt> parse_fields_until(std::initializer_list<Token_Type> stop_tokens);
 
+	void check_arg_length_matches(const std::string_view name, const Args &args);
+
 	void deduce_func_decl_param_types_from_expr(const FuncCallExpr& func_call_expr);
 	void deduce_func_decl_param_types_from_stmt(const FuncCallStmt& func_call_stmt);
 
@@ -94,7 +96,8 @@ private:
 	[[nodiscard]] bool is_record(const std::string_view name);
 	[[nodiscard]] bool is_stmt(Token_Type token_type);
 	[[nodiscard]] bool is_stdlib(const std::string_view name);
-	[[nodiscard]] bool is_var_defined(const VarStmt& var_stmt);
+	void remove_var(const std::string_view name);
+	[[nodiscard]] bool is_var_defined(const std::string_view name);
 	[[nodiscard]] VarStmt existing_vars_lookup(std::string_view name);
 	[[nodiscard]] FuncDeclStmt& existing_func_lookup(std::string_view name);
 
@@ -118,6 +121,7 @@ private:
 	std::vector<RecordStmt> m_existing_records{};
 
 	std::vector<std::pair<Expr*, std::string>> m_unresolved_exprs{};
+	std::vector<std::pair<Expr*, Expr*>> m_unresolved_decls{};
 	std::string m_last_func_call_name{};
 
 	std::vector<std::size_t> m_var_scope_stack{};

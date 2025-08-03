@@ -121,7 +121,7 @@ void Lexer::lex()
 		{
 			lex_number();
 		}
-		else if (peek() == '"')
+		else if (peek() == '\'')
 		{
 			lex_string_lit();
 		}
@@ -215,13 +215,16 @@ void Lexer::lex_number()
 
 void Lexer::lex_string_lit()
 {
-	m_buffer += eat();
+	eat();
 	do
 	{
 		m_buffer += eat();
-	} while (peek() != '\0' && peek() != '"');
+	} while (peek() != '\0' && peek() != '\'');
 
-	m_buffer += eat();
+	if (peek() == '\'') {
+		eat();
+	}
+
 	m_tokens.push_back({Token_Type::STRING, m_buffer, m_line, m_col});
 	m_buffer.clear();
 }

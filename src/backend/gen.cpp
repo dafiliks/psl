@@ -274,12 +274,12 @@ void Generator::gen_stmt(const Stmt &stmt)
 		{
 			*gen.m_current_stream << "for (const auto& ";
 
-			gen.check_expr_is_type(*gen.existing_var_lookup(for_in_stmt.m_declaration).m_expr,
-			                       for_in_stmt.m_range->m_type);
-
 			*gen.m_current_stream << for_in_stmt.m_declaration;
 
 			*gen.m_current_stream << " : ";
+
+			gen.check_expr_is_not_type(*for_in_stmt.m_range, Data_Type::INT);
+			gen.check_expr_is_not_type(*for_in_stmt.m_range, Data_Type::REAL);
 			gen.gen_expr(*for_in_stmt.m_range);
 
 			*gen.m_current_stream << ")\n";

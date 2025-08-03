@@ -161,16 +161,19 @@ void Parser::populate_stdlib_funcs()
 		}
 	}
 
-	var_stmt.m_expr = parse_expr();
-
-	if (is_var_defined(var_stmt))
+	if (is_var_defined(var_stmt.m_name))
 	{
-		// doesn't work yet
-		var_stmt.m_previous_expr = var_stmt.m_expr;
+		if (existing_vars_lookup(var_stmt.m_name).m_is_constant) {
+			var_stmt.m_is_constant = true;
+		}
+
+		var_stmt.m_previous_expr = existing_vars_lookup(var_stmt.m_name).m_expr;
 		var_stmt.m_is_reassignment = true;
+		var_stmt.m_expr = parse_expr();
 	}
 	else
 	{
+		var_stmt.m_expr = parse_expr();
 		m_existing_vars.push_back(var_stmt);
 	}
 
@@ -248,6 +251,8 @@ void Parser::skip_over_function_body()
 	try_eat(Token_Type::O_PAREN);
 
 	func_call_stmt.m_args = parse_args();
+
+	check_arg_length_matches(func_call_stmt.m_name, func_call_stmt.m_args);
 
 	deduce_func_decl_param_types_from_stmt(func_call_stmt);
 
@@ -385,6 +390,8 @@ void Parser::skip_over_function_body()
 
 	for_to_stmt.m_body = std::make_shared<Body>(parse_body_until({Token_Type::END_FOR}));
 
+	remove_var(for_to_stmt.m_var_stmt.m_name);
+
 	try_eat(Token_Type::END_FOR);
 
 	return for_to_stmt;
@@ -400,24 +407,24 @@ void Parser::skip_over_function_body()
 
 	try_eat(Token_Type::IN);
 
-	for_in_stmt.m_range = std::make_shared<Expr>(*parse_expr());
-
-	m_var_scope_stack.push_back(m_existing_vars.size());
+	for_in_stmt.m_range = parse_expr();
 
 	VarStmt var_stmt{};
 	var_stmt.m_name = for_in_stmt.m_declaration;
+	var_stmt.m_is_constant = true;
 	var_stmt.m_expr = std::make_shared<Expr>();
 	var_stmt.m_expr->m_type = for_in_stmt.m_range->m_type;
 	m_existing_vars.push_back(var_stmt);
 
+	if (for_in_stmt.m_range->m_type == Data_Type::UNRESOLVED) {
+		m_unresolved_decls.push_back(std::make_pair(var_stmt.m_expr.get(), for_in_stmt.m_range.get()));
+	}
+
 	for_in_stmt.m_body = std::make_shared<Body>(parse_body_until({Token_Type::END_FOR}));
 
+	remove_var(var_stmt.m_name);
+
 	try_eat(Token_Type::END_FOR);
-
-	m_existing_vars.resize(m_var_scope_stack.back());
-	m_var_scope_stack.pop_back();
-
-	//remove var
 
 	return for_in_stmt;
 }
@@ -560,6 +567,7 @@ void Parser::skip_over_function_body()
 			lhs->m_type = Data_Type::USER_DEFINED_TYPE;
 		} else {
 			m_unresolved_exprs.emplace_back(lhs.get(), peek().m_value);
+			lhs->m_type = Data_Type::UNRESOLVED;
 		}
 
 		*lhs = Expr{parse_atom(), lhs->m_type};
@@ -691,6 +699,8 @@ void Parser::deduce_func_decl_param_types_from_stmt(const FuncCallStmt &func_cal
 	try_eat(Token_Type::O_PAREN);
 
 	func_call_expr.m_args = parse_args();
+
+	check_arg_length_matches(func_call_expr.m_name, func_call_expr.m_args);
 
 	deduce_func_decl_param_types_from_expr(func_call_expr);
 
@@ -1044,6 +1054,11 @@ void Parser::parse_unresolved_exprs_2nd_pass()
 			i.first->m_type = existing_func_lookup(i.second).m_return.m_return_expr->m_type;
 		}
 	}
+
+	for (auto &i : m_unresolved_decls)
+	{
+		i.first->m_type = i.second->m_type;
+	}
 }
 
 [[nodiscard]] Operator Parser::determine_op()
@@ -1187,17 +1202,34 @@ void Parser::parse_unresolved_exprs_2nd_pass()
 		   name == "RANDOM_INT";
 }
 
-[[nodiscard]] bool Parser::is_var_defined(const VarStmt &var_stmt)
+[[nodiscard]] bool Parser::is_var_defined(const std::string_view name)
 {
-	for (std::size_t i = m_existing_vars.size(); i < 0; i++)
+	std::size_t stop_index{};
+
+	if (!m_var_scope_stack.empty())
 	{
-		if (m_existing_vars[i].m_name == var_stmt.m_name)
+		stop_index = m_var_scope_stack.back();
+	}
+
+	for (std::size_t i = m_existing_vars.size(); i-- > stop_index;)
+	{
+		if (m_existing_vars[i].m_name == name)
 		{
 			return true;
 		}
 	}
 
 	return false;
+}
+
+void Parser::remove_var(const std::string_view name)
+{
+	for (auto it{m_existing_vars.begin()}; it != m_existing_vars.end(); it++) {
+		if (it->m_name == name) {
+			m_existing_vars.erase(it);
+			break;
+		}
+	}
 }
 
 [[nodiscard]] VarStmt Parser::existing_vars_lookup(std::string_view name)
@@ -1327,5 +1359,15 @@ Token Parser::try_eat(Token_Type type)
 	else
 	{
 		return eat();
+	}
+}
+
+void Parser::check_arg_length_matches(const std::string_view name, const Args &args)
+{
+	FuncDeclStmt &func_decl_stmt{existing_func_lookup(name)};
+
+	if (args.m_exprs.size() != func_decl_stmt.m_params.m_params.size())
+	{
+		parse_error_l("amount of arguments given in function call doesn't match definition");
 	}
 }

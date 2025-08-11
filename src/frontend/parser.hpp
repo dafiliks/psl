@@ -1,130 +1,417 @@
+/* frontend/parser.hpp by David Filiks */
+/* The parser header for the PsL compiler */
+
 #ifndef PARSER_HPP
 #define PARSER_HPP
 
 #include <vector>
-#include <optional>
 #include <utility>
 
 #include "lexer.hpp"
 #include "ast.hpp"
+#include "../compiler/compilation_stage.hpp"
+#include "../utils/stack.hpp"
 
-#define parse_error_s(a) \
-	Error { a, peek().m_line, peek().m_col, m_source }
-#define parse_error_l(a) \
-	Error { a }
+/* The main parser class, responsible for converting the token stream into an AST */
+/* Due to the nature of AQA pseudocode, semantic analysis is performed here */
+/* Inherits from CompilationStage as syntactic analysis is a compilation stage */
+class Parser : public CompilationStage
+{
 
-class Parser {
+/* Public members */
 public:
-	Parser() = default;
-	explicit Parser(Lexer& lexer);
 
+	/* Functions */
+
+	/* Constructs a Parser object */
+	/* Param: const Lexer& - a lexer object */
+	Parser(const Lexer& lexer);
+
+	/* Executes the parse() function */
+	void execute() override;
+
+	/* Performs syntactic analysis on the token stream */
 	void parse();
 
+	/* Getter function for the AST */
+	/* Returns: const AST& - the AST */
 	[[nodiscard]] const AST& get_ast() const;
+
+	/* Getter function for the token stream */
+	/* Returns: const std::vector<Token>& - the entire token stream */
+	[[nodiscard]] const std::vector<Token>& get_tokens() const;
+
+	/* Getter function for the current token index */
+	/* Returns: const std::size_t& - the current token index */
+	[[nodiscard]] const std::size_t& get_token_index() const;
+
+	/* Getter function for the source contents */
+	/* Returns: const std::string& - the source contents */
 	[[nodiscard]] const std::string& get_source() const;
-	[[nodiscard]] const std::vector<VarStmt>& get_existing_vars() const;
-	[[nodiscard]] const std::vector<FuncDeclStmt>& get_existing_funcs() const;
-	[[nodiscard]] const std::vector<RecordStmt>& get_existing_records() const;
 
+	/* Getter function for the source file path */
+	/* Returns: const std::string& - the source file path */
+	[[nodiscard]] const std::string& get_source_path() const;
+
+	/* Getter function for the existing program variables */
+	/* Returns: const std::vector<std::unique_ptr<VarStmt>>& - a dynamic array of the existing variable */
+	[[nodiscard]] const std::vector<std::unique_ptr<VarStmt>>& get_existing_vars() const;
+
+	/* Getter function for the existing program functions */
+	/* Returns: const std::vector<std::unique_ptr<FuncDeclStmt>>& - a dynamic array of the existing function */
+	[[nodiscard]] const std::vector<std::unique_ptr<FuncDeclStmt>>& get_existing_funcs() const;
+
+	/* Getter function for the existing program records */
+	/* Returns: const std::vector<std::unique_ptr<RecordStmt>>& - a dynamic array of the existing record */
+	[[nodiscard]] const std::vector<std::unique_ptr<RecordStmt>>& get_existing_records() const;
+
+	/* Getter function for the unresolved expressions */
+	/* Returns: const std::vector<std::pair<std::unique_ptr<Expr>, std::unique_ptr<Expr>>>& - a dynamic array of pairs of unresolved expression */
+	[[nodiscard]] const std::vector<std::pair<std::unique_ptr<Expr>, std::unique_ptr<Expr>>>& get_unresolved_exprs() const;
+
+	/* Getter function for the variable scope stack */
+	/* Returns: const Scope& - a dynamic stack of variable scope indexes */
+	[[nodiscard]] const Stack<std::size_t>& get_var_scope_stack() const;
+
+
+/* Private members */
 private:
-	void populate_stdlib_funcs();
 
+	/* Functions */
+
+	/* Parses an arbitrary statement */
+	/* Returns: Stmt - the statement */
 	[[nodiscard]] Stmt parse_stmt();
-	[[nodiscard]] VarStmt parse_var_stmt();
+
+	/* Parses a variable statement */
+	/* E.g. a <- 10 */
+	/* Returns: VarStmt& - the variable statement */
+	[[nodiscard]] VarStmt& parse_var_stmt();
+
+	/* Parses a field access statement */
+	/* E.g. jake.age <- 20 */
+	/* Returns: FieldAccessStmt - the field access statement */
 	[[nodiscard]] FieldAccessStmt parse_field_access_stmt();
+
+	/* Parses an output statement */
+	/* E.g. OUTPUT 'output' */
+	/* Returns: OutputStmt - the output statement */
 	[[nodiscard]] OutputStmt parse_output_stmt();
-	[[nodiscard]] FuncDeclStmt parse_func_decl_stmt();
+
+	/* Parses a function declaration statement */
+	/* E.g. SUBROUTINE func(a, b) ... ENDSUBROUTINE */
+	/* Returns: FuncDeclStmt& - the function declaration statement */
+	[[nodiscard]] FuncDeclStmt& parse_func_decl_stmt();
+
+	/* Parses a function call statement */
+	/* E.g. func(10, 'str') */
+	/* Returns: FuncDeclStmt - the function declaration statement */
 	[[nodiscard]] FuncCallStmt parse_func_call_stmt();
 
+	/* Parses a repeat until statement */
+	/* E.g. REPEAT ... UNTIL a = 10 */
+	/* Returns: RepeatUntilStmt - the repeat until statement */
 	[[nodiscard]] RepeatUntilStmt parse_repeat_until_stmt();
+
+	/* Parses a while statement */
+	/* E.g. WHILE a < 4 ... ENDWHILE */
+	/* Returns: WhileStmt - the while statement */
 	[[nodiscard]] WhileStmt parse_while_stmt();
+
+	/* Parses an if statement */
+	/* E.g. IF a != 5 THEN ... ENDIF */
+	/* Returns: IfStmt - the if statement */
 	[[nodiscard]] IfStmt parse_if_stmt();
+
+	/* Parses an else if statement */
+	/* E.g. ELSE IF a == 5 THEN ... ENDIF */
+	/* Returns: ElseIfStmt - the else if statement */
 	[[nodiscard]] ElseIfStmt parse_else_if_stmt();
+
+	/* Parses an else statement */
+	/* E.g. ELSE ... ENDIF */
+	/* Returns: ElseStmt - the else statement */
 	[[nodiscard]] ElseStmt parse_else_stmt();
-	[[nodiscard]] FieldStmt parse_field_stmt();
-	[[nodiscard]] RecordStmt parse_record_stmt();
+
+	/* Parses a for to statement */
+	/* E.g. FOR a <- 1 TO 3 ... ENDFOR */
+	/* E.g. FOR a <- 1 TO 5 STEP 2 ... ENDFOR */
+	/* Returns: ForToStmt - the for to statement */
 	[[nodiscard]] ForToStmt parse_for_to_stmt();
+
+	/* Parses a for in statement */
+	/* E.g. FOR c IN message ... ENDFOR */
+	/* Returns: ForInStmt - the for in statement */
 	[[nodiscard]] ForInStmt parse_for_in_stmt();
+
+	/* Parses a record statement */
+	/* E.g. RECORD Human ... ENDRECORD */
+	/* Returns: RecordStmt& - the record statement */
+	[[nodiscard]] RecordStmt& parse_record_stmt();
+
+	/* Parses a field statement */
+	/* E.g. name : String */
+	/* E.g. age : Integer */
+	/* Returns: FieldStmt - the field statement */
+	[[nodiscard]] FieldStmt parse_field_stmt();
+
+	/* Parses a list access statement */
+	/* E.g. list[1]  <- 200 */
+	/* E.g. list[1][1] <- 200 */
+	/* Returns: ListAccessStmt - the list access statement */
 	[[nodiscard]] ListAccessStmt parse_list_access_stmt();
 
+	/* Skips over the entire function body, in order to parse it on the second pass */
 	void skip_over_function_body();
 
+	/* Parses function declaration parameters */
+	/* Returns: Params - the function declaration parameters */
 	[[nodiscard]] Params parse_func_decl_params();
+
+	/* Parses arguments */
+	/* Returns: Args - the arguments */
 	[[nodiscard]] Args parse_args();
 
-	[[nodiscard]] Body parse_body_until(std::initializer_list<Token_Type> stop_tokens);
-	[[nodiscard]] std::vector<FieldStmt> parse_fields_until(std::initializer_list<Token_Type> stop_tokens);
+	/* Parses function bodies on the second pass, after previous skip */
+	void parse_func_bodies_2nd_pass();
 
-	void check_arg_length_matches(const std::string_view name, const Args &args);
-
-	void deduce_func_decl_param_types_from_expr(const FuncCallExpr& func_call_expr);
-	void deduce_func_decl_param_types_from_stmt(const FuncCallStmt& func_call_stmt);
-
-	[[nodiscard]] std::unique_ptr<Expr> parse_expr();
-	[[nodiscard]] Data_Type deduce_expr_type(Token token);
-	[[nodiscard]] FieldAccessExpr parse_field_access_expr();
-	[[nodiscard]] ListAccessExpr parse_list_access_expr();
-	[[nodiscard]] FuncCallExpr parse_func_call_expr();
-	[[nodiscard]] UnaryOpExpr parse_unary_op_expr();
-	[[nodiscard]] AtomExpr parse_atom();
-	[[nodiscard]] IntExpr parse_int_expr();
-	[[nodiscard]] RealExpr parse_real_expr();
-	[[nodiscard]] StrExpr parse_str_expr();
-
-	[[nodiscard]] LenCallExpr parse_len_call_expr();
-	[[nodiscard]] PositionCallExpr parse_position_call_expr();
-	[[nodiscard]] SubStrCallExpr parse_sub_str_call_expr();
-	[[nodiscard]] StrToIntCallExpr parse_str_to_int_call_expr();
-	[[nodiscard]] StrToRealCallExpr parse_str_to_real_call_expr();
-	[[nodiscard]] IntToStrCallExpr parse_int_to_str_call_expr();
-	[[nodiscard]] RealToStrCallExpr parse_real_to_str_call_expr();
-	[[nodiscard]] CharToCodeCallExpr parse_char_to_code_call_expr();
-	[[nodiscard]] CodeToCharCallExpr parse_code_to_char_call_expr();
-	[[nodiscard]] RandomIntCallExpr parse_random_int_call_expr();
-
-	[[nodiscard]] VarExpr parse_var_expr();
-	[[nodiscard]] UserInputExpr parse_user_input_expr();
-	[[nodiscard]] ObjectCreationExpr parse_object_creation_expr();
-
-	void parse_func_body_2nd_pass();
+	/* Parses all expressions in the unresolved expressions dynamic array */
 	void parse_unresolved_exprs_2nd_pass();
 
+	/* Checks function call argument length matches function declaration */
+	/* Param: const std::string_view - the name of the function */
+	/* Param: const Args& - the function call arguments */
+	void check_arg_count_matches(const std::string_view name, const Args& args);
+
+	/* Parses an arbitrary expression */
+	/* Returns: Expr - the expression */
+	[[nodiscard]] Expr parse_expr();
+
+	/* Parses an atom expression */
+	/* Returns: AtomExpr - the atom expression */
+	[[nodiscard]] AtomExpr parse_atom();
+
+	/* Parses an integer expression */
+	/* E.g. 50 */
+	/* Returns: IntExpr - the integer expression */
+	[[nodiscard]] IntExpr parse_int_expr();
+
+	/* Parses a real expression */
+	/* E.g. 3.14 */
+	/* Returns: RealExpr - the real expression */
+	[[nodiscard]] RealExpr parse_real_expr();
+
+	/* Parses a string expression */
+	/* E.g. 'str' */
+	/* Returns: StrExpr - the string expression */
+	[[nodiscard]] StrExpr parse_str_expr();
+
+	/* Parses a variable expression */
+	/* E.g. var_name */
+	/* Returns: VarExpr - the variable expression */
+	[[nodiscard]] VarExpr parse_var_expr();
+
+	/* Parses a unary operator expression */
+	/* E.g. -10 */
+	/* Returns: UnaryOpExpr - the unary operator expression */
+	[[nodiscard]] UnaryOpExpr parse_unary_op_expr();
+
+	/* Parses a field access expression */
+	/* E.g. jake.age */
+	/* Returns: FieldAccessExpr - the field access expression */
+	[[nodiscard]] FieldAccessExpr parse_field_access_expr();
+
+	/* Parses a list access expression */
+	/* E.g. list[1] */
+	/* E.g. list[1][1] */
+	/* Returns: ListAccessExpr - the list access expression */
+	[[nodiscard]] ListAccessExpr parse_list_access_expr();
+
+	/* Parses a function call expression */
+	/* E.g. func(10, 'str') */
+	/* Returns: FuncCallExpr - the function call expression */
+	[[nodiscard]] FuncCallExpr parse_func_call_expr();
+
+	/* Parses a user input expression */
+	/* E.g. USERINPUT */
+	/* Returns: UserInputExpr - the user input expression */
+	[[nodiscard]] UserInputExpr parse_user_input_expr();
+
+	/* Parses an object creation expression */
+	/* E.g. Human('Andrew', 25) */
+	/* Returns: ObjectCreationExpr - the object creation expression */
+	[[nodiscard]] ObjectCreationExpr parse_object_creation_expr();
+
+	/* Parses a standard library call expression to LEN() */
+	/* Returns: LenCallExpr - the LEN() function call expression */
+	[[nodiscard]] LenCallExpr parse_len_call_expr();
+
+	/* Parses a standard library call expression to POSITION() */
+	/* Returns: PositionCallExpr - the POSITION() function call expression */
+	[[nodiscard]] PositionCallExpr parse_position_call_expr();
+
+	/* Parses a standard library call expression to SUBSTRING() */
+	/* Returns: SubStrCallExpr - the SUBSTRING() function call expression */
+	[[nodiscard]] SubStrCallExpr parse_sub_str_call_expr();
+
+	/* Parses a standard library call expression to STRING_TO_INT() */
+	/* Returns: StrToIntCallExpr - the STRING_TO_INT() function call expression */
+	[[nodiscard]] StrToIntCallExpr parse_str_to_int_call_expr();
+
+	/* Parses a standard library call expression to STRING_TO_REAL() */
+	/* Returns: StrToRealCallExpr - the STRING_TO_REAL() function call expression */
+	[[nodiscard]] StrToRealCallExpr parse_str_to_real_call_expr();
+
+	/* Parses a standard library call expression to INT_TO_STRING() */
+	/* Returns: IntToStrCallExpr - the INT_TO_STRING() function call expression */
+	[[nodiscard]] IntToStrCallExpr parse_int_to_str_call_expr();
+
+	/* Parses a standard library call expression to REAL_TO_STRING() */
+	/* Returns: RealToStrCallExpr - the REAL_TO_STRING() function call expression */
+	[[nodiscard]] RealToStrCallExpr parse_real_to_str_call_expr();
+
+	/* Parses a standard library call expression to CHAR_TO_CODE() */
+	/* Returns: CharToCodeCallExpr - the CHAR_TO_CODE() function call expression */
+	[[nodiscard]] CharToCodeCallExpr parse_char_to_code_call_expr();
+
+	/* Parses a standard library call expression to CODE_TO_CHAR() */
+	/* Returns: CodeToCharCallExpr - the CODE_TO_CHAR() function call expression */
+	[[nodiscard]] CodeToCharCallExpr parse_code_to_char_call_expr();
+
+	/* Parses a standard library call expression to RANDOM_INT() */
+	/* Returns: RandomIntCallExpr - the RANDOM_INT() function call expression */
+	[[nodiscard]] RandomIntCallExpr parse_random_int_call_expr();
+
+	/* Parses a body until it encounters one of the stop tokens */
+	/* Param: const std::initializer_list<TokenType>& - list of stop tokens */
+	/* Returns: Body - the body construct */
+	[[nodiscard]] Body parse_body_until(const std::initializer_list<TokenType>& stop_tokens);
+
+	/* Parses field statements until it encounters one of the stop tokens */
+	/* Param: const std::initializer_list<TokenType>& - list of stop tokens */
+	/* Returns: FieldStmt - the record fields */
+	[[nodiscard]] Fields parse_fields_until(const std::initializer_list<TokenType>& stop_tokens);
+
+	/* Parses comma seperated expressions */
+	/* Returns: std::vector<Expr> - the parsed expressions */
+	[[nodiscard]] std::vector<Expr> parse_cse();
+
+	/* Determines the operator present at the current token index */
+	/* Returns: Operator - the operator present */
 	[[nodiscard]] Operator determine_op();
 
-	[[nodiscard]] bool is_bin_op(Token_Type token_type);
-	[[nodiscard]] bool is_unary(Token_Type token_type);
-	[[nodiscard]] bool is_record(const std::string_view name);
-	[[nodiscard]] bool is_stmt(Token_Type token_type);
-	[[nodiscard]] bool is_stdlib(const std::string_view name);
+	/* Peeks a certain distance away from the current token index */
+	/* Param: const std::size_t - distance to peek */
+	/* Returns: const Token& - token present at the peek position */
+	[[nodiscard]] const Token& peek(const std::size_t distance = 0) const;
+
+	/* Errors out if the token at peek position signifies end of file */
+	/* Param: const std::size_t - distance to peek */
+	/* Returns: Token - the token present at the peek position */
+	const Token& try_peek(const std::size_t distance = 0) const;
+
+	/* Consumes a number of tokens and adjusts the index accordingly */
+	/* Param: const std::size_t - distance to consume */
+	/* Returns: Token - token present at the new index position */
+	const Token& consume(const std::size_t distance = 1);
+
+	/* Errors out if the consumed token does not match the type specified */
+	/* Param: const TokenType - the type to check against */
+	/* Returns: Token - the token consumed */
+	const Token& try_consume(const TokenType type);
+
+	/* Removes variable for existing variables array */
+	/* Param: const std::string_view - the name of the variable */
 	void remove_var(const std::string_view name);
+
+	/* Checks whether a variable with a certain name is defined previously */
+	/* Param: const std::string_view - the name of the variable */
+	/* Returns: bool - whether the variable was defined previously */
 	[[nodiscard]] bool is_var_defined(const std::string_view name);
-	[[nodiscard]] VarStmt existing_vars_lookup(std::string_view name);
-	[[nodiscard]] FuncDeclStmt& existing_func_lookup(std::string_view name);
 
-	[[nodiscard]] Data_Type get_field_type_from_access(Token name, Token field);
+	/* Looks up an existing variable */
+	/* Param: const std::string_view - the name of the variable */
+	/* Returns: VarStmt* - the variable statement */
+	[[nodiscard]] VarStmt* existing_var_lookup(const std::string_view name);
 
-	[[nodiscard]] Data_Type tt_to_dt(Token_Type token_type);
-	[[nodiscard]] Data_Type tt_to_dt(Token token);
-	[[nodiscard]] Operator tt_to_op(Token_Type token_type);
+	/* Looks up an existing function */
+	/* Param: const std::string_view - the name of the function */
+	/* Returns: FuncDeclStmt* - the function declaration statement */
+	[[nodiscard]] FuncDeclStmt* existing_func_lookup(const std::string_view name);
 
-	[[nodiscard]] Token peek(std::size_t distance = 0);
-	Token eat(int distance = 1);
-	Token try_eat(Token_Type type);
+	/* Checks whether a record with the following name exists */
+	/* Param: const std::string_view - the name of suspected record */
+	/* Returns: bool - whether any record has the same name */
+	[[nodiscard]] bool is_record(const std::string_view name);
 
-	AST m_ast{};
-	std::vector<Token> m_tokens{};
-	std::size_t m_token_index{};
-	std::string m_source{};
+	/* Checks whether a standard library function with the following name exists */
+	/* Param: const std::string_view - the name of suspected standard library function */
+	/* Returns: bool - whether any standard library function has the same name */
+	[[nodiscard]] bool is_stdlib(const std::string_view name);
 
-	std::vector<VarStmt> m_existing_vars{};
-	std::vector<FuncDeclStmt> m_existing_funcs{};
-	std::vector<RecordStmt> m_existing_records{};
+	/* Checks whether the token type indicates a statement */
+	/* Param: const TokenType - the type of the token */
+	/* Returns: bool - whether the token type indicates a statement */
+	[[nodiscard]] bool is_stmt(const TokenType token_type);
 
-	std::vector<std::pair<Expr*, std::string>> m_unresolved_exprs{};
-	std::vector<std::pair<Expr*, Expr*>> m_unresolved_decls{};
-	std::string m_last_func_call_name{};
+	/* Deduces function declaration parameter types from an argument list */
+	/* Param: const std::string_view - the name of the function */
+	/* Param: const Args& - the argument list */
+	void deduce_func_decl_param_types_from_args(const std::string_view name, const Args& args);
 
-	std::vector<std::size_t> m_var_scope_stack{};
+	/* Deduces expression data type from a given token */
+	/* Param: const Token - the token to deduce from */
+	/* Returns: DataType - the data type deduced */
+	[[nodiscard]] DataType deduce_expr_type(const Token token);
+
+	/* Gets a particular field data type from a field access expression */
+	/* Param: const Token - the token containing the variable name */
+	/* Param: const Token - the token containing the field name */
+	/* Returns: DataType - the field data type */
+	[[nodiscard]] DataType deduce_field_type_from_access(const Token name, const Token field);
+
+	/* Returns the corresponding data type equivalent for a particular token type */
+	/* Param: const Token - the token containing it's value and type information */
+	/* Returns: DataType - the data type equivalent */
+	[[nodiscard]] DataType tt_to_dt(const Token token);
+
+	/* Checks whether a token type indicates the presence of a binary operator */
+	/* Param: const TokenType - the token type */
+	/* Returns: bool - whether the token type indicated the presence of a binary operator */
+	[[nodiscard]] bool is_bin_op(const TokenType token_type);
+
+	/* Checks whether a token type indicates the presence of a unary operator */
+	/* Param: const TokenType - the token type */
+	/* Returns: bool - whether the token type indicated the presence of a unary operator */
+	[[nodiscard]] bool is_unary(const TokenType token_type);
+
+	/* Populates the existing function array with the standard library functions */
+	void populate_stdlib_funcs();
+
+	/* Adds a certain standard library function to the existing functions list */
+	/* Param: const std::string_view - the name of the function */
+	/* const std::initializer_list<DataType>& param_types - the types of the function's parameters in order */
+	/* const DataType - the return type for the function */
+	void add_stdlib_func(const std::string_view name, const std::initializer_list<DataType>& param_types, const DataType return_type);
+
+	/* Variables */
+
+	AST m_ast{}; /* Holds the AST representation */
+
+	std::vector<Token> m_tokens{}; /* Token stream created by lexer */
+	std::size_t m_token_index{}; /* Current index in the token stream */
+
+	std::string m_source{}; /* The source contents */
+	std::string m_source_path{}; /* The source file path */
+
+	[[maybe_unused]] std::vector<std::unique_ptr<VarStmt>> m_existing_vars{}; /* A dynamic array of existing variable */
+	[[maybe_unused]] std::vector<std::unique_ptr<FuncDeclStmt>> m_existing_funcs{}; /* A dynamic array of existing function */
+	[[maybe_unused]] std::vector<std::unique_ptr<RecordStmt>> m_existing_records{}; /* A dynamic array of existing record */
+
+	/* A dynamic array of a pair of unresolved expression */
+	[[maybe_unused]] std::vector<std::pair<std::unique_ptr<Expr>, std::unique_ptr<Expr>>> m_unresolved_exprs{};
+
+	[[maybe_unused]] Stack<std::size_t> m_var_scope_stack{}; /* An index stack, used to manage variable scopes */
 };
 
 #endif

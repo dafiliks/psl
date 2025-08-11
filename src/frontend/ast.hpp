@@ -6,14 +6,14 @@
 #include <string>
 #include <memory>
 
-enum class Data_Type {
+enum class DataType {
+	UNRESOLVED,
 	INT,
 	STRING,
 	REAL,
 	CHAR,
 	NONE,
 	USER_DEFINED_TYPE,
-	UNRESOLVED,
 };
 
 enum class Operator {
@@ -44,9 +44,9 @@ struct AtomExpr;
 
 struct VarStmt {
 	std::string m_name{};
-	std::shared_ptr<Expr> m_expr{};
+	std::unique_ptr<Expr> m_expr{};
 
-	[[maybe_unused]] std::shared_ptr<Expr> m_previous_expr{};
+	[[maybe_unused]] std::unique_ptr<Expr> m_previous_expr{};
 
 	bool m_is_constant{};
 	bool m_is_reassignment{};
@@ -59,7 +59,7 @@ struct VarStmt {
 
 struct Param {
 	std::string m_name{};
-	Data_Type m_type{};
+	DataType m_type{};
 };
 
 struct Params {
@@ -71,7 +71,7 @@ struct Args {
 };
 
 struct Return {
-	std::shared_ptr<Expr> m_return_expr{};
+	std::unique_ptr<Expr> m_return_expr{};
 };
 
 struct OutputStmt {
@@ -82,7 +82,7 @@ struct FuncDeclStmt {
 	std::string m_name{};
 	Params m_params{};
 	std::size_t m_token_index_start{};
-	std::shared_ptr<Body> m_body{};
+	std::unique_ptr<Body> m_body{};
 	Return m_return{};
 	bool m_is_void{true};
 	bool m_is_called{false};
@@ -94,63 +94,68 @@ struct FuncCallStmt {
 };
 
 struct RepeatUntilStmt {
-	std::shared_ptr<Expr> m_condition_expr{};
-	std::shared_ptr<Body> m_body{};
+	std::unique_ptr<Expr> m_condition_expr{};
+	std::unique_ptr<Body> m_body{};
 };
 
 struct WhileStmt {
-	std::shared_ptr<Expr> m_condition_expr{};
-	std::shared_ptr<Body> m_body{};
+	std::unique_ptr<Expr> m_condition_expr{};
+	std::unique_ptr<Body> m_body{};
 };
 
 struct IfStmt {
-	std::shared_ptr<Expr> m_condition_expr{};
-	std::shared_ptr<Body> m_body{};
+	std::unique_ptr<Expr> m_condition_expr{};
+	std::unique_ptr<Body> m_body{};
 };
 
 struct ElseIfStmt {
-	std::shared_ptr<Expr> m_condition_expr{};
-	std::shared_ptr<Body> m_body{};
+	std::unique_ptr<Expr> m_condition_expr{};
+	std::unique_ptr<Body> m_body{};
 };
 
 struct ElseStmt {
-	std::shared_ptr<Body> m_body{};
+	std::unique_ptr<Body> m_body{};
 };
 
 struct ForToStmt {
 	VarStmt m_var_stmt{};
-	std::shared_ptr<Expr> m_boundary{};
-	std::shared_ptr<Expr> m_step{};
-	std::shared_ptr<Body> m_body{};
+	std::unique_ptr<Expr> m_boundary{};
+	std::unique_ptr<Expr> m_step{};
+	std::unique_ptr<Body> m_body{};
 };
 
 struct ForInStmt {
-	std::string m_declaration{};
-	std::shared_ptr<Expr> m_range{};
-	std::shared_ptr<Body> m_body{};
+	std::unique_ptr<VarStmt> m_declaration{};
+	std::unique_ptr<Expr> m_range{};
+	std::unique_ptr<Body> m_body{};
 };
 
 struct ListAccessStmt {
 	std::string m_name{};
-	std::shared_ptr<Expr> m_row{};
-	std::shared_ptr<Expr> m_col{};
-	std::shared_ptr<Expr> m_expr{};
+	std::unique_ptr<Expr> m_row{};
+	std::unique_ptr<Expr> m_col{};
+	std::unique_ptr<Expr> m_expr{};
 };
 
 struct FieldStmt {
 	std::string m_name{};
-	Data_Type m_type{};
+	DataType m_type{};
+};
+
+struct Fields
+{
+	std::vector<FieldStmt> m_fields{};
 };
 
 struct RecordStmt {
 	std::string m_name{};
-	std::vector<FieldStmt> m_fields{};
+	Fields m_fields{};
 };
 
 struct FieldAccessStmt {
 	std::string m_name{};
 	std::string m_field_name{};
-	std::shared_ptr<Expr> m_expr{};
+	std::unique_ptr<Expr> m_expr{};
 };
 
 struct Stmt {
@@ -189,53 +194,53 @@ struct FuncCallExpr {
 };
 
 struct LenCallExpr {
-	std::shared_ptr<Expr> m_expr{};
+	std::unique_ptr<Expr> m_expr{};
 };
 
 struct PositionCallExpr {
-	std::shared_ptr<Expr> m_str_expr{};
-	std::shared_ptr<Expr> m_char_expr{};
+	std::unique_ptr<Expr> m_str_expr{};
+	std::unique_ptr<Expr> m_char_expr{};
 };
 
 struct SubStrCallExpr {
-	std::shared_ptr<Expr> m_num1_expr{};
-	std::shared_ptr<Expr> m_num2_expr{};
-	std::shared_ptr<Expr> m_str_expr{};
+	std::unique_ptr<Expr> m_num1_expr{};
+	std::unique_ptr<Expr> m_num2_expr{};
+	std::unique_ptr<Expr> m_str_expr{};
 };
 
 struct StrToIntCallExpr {
-	std::shared_ptr<Expr> m_str_expr{};
+	std::unique_ptr<Expr> m_str_expr{};
 };
 
 struct StrToRealCallExpr {
-	std::shared_ptr<Expr> m_str_expr{};
+	std::unique_ptr<Expr> m_str_expr{};
 };
 
 struct IntToStrCallExpr {
-	std::shared_ptr<Expr> m_int_expr{};
+	std::unique_ptr<Expr> m_int_expr{};
 };
 
 struct RealToStrCallExpr {
-	std::shared_ptr<Expr> m_real_expr{};
+	std::unique_ptr<Expr> m_real_expr{};
 };
 
 struct CharToCodeCallExpr {
-	std::shared_ptr<Expr> m_char_expr{};
+	std::unique_ptr<Expr> m_char_expr{};
 };
 
 struct CodeToCharCallExpr {
-	std::shared_ptr<Expr> m_int_expr{};
+	std::unique_ptr<Expr> m_int_expr{};
 };
 
 struct RandomIntCallExpr {
-	std::shared_ptr<Expr> m_int1_expr{};
-	std::shared_ptr<Expr> m_int2_expr{};
+	std::unique_ptr<Expr> m_int1_expr{};
+	std::unique_ptr<Expr> m_int2_expr{};
 };
 
 struct ListAccessExpr {
 	std::string m_name{};
-	std::shared_ptr<Expr> m_row{};
-	std::shared_ptr<Expr> m_col{};
+	std::unique_ptr<Expr> m_row{};
+	std::unique_ptr<Expr> m_col{};
 };
 
 struct FieldAccessExpr {
@@ -257,18 +262,18 @@ struct AtomExpr {
 };
 
 struct BinOpExpr {
-	std::shared_ptr<Expr> m_lhs{};
-	std::shared_ptr<Expr> m_rhs{};
+	std::unique_ptr<Expr> m_lhs{};
+	std::unique_ptr<Expr> m_rhs{};
 	Operator m_op{};
 };
 
 struct UnaryOpExpr {
-	std::shared_ptr<Expr> m_unary_expr{};
+	std::unique_ptr<Expr> m_unary_expr{};
 	Operator m_op{};
 };
 
 struct ParenExpr {
-	std::shared_ptr<Expr> m_expr{};
+	std::unique_ptr<Expr> m_expr{};
 };
 
 struct ListExpr {
@@ -277,7 +282,7 @@ struct ListExpr {
 
 struct Expr {
 	std::variant<AtomExpr, BinOpExpr, UnaryOpExpr, ParenExpr, ListExpr> m_expr{};
-	Data_Type m_type{};
+	DataType m_type{};
 };
 
 struct AST {

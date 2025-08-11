@@ -1,6 +1,6 @@
 #include <fstream>
 #include <cctype>
-#include <limits>
+#include <filesystem>
 #include <algorithm>
 #include <iostream>
 #include <variant>
@@ -10,12 +10,23 @@
 #include "../utils/error.hpp"
 #include "../frontend/parser.hpp"
 
-Generator::Generator(Parser &parser) : m_ast(parser.get_ast()), m_source(parser.get_source()),
+Generator::Generator(Parser &parser) : m_ast(parser.get_ast()), m_source(parser.get_source()), m_source_path(parser.get_source_path()),
                                        m_existing_vars(parser.get_existing_vars()), m_existing_funcs(parser.get_existing_funcs()),
                                        m_existing_records(parser.get_existing_records()) {}
 
-void Generator::gen(const std::string &cpp_output_path)
+void Generator::execute()
 {
+	/* Executes the gen() function */
+	gen();
+}
+
+void Generator::gen()
+{
+	const std::string cpp_output_path
+	{
+		std::filesystem::path{m_source_path}.replace_extension(std::filesystem::path{".cpp"})
+	};
+
 	change_stream(m_main_stream);
 
 	*m_current_stream << "int main()\n";
@@ -125,7 +136,7 @@ void Generator::gen_stmt(const Stmt &stmt)
 			*gen.m_current_stream << func_decl_stmt.m_name;
 			*gen.m_current_stream << "(";
 
-			gen.gen_params(func_decl_stmt.m_params);
+			gen.gen_params(table_func_decl_stmt.m_params);
 
 			*gen.m_current_stream << ")\n";
 			*gen.m_current_stream << "{\n";
@@ -234,14 +245,14 @@ void Generator::gen_stmt(const Stmt &stmt)
 			*gen.m_current_stream << "for (";
 
 			gen.check_var_not_list(for_to_stmt.m_var_stmt);
-			gen.check_expr_is_type(*for_to_stmt.m_var_stmt.m_expr, Data_Type::INT);
+			gen.check_expr_is_type(*for_to_stmt.m_var_stmt.m_expr, DataType::INT);
 			gen.gen_stmt(Stmt{for_to_stmt.m_var_stmt});
 
 			*gen.m_current_stream << " ";
 
 			*gen.m_current_stream << for_to_stmt.m_var_stmt.m_name << " < ";
 
-			gen.check_expr_is_type(*for_to_stmt.m_boundary, Data_Type::INT);
+			gen.check_expr_is_type(*for_to_stmt.m_boundary, DataType::INT);
 			gen.gen_expr(*for_to_stmt.m_boundary);
 
 			*gen.m_current_stream << " + 1";
@@ -251,7 +262,7 @@ void Generator::gen_stmt(const Stmt &stmt)
 
 			if (for_to_stmt.m_step)
 			{
-				gen.check_expr_is_type(*for_to_stmt.m_step, Data_Type::INT);
+				gen.check_expr_is_type(*for_to_stmt.m_step, DataType::INT);
 				gen.gen_expr(*for_to_stmt.m_step);
 			}
 			else
@@ -278,8 +289,8 @@ void Generator::gen_stmt(const Stmt &stmt)
 
 			*gen.m_current_stream << " : ";
 
-			gen.check_expr_is_not_type(*for_in_stmt.m_range, Data_Type::INT);
-			gen.check_expr_is_not_type(*for_in_stmt.m_range, Data_Type::REAL);
+			gen.check_expr_is_not_type(*for_in_stmt.m_range, DataType::INT);
+			gen.check_expr_is_not_type(*for_in_stmt.m_range, DataType::REAL);
 			gen.gen_expr(*for_in_stmt.m_range);
 
 			*gen.m_current_stream << ")\n";
@@ -292,13 +303,14 @@ void Generator::gen_stmt(const Stmt &stmt)
 			*gen.m_current_stream << "	";
 			*gen.m_current_stream << "}\n";
 		}
+		
 
 		void operator()(const ListAccessStmt& list_access_stmt)
 		{
 			*gen.m_current_stream << list_access_stmt.m_name;
 			*gen.m_current_stream << "[";
 
-			gen.check_expr_is_type(*list_access_stmt.m_row, Data_Type::INT);
+			gen.check_expr_is_type(*list_access_stmt.m_row, DataType::INT);
 			gen.gen_expr(*list_access_stmt.m_row);
 
 			*gen.m_current_stream << "]";
@@ -307,7 +319,7 @@ void Generator::gen_stmt(const Stmt &stmt)
 			{
 				*gen.m_current_stream << "[";
 
-				gen.check_expr_is_type(*list_access_stmt.m_col, Data_Type::INT);
+				gen.check_expr_is_type(*list_access_stmt.m_col, DataType::INT);
 				gen.gen_expr(*list_access_stmt.m_col);
 
 				*gen.m_current_stream << "]";
@@ -374,22 +386,23 @@ void Generator::gen_stmt(const Stmt &stmt)
 	std::visit(stmt_visitor, stmt.m_stmt);
 }
 
-void Generator::gen_type(const Data_Type &type)
+void Generator::gen_type(const DataType &type)
 {
 	switch (type)
 	{
-	case (Data_Type::REAL):
+	case (DataType::REAL):
 		*m_current_stream << "double";
 		break;
-	case (Data_Type::INT):
+	case (DataType::INT):
 		*m_current_stream << "int";
 		break;
-	case (Data_Type::STRING):
+	case (DataType::STRING):
 		require_lib("string");
 		*m_current_stream << "std::string";
 		break;
-	case (Data_Type::USER_DEFINED_TYPE):
-	case (Data_Type::NONE):
+	case (DataType::USER_DEFINED_TYPE):
+	case (DataType::UNRESOLVED):
+	case (DataType::NONE):
 		*m_current_stream << "auto";
 		break;
 	default:
@@ -410,8 +423,8 @@ void Generator::gen_expr(const Expr &expr)
 
 		void operator()(const BinOpExpr &bin_op_expr)
 		{
-			const Data_Type &type1{bin_op_expr.m_lhs->m_type};
-			const Data_Type &type2{bin_op_expr.m_rhs->m_type};
+			const DataType &type1{bin_op_expr.m_lhs->m_type};
+			const DataType &type2{bin_op_expr.m_rhs->m_type};
 
 			if (bin_op_expr.m_op != Operator::AND && bin_op_expr.m_op != Operator::OR)
 			{
@@ -464,7 +477,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 		void operator()(const StrExpr &str_expr)
 		{
 			gen.require_lib("string");
-			*gen.m_current_stream << "std::string(" << str_expr.m_value << ")";
+			*gen.m_current_stream << "std::string(\"" << str_expr.m_value << "\")";
 		}
 
 		void operator()(const IntExpr &int_expr)
@@ -519,13 +532,13 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 		{
 			*gen.m_current_stream << "(";
 
-			gen.check_expr_is_type(*position_call_expr.m_str_expr, Data_Type::STRING);
+			gen.check_expr_is_type(*position_call_expr.m_str_expr, DataType::STRING);
 			gen.gen_expr(*position_call_expr.m_str_expr);
 
 			*gen.m_current_stream << ")";
 			*gen.m_current_stream << ".find(";
 
-			gen.check_expr_is_type(*position_call_expr.m_char_expr, Data_Type::STRING);
+			gen.check_expr_is_type(*position_call_expr.m_char_expr, DataType::STRING);
 			gen.gen_expr(*position_call_expr.m_char_expr);
 
 			*gen.m_current_stream << ")";
@@ -535,18 +548,18 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 		{
 			*gen.m_current_stream << "(";
 
-			gen.check_expr_is_type(*sub_str_call_expr.m_str_expr, Data_Type::STRING);
+			gen.check_expr_is_type(*sub_str_call_expr.m_str_expr, DataType::STRING);
 			gen.gen_expr(*sub_str_call_expr.m_str_expr);
 
 			*gen.m_current_stream << ")";
 			*gen.m_current_stream << ".substr(";
 
-			gen.check_expr_is_type(*sub_str_call_expr.m_num1_expr, Data_Type::INT);
+			gen.check_expr_is_type(*sub_str_call_expr.m_num1_expr, DataType::INT);
 			gen.gen_expr(*sub_str_call_expr.m_num1_expr);
 
 			*gen.m_current_stream << ", ";
 
-			gen.check_expr_is_type(*sub_str_call_expr.m_num2_expr, Data_Type::INT);
+			gen.check_expr_is_type(*sub_str_call_expr.m_num2_expr, DataType::INT);
 			gen.gen_expr(*sub_str_call_expr.m_num2_expr);
 
 			*gen.m_current_stream << " - 1";
@@ -557,7 +570,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 		{
 			*gen.m_current_stream << "std::stoi(";
 
-			gen.check_expr_is_type(*str_to_int_call_expr.m_str_expr, Data_Type::STRING);
+			gen.check_expr_is_type(*str_to_int_call_expr.m_str_expr, DataType::STRING);
 			gen.gen_expr(*str_to_int_call_expr.m_str_expr);
 
 			*gen.m_current_stream << ")";
@@ -567,7 +580,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 		{
 			*gen.m_current_stream << "std::stod(";
 
-			gen.check_expr_is_type(*str_to_real_call_expr.m_str_expr, Data_Type::STRING);
+			gen.check_expr_is_type(*str_to_real_call_expr.m_str_expr, DataType::STRING);
 			gen.gen_expr(*str_to_real_call_expr.m_str_expr);
 
 			*gen.m_current_stream << ")";
@@ -577,7 +590,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 		{
 			*gen.m_current_stream << "std::to_string(";
 
-			gen.check_expr_is_type(*int_to_str_call_expr.m_int_expr, Data_Type::INT);
+			gen.check_expr_is_type(*int_to_str_call_expr.m_int_expr, DataType::INT);
 			gen.gen_expr(*int_to_str_call_expr.m_int_expr);
 
 			*gen.m_current_stream << ")";
@@ -587,7 +600,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 		{
 			*gen.m_current_stream << "std::to_string(";
 
-			gen.check_expr_is_type(*real_to_str_call_expr.m_real_expr, Data_Type::REAL);
+			gen.check_expr_is_type(*real_to_str_call_expr.m_real_expr, DataType::REAL);
 			gen.gen_expr(*real_to_str_call_expr.m_real_expr);
 
 			*gen.m_current_stream << ")";
@@ -597,7 +610,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 		{
 			*gen.m_current_stream << "static_cast<int>((";
 
-			gen.check_expr_is_type(*char_to_code_call_expr.m_char_expr, Data_Type::CHAR);
+			gen.check_expr_is_type(*char_to_code_call_expr.m_char_expr, DataType::CHAR);
 			gen.gen_expr(*char_to_code_call_expr.m_char_expr);
 
 			*gen.m_current_stream << ").at(0)";
@@ -608,7 +621,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 		{
 			*gen.m_current_stream << "static_cast<char>(";
 
-			gen.check_expr_is_type(*code_to_char_call_expr.m_int_expr, Data_Type::INT);
+			gen.check_expr_is_type(*code_to_char_call_expr.m_int_expr, DataType::INT);
 			gen.gen_expr(*code_to_char_call_expr.m_int_expr);
 
 			*gen.m_current_stream << ")";
@@ -634,12 +647,12 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 
 			*gen.m_current_stream << "RANDOM_INT(";
 
-			gen.check_expr_is_type(*random_int_call_expr.m_int1_expr, Data_Type::INT);
+			gen.check_expr_is_type(*random_int_call_expr.m_int1_expr, DataType::INT);
 			gen.gen_expr(*random_int_call_expr.m_int1_expr);
 
 			*gen.m_current_stream << ", ";
 
-			gen.check_expr_is_type(*random_int_call_expr.m_int2_expr, Data_Type::INT);
+			gen.check_expr_is_type(*random_int_call_expr.m_int2_expr, DataType::INT);
 			gen.gen_expr(*random_int_call_expr.m_int2_expr);
 
 			*gen.m_current_stream << ")";
@@ -651,7 +664,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 
 			*gen.m_current_stream << "[";
 
-			gen.check_expr_is_type(*list_access_expr.m_row, Data_Type::INT);
+			gen.check_expr_is_type(*list_access_expr.m_row, DataType::INT);
 			gen.gen_expr(*list_access_expr.m_row);
 
 			*gen.m_current_stream << "]";
@@ -660,7 +673,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 			{
 				*gen.m_current_stream << "[";
 
-				gen.check_expr_is_type(*list_access_expr.m_row, Data_Type::INT);
+				gen.check_expr_is_type(*list_access_expr.m_row, DataType::INT);
 				gen.gen_expr(*list_access_expr.m_col);
 
 				*gen.m_current_stream << "]";
@@ -755,7 +768,7 @@ void Generator::gen_params(const Params &params)
 {
 	for (std::size_t i{0}; i < params.m_params.size(); i++)
 	{
-		gen_type(existing_param_lookup(params.m_params[i].m_name).m_type);
+		gen_type(params.m_params[i].m_type);
 
 		*m_current_stream << " ";
 		*m_current_stream << params.m_params[i].m_name;
@@ -771,7 +784,7 @@ void Generator::gen_output_stmt_args(const Args &args)
 {
 	for (std::size_t i{0}; i < args.m_exprs.size(); i++)
 	{
-		check_expr_is_not_type(args.m_exprs[i], Data_Type::USER_DEFINED_TYPE);
+		check_expr_is_not_type(args.m_exprs[i], DataType::USER_DEFINED_TYPE);
 		gen_expr(args.m_exprs[i]);
 
 		if (i < args.m_exprs.size() - 1)
@@ -813,7 +826,7 @@ void Generator::gen_fields(const RecordStmt& record_stmt)
 	}
 }
 
-Data_Type Generator::get_field_type_from_access(const FieldAccessStmt& field_access_stmt)
+DataType Generator::get_field_type_from_access(const FieldAccessStmt& field_access_stmt)
 {
 	const std::string_view record_name{existing_var_lookup(field_access_stmt.m_name).m_record_name};
 
@@ -832,9 +845,9 @@ Data_Type Generator::get_field_type_from_access(const FieldAccessStmt& field_acc
 	}
 }
 
-void Generator::type_check(const Data_Type &type1, const Data_Type &type2)
+void Generator::type_check(const DataType &type1, const DataType &type2)
 {
-	if (type1 != type2 || type1 == Data_Type::USER_DEFINED_TYPE && type2 == Data_Type::USER_DEFINED_TYPE)
+	if (type1 != type2 || type1 == DataType::USER_DEFINED_TYPE && type2 == DataType::USER_DEFINED_TYPE)
 	{
 		gen_error_l("type mismatch");
 	}
@@ -870,7 +883,7 @@ void Generator::type_check_record_args(const ObjectCreationExpr& object_creation
 
 void Generator::type_check_list(const ListExpr& list_expr) const
 {
-	Data_Type list_type{list_expr.m_exprs[0].m_type};
+	DataType list_type{list_expr.m_exprs[0].m_type};
 
 	for (const auto& i : list_expr.m_exprs)
 	{
@@ -881,15 +894,15 @@ void Generator::type_check_list(const ListExpr& list_expr) const
 	}
 }
 
-void Generator::op_check(const Data_Type &type1, const Operator &op, const Data_Type &type2)
+void Generator::op_check(const DataType &type1, const Operator &op, const DataType &type2)
 {
-	if (type1 == Data_Type::STRING && type2 == Data_Type::STRING && op != Operator::PLUS &&
+	if (type1 == DataType::STRING && type2 == DataType::STRING && op != Operator::PLUS &&
 		op != Operator::EQUALS && op != Operator::NOT_EQUALS)
 	{
 		gen_error_l("only concatenation can be performed between strings");
 	}
 
-	if (type1 == Data_Type::REAL && type2 == Data_Type::REAL && op == Operator::MOD)
+	if (type1 == DataType::REAL && type2 == DataType::REAL && op == Operator::MOD)
 	{
 		gen_error_l("mod can only be performed between ints, not reals");
 	}
@@ -1087,17 +1100,17 @@ void Generator::check_var_not_list(const VarStmt& var_stmt) const
 	}
 }
 
-void Generator::check_expr_is_type(const Expr &expr, const Data_Type data_type)
+void Generator::check_expr_is_type(const Expr &expr, const DataType DataType)
 {
-	if (expr.m_type != data_type)
+	if (expr.m_type != DataType)
 	{
 		gen_error_l("expr doesn't eval to correct data type");
 	}
 }
 
-void Generator::check_expr_is_not_type(const Expr& expr, Data_Type data_type) const
+void Generator::check_expr_is_not_type(const Expr& expr, DataType DataType) const
 {
-	if (expr.m_type == data_type)
+	if (expr.m_type == DataType)
 	{
 		gen_error_l("cannot be that data type");
 	}
@@ -1105,7 +1118,7 @@ void Generator::check_expr_is_not_type(const Expr& expr, Data_Type data_type) co
 
 void Generator::check_expr_is_not_str(const Expr &expr)
 {
-	if (expr.m_type == Data_Type::STRING)
+	if (expr.m_type == DataType::STRING)
 	{
 		gen_error_l("expr cannot be string");
 	}

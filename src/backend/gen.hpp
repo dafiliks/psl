@@ -7,19 +7,20 @@
 
 #include "../frontend/parser.hpp"
 #include "../frontend/ast.hpp"
+#include "../compiler/compilation_stage.hpp"
 
-#define gen_error_s(a, b, c) \
-	Error { a, b, c, m_source }
-#define gen_error_l(a) \
-	Error { a }
-
-class Generator
+/* The main generator class, responsible for converting the valid AST into a C++20 source file */
+/* Due to the nature of AQA pseudocode, semantic analysis is performed here */
+/* Inherits from CompilationStage as code generation is a compilation stage */
+class Generator : public CompilationStage
 {
 public:
 	Generator() = default;
 	explicit Generator(Parser &parser);
 
-	void gen(const std::string &cpp_output_path);
+	void execute() override;
+
+	void gen();
 
 private:
 	void gen_stmt(const Stmt &stmt);
@@ -98,6 +99,7 @@ private:
 
 	std::ofstream m_output_file{};
 	std::string m_source{};
+	std::string m_source_path{};
 
 	std::ostringstream m_lib_stream{};
 	std::ostringstream m_record_stream{};

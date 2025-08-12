@@ -1017,7 +1017,7 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 		*lhs = Expr{parse_unary_op_expr(), lhs->m_type};
 	}
 
-	/* If the current token is an IDENTIFIER or a standard library function */
+	/* If the current and next token suggest a function call expression, a record, or a standard library function */
 	else if (peek().m_type == TokenType::IDENTIFIER && try_peek(1).m_type == TokenType::O_PAREN || is_stdlib(peek().m_value))
 	{
 		/* If the current token has a value that matches a record name */

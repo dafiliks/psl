@@ -5,6 +5,7 @@
 #define ERROR_HPP
 
 #include <string>
+#include <iostream>
 
 /* Enum class of all the possible error stages for the PsL compiler */
 enum class ErrorType

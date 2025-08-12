@@ -2,7 +2,6 @@
 /* The compilation targets implementation for the PsL compiler */
 
 #include "compilation_targets.hpp"
-#include "../utils/error_types.hpp"
 
 CompilationTarget::CompilationTarget(const OutputTarget& target)
 : m_target(target) /* Initialize output target */ {}

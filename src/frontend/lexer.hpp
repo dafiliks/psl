@@ -7,9 +7,13 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <cctype>
+#include <cstring>
+#include <cassert>
 
 #include "../utils/cliargs.hpp"
 #include "../compiler/compilation_stage.hpp"
+#include "../utils/error_types.hpp"
 
 /* Enum class of all the token types used in AQA pseudocode */
 enum class TokenType

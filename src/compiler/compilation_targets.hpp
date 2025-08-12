@@ -6,6 +6,8 @@
 
 #include <string>
 
+#include "../utils/error_types.hpp"
+
 /* Enum class of all the possible output format targets */
 enum class OutputTarget
 {

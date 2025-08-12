@@ -1,17 +1,12 @@
 /* frontend/parser.cpp by David Filiks */
 /* The parser implementation for the PsL compiler */
 
-#include <cassert>
-#include <algorithm>
-#include <memory>
-
 #include "parser.hpp"
-#include "lexer.hpp"
-#include "ast.hpp"
-#include "../utils/error_types.hpp"
 
 Parser::Parser(const Lexer& lexer)
-: m_tokens(lexer.get_tokens()), m_source(lexer.get_source()), m_source_path(lexer.get_source_path()) /* Initialize private members */ {}
+: m_tokens(lexer.get_tokens()),
+  m_source(lexer.get_source()),
+  m_source_path(lexer.get_source_path()) /* Initialize private members */ {}
 
 void Parser::execute()
 {
@@ -60,24 +55,29 @@ void Parser::parse()
 	return m_source_path; /* Return the source path */
 }
 
-[[nodiscard]] const std::vector<std::unique_ptr<VarStmt>>& Parser::get_existing_vars() const
+[[nodiscard]] const std::vector<std::shared_ptr<VarStmt>>& Parser::get_existing_vars() const
 {
 	return m_existing_vars; /* Return the existing variables list */
 }
 
-[[nodiscard]] const std::vector<std::unique_ptr<FuncDeclStmt>>& Parser::get_existing_funcs() const
+[[nodiscard]] const std::vector<std::shared_ptr<FuncDeclStmt>>& Parser::get_existing_funcs() const
 {
 	return m_existing_funcs; /* Return the existing functions list */
 }
 
-[[nodiscard]] const std::vector<std::unique_ptr<RecordStmt>>& Parser::get_existing_records() const
+[[nodiscard]] const std::vector<std::shared_ptr<RecordStmt>>& Parser::get_existing_records() const
 {
 	return m_existing_records; /* Return the existing records list */
 }
 
-[[nodiscard]] const std::vector<std::pair<std::unique_ptr<Expr>, std::unique_ptr<Expr>>>& Parser::get_unresolved_exprs() const
+[[nodiscard]] const std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>>& Parser::get_unresolved_exprs() const
 {
 	return m_unresolved_exprs; /* Return the unresolved expressions list */
+}
+
+[[nodiscard]] const std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>>& Parser::get_unresolved_decls() const
+{
+	return m_unresolved_exprs; /* Return the unresolved declarations list */
 }
 
 [[nodiscard]] const Stack<std::size_t>& Parser::get_var_scope_stack() const
@@ -87,8 +87,6 @@ void Parser::parse()
 
 [[nodiscard]] Stmt Parser::parse_stmt()
 {
-	/* No need to try_peek() here as if control flow reaches this function, it means that peek() is valid */
-
 	/* Switch through all statements we can deduce from only peeking at the current token */
 	switch (peek().m_type)
 	{
@@ -96,8 +94,7 @@ void Parser::parse()
 		case (TokenType::CONSTANT):
 			/* Parse the remainder as a variable statement */
 			/* This is because only variables can be prefixed with CONSTANT */
-			/* Uses std::move() because VarStmt contains non-copyable unique_ptrs */
-			return Stmt{std::move(parse_var_stmt())};
+			return Stmt{parse_var_stmt()};
 
 		/* If the current token type is REPEAT */
 		case (TokenType::REPEAT):
@@ -127,11 +124,12 @@ void Parser::parse()
 		/* If the current token type is SUB_ROUTINE */
 		case (TokenType::SUB_ROUTINE):
 			/* Parse the remainder as a function declaration statement */
-			/* Uses std::move() because FuncDeclStmt contains non-copyable unique_ptrs */
-			return Stmt{std::move(parse_func_decl_stmt())};
+			return Stmt{parse_func_decl_stmt()};
 
 		/* In the case of no matches */
-		default: /* Fall through in order to possibly deduce using more tokens */
+		default:
+			/* Fall through in order to possibly deduce using more tokens */
+			break;
 	}
 
 	/* Try to peek one token ahead, checking it's not end of file */
@@ -161,8 +159,7 @@ void Parser::parse()
 			/* If the next token is LESS_THAN */
 			case (TokenType::LESS_THAN):
 				/* Parse the remainder as a variable statement */
-				/* Uses std::move() because VarStmt contains non-copyable unique_ptrs */
-				return Stmt{std::move(parse_var_stmt())};
+				return Stmt{parse_var_stmt()};
 
 			/* If the next token is O_PAREN */
 			case (TokenType::O_PAREN):
@@ -170,7 +167,8 @@ void Parser::parse()
 				return Stmt{parse_func_call_stmt()};
 
 			/* In the case of no matches */
-			default: /* Fall through to error */
+			default:
+				break; /* Fall through to error */
 		}
 	}
 
@@ -228,10 +226,10 @@ void Parser::parse()
 	return Stmt{};
 }
 
-[[nodiscard]] VarStmt& Parser::parse_var_stmt()
+[[nodiscard]] VarStmt Parser::parse_var_stmt()
 {
 	/* Create a new variable statement pointer */
-	std::unique_ptr<VarStmt> var_stmt{std::make_unique<VarStmt>()};
+	std::shared_ptr<VarStmt> var_stmt{std::make_shared<VarStmt>()};
 
 	/* If the current token type is CONSTANT */
 	if (peek().m_type == TokenType::CONSTANT)
@@ -306,13 +304,13 @@ void Parser::parse()
 		}
 
 		/* Set the previous variable expression to the existing variable's current expression */
-		var_stmt->m_previous_expr = std::make_unique<Expr>(existing_var_lookup(var_stmt->m_name)->m_expr);
+		var_stmt->m_previous_expr = existing_var_lookup(var_stmt->m_name)->m_expr;
 
 		/* Set reassignment boolean to true, which helps in the generation stage */
 		var_stmt->m_is_reassignment = true;
 
 		/* Parse and set the new variable expression */
-		var_stmt->m_expr = std::make_unique<Expr>(parse_expr());
+		var_stmt->m_expr = parse_expr();
 
 		/* Return the variable statement */
 		return *var_stmt;
@@ -322,10 +320,10 @@ void Parser::parse()
 	else
 	{
 		/* Parse the variable expression */
-		var_stmt->m_expr = std::make_unique<Expr>(parse_expr());
+		var_stmt->m_expr = parse_expr();
 
 		/* Append the variable pointer to the existing variables array */
-		m_existing_vars.push_back(std::move(var_stmt));
+		m_existing_vars.push_back(var_stmt);
 
 		/* Return the variable statement from list */
 		return *m_existing_vars.back();
@@ -353,7 +351,7 @@ void Parser::parse()
 	try_consume(TokenType::SUBTRACTION);
 
 	/* Parse the new field expression */
-	field_access_stmt.m_expr = std::make_unique<Expr>(parse_expr());
+	field_access_stmt.m_expr = parse_expr();
 
 	/* Return the field access statement */
 	return field_access_stmt;
@@ -372,10 +370,10 @@ void Parser::parse()
 	return output_stmt;
 }
 
-[[nodiscard]] FuncDeclStmt& Parser::parse_func_decl_stmt()
+[[nodiscard]] FuncDeclStmt Parser::parse_func_decl_stmt()
 {
 	/* Create a new function declaration statement pointer */
-	std::unique_ptr<FuncDeclStmt> func_decl_stmt{std::make_unique<FuncDeclStmt>()};
+	std::shared_ptr<FuncDeclStmt> func_decl_stmt{std::make_shared<FuncDeclStmt>()};
 
 	/* Consume the SUBROUTINE token */
 	/* No need to use try_consume() as entering this function implies that the current token is SUBROUTINE */
@@ -403,7 +401,7 @@ void Parser::parse()
 	consume();
 
 	/* Append the function to the existing functions list */
-	m_existing_funcs.push_back(std::move(func_decl_stmt));
+	m_existing_funcs.push_back(func_decl_stmt);
 
 	/* Return the function declaration statement */
 	return *m_existing_funcs.back();
@@ -426,7 +424,7 @@ void Parser::parse()
 	func_call_stmt.m_args = parse_args();
 
 	/* Check that the function has been declared */
-	check_func_declared(func_call_stmt.m_name);
+	existing_func_lookup(func_call_stmt.m_name);
 
 	/* Check that the function call argument count matches up with the function declaration */
 	check_arg_count_matches(func_call_stmt.m_name, func_call_stmt.m_args);
@@ -451,14 +449,14 @@ void Parser::parse()
 	consume();
 
 	/* Parse the repeat until statement body */
-	repeat_until_stmt.m_body = std::make_unique<Body>(parse_body_until({TokenType::UNTIL}));
+	repeat_until_stmt.m_body = std::make_shared<Body>(parse_body_until({TokenType::UNTIL}));
 
 	/* No try_consume() used here as the function above exits upon a UNTIL token */
 	/* Consume a token of type UNTIL */
 	consume();
 
 	/* Parse and store the condition expression */
-	repeat_until_stmt.m_condition_expr = std::make_unique<Expr>(parse_expr());
+	repeat_until_stmt.m_condition_expr = parse_expr();
 
 	/* Return the repeat until statement */
 	return repeat_until_stmt;
@@ -474,10 +472,10 @@ void Parser::parse()
 	consume();
 
 	/* Parse and store the condition expression */
-	while_stmt.m_condition_expr = std::make_unique<Expr>(parse_expr());
+	while_stmt.m_condition_expr = parse_expr();
 
 	/* Parse and store the while statement body */
-	while_stmt.m_body = std::make_unique<Body>(parse_body_until({TokenType::END_WHILE}));
+	while_stmt.m_body = std::make_shared<Body>(parse_body_until({TokenType::END_WHILE}));
 
 	/* No try_consume() used here as the function above exits upon a ENDWHILE token */
 	/* Consume a token of type END_WHILE */
@@ -497,14 +495,14 @@ void Parser::parse()
 	consume();
 
 	/* Parse and store the condition expression */
-	if_stmt.m_condition_expr = std::make_unique<Expr>(parse_expr());
+	if_stmt.m_condition_expr = parse_expr();
 
 	/* Try to consume a token of type THEN */
 	try_consume(TokenType::THEN);
 
 	/* Parse and store the if statement body */
 	/* An if statement can end in two ways, either with ENDIF or ELSE IF/ELSE */
-	if_stmt.m_body = std::make_unique<Body>(parse_body_until({TokenType::ELSE, TokenType::END_IF}));
+	if_stmt.m_body = std::make_shared<Body>(parse_body_until({TokenType::ELSE, TokenType::END_IF}));
 
 	/* If the current token has type END_IF*/
 	/* This function is responsible for handling it, unlike if the current token was ELSE */
@@ -528,13 +526,13 @@ void Parser::parse()
 	consume(2);
 
 	/* Parse and store the condition expression */
-	else_if_stmt.m_condition_expr = std::make_unique<Expr>(parse_expr());
+	else_if_stmt.m_condition_expr = parse_expr();
 
 	/* Try to consume a token of type THEN */
 	try_consume(TokenType::THEN);
 
 	/* Parse and store the else if statement body */
-	else_if_stmt.m_body = std::make_unique<Body>(parse_body_until({TokenType::ELSE, TokenType::END_IF}));
+	else_if_stmt.m_body = std::make_shared<Body>(parse_body_until({TokenType::ELSE, TokenType::END_IF}));
 
 	/* If the current token has type END_IF*/
 	/* This function is responsible for handling it, unlike if the current token was ELSE */
@@ -558,7 +556,7 @@ void Parser::parse()
 	consume();
 
 	/* Parse and store the else statement body */
-	else_stmt.m_body = std::make_unique<Body>(parse_body_until({TokenType::END_IF}));
+	else_stmt.m_body = std::make_shared<Body>(parse_body_until({TokenType::END_IF}));
 
 	/* No try_consume() used here as the function above exits upon a ENDIF token */
 	/* Consume a token of type END_IF */
@@ -578,13 +576,13 @@ void Parser::parse()
 	consume();
 
 	/* Parse and set a variable statement as part of the condition */
-	for_to_stmt.m_var_stmt = std::move(parse_var_stmt());
+	for_to_stmt.m_var_stmt = parse_var_stmt();
 
 	/* Try to consume a token of type TO */
 	try_consume(TokenType::TO);
 
 	/* Parse and store the loop boundary expression */
-	for_to_stmt.m_boundary = std::make_unique<Expr>(parse_expr());
+	for_to_stmt.m_boundary = parse_expr();
 
 	/* If the current token is of type STEP */
 	if (peek().m_type == TokenType::STEP)
@@ -593,11 +591,11 @@ void Parser::parse()
 		consume();
 
 		/* Parse and store the step expression */
-		for_to_stmt.m_step = std::make_unique<Expr>(parse_expr());
+		for_to_stmt.m_step = parse_expr();
 	}
 
 	/* Parse and store the for to statement body */
-	for_to_stmt.m_body = std::make_unique<Body>(parse_body_until({TokenType::END_FOR}));
+	for_to_stmt.m_body = std::make_shared<Body>(parse_body_until({TokenType::END_FOR}));
 
 	/* No try_consume() used here as the function above exits upon a ENDFOR token */
 	/* Consume a token of type END_FOR */
@@ -620,7 +618,7 @@ void Parser::parse()
 	consume();
 
 	/* Allocate heap memory for the loop declaration */
-	for_in_stmt.m_declaration = std::make_unique<VarStmt>();
+	for_in_stmt.m_declaration = std::make_shared<VarStmt>();
 
 	/* If the reason for try_consume() here confuses you, see the implementation of parse_stmt() */
 	for_in_stmt.m_declaration->m_name = try_consume(TokenType::IDENTIFIER).m_value;
@@ -629,21 +627,24 @@ void Parser::parse()
 	/* Consume a IN token */
 	consume();
 
+	/* Store the range name for later use */
+	const std::string_view range_name{peek().m_value};
+
 	/* Parse and store the loop range expression */
-	for_in_stmt.m_range = std::make_unique<Expr>(parse_expr());
+	for_in_stmt.m_range = parse_expr();
 
 	/* Make the declaration variable act as a constant */
 	for_in_stmt.m_declaration->m_is_constant = true;
 
 	/* Allocate heap memory for the declaration's expression */
-	for_in_stmt.m_declaration->m_expr = std::make_unique<Expr>();
+	for_in_stmt.m_declaration->m_expr = std::make_shared<Expr>();
 
 	/* If the range type is unresolved */
-	if (for_in_stmt.m_range->m_type == DataType::UNRESOLVED) 
+	if (for_in_stmt.m_range->m_type == DataType::UNRESOLVED)
 	{
 		/* This means that the declaration is also unresolved, and must be resolved later on */
-		/* The declaration is paired to the range as they need to be of the same type */
-		m_unresolved_exprs.emplace_back(*for_in_stmt.m_declaration->m_expr, *for_in_stmt.m_range);
+		/* The declaration is paired to the range name as they need to be of the same type */
+		m_unresolved_exprs.emplace_back(for_in_stmt.m_declaration->m_expr, range_name);
 	}
 
 	/* If the range type is known */
@@ -654,10 +655,10 @@ void Parser::parse()
 	}
 
 	/* Add the declaration variable to the existing variables list */
-	m_existing_vars.push_back(std::move(for_in_stmt.m_declaration));
+	m_existing_vars.push_back(for_in_stmt.m_declaration);
 
 	/* Parse and store the for in statement body */
-	for_in_stmt.m_body = std::make_unique<Body>(parse_body_until({TokenType::END_FOR}));
+	for_in_stmt.m_body = std::make_shared<Body>(parse_body_until({TokenType::END_FOR}));
 
 	/* No try_consume() used here as the function above exits upon a ENDFOR token */
 	/* Consume a token of type END_FOR */
@@ -670,10 +671,10 @@ void Parser::parse()
 	return for_in_stmt;
 }
 
-[[nodiscard]] RecordStmt& Parser::parse_record_stmt()
+[[nodiscard]] RecordStmt Parser::parse_record_stmt()
 {
 	/* Create a new record statement pointer */
-	std::unique_ptr<RecordStmt> record_stmt{std::make_unique<RecordStmt>()};
+	std::shared_ptr<RecordStmt> record_stmt{std::make_shared<RecordStmt>()};
 
 	/* No need to use try_consume() as entering this function implies the current token is RECORD */
 	/* Consume a RECORD token */
@@ -690,7 +691,7 @@ void Parser::parse()
 	consume();
 
 	/* Add the record to the existing records list */
-	m_existing_records.push_back(std::move(record_stmt));
+	m_existing_records.push_back(record_stmt);
 
 	/* Return the record statement */
 	return *m_existing_records.back();
@@ -714,7 +715,7 @@ void Parser::parse()
 
 	/* Set the field to a valid data type */
 	/* tt_to_dt() errors out if the token is unable to represent a valid data type */
-	field_stmt.m_type = tt_to_dt(consume());
+	field_stmt.m_type = tt_to_dt(consume().m_type);
 
 	/* Return the field statement */
 	return field_stmt;
@@ -734,7 +735,7 @@ void Parser::parse()
 	consume();
 
 	/* Parse and store the access row expression */
-	list_access_stmt.m_row = std::make_unique<Expr>(parse_expr());
+	list_access_stmt.m_row = parse_expr();
 
 	/* Try to consume a token of type SQ_C_BRACKET */
 	try_consume(TokenType::SQ_C_BRACKET);
@@ -746,7 +747,7 @@ void Parser::parse()
 		try_consume(TokenType::SQ_O_BRACKET);
 
 		/* Parse and store the access col expression */
-		list_access_stmt.m_col = std::make_unique<Expr>(parse_expr());
+		list_access_stmt.m_col = parse_expr();
 
 		/* Try to consume a token of type SQ_C_BRACKET */
 		try_consume(TokenType::SQ_C_BRACKET);
@@ -757,7 +758,7 @@ void Parser::parse()
 	try_consume(TokenType::SUBTRACTION);
 
 	/* Parse the list index's new expression */
-	list_access_stmt.m_expr = std::make_unique<Expr>(parse_expr());
+	list_access_stmt.m_expr = parse_expr();
 
 	/* Return the list access statement */
 	return list_access_stmt;
@@ -851,7 +852,7 @@ void Parser::skip_over_function_body()
 			/* If the current token is not of type COMMA */
 			default:
 				/* Parse the expression and add it to the argument list */
-				args.push_back(parse_expr());
+				args.push_back(*parse_expr());
 		}
 	}
 
@@ -877,23 +878,23 @@ void Parser::parse_func_bodies_2nd_pass()
 			for (const auto& param : func->m_params.m_params)
 			{
 				/* Create a new variable statement for each parameter */
-				std::unique_ptr<VarStmt> var_stmt{std::make_unique<VarStmt>()};
+				std::shared_ptr<VarStmt> var_stmt{std::make_shared<VarStmt>()};
 
 				/* Set the parameter name */
 				var_stmt->m_name = param.m_name;
 
 				/* Allocate heap memory for the variable expression */
-				var_stmt->m_expr = std::make_unique<Expr>();
+				var_stmt->m_expr = std::make_shared<Expr>();
 
 				/* Set the type of the expression to the parameter type */
 				var_stmt->m_expr->m_type = param.m_type;
 
 				/* Add the parameter to the existing variables */
-				m_existing_vars.push_back(std::move(var_stmt));
+				m_existing_vars.push_back(var_stmt);
 			}
 
 			/* Parse and store the function body */
-			func->m_body = std::make_unique<Body>(parse_body_until({TokenType::RETURN, TokenType::END_SUB_ROUTINE}));
+			func->m_body = std::make_shared<Body>(parse_body_until({TokenType::RETURN, TokenType::END_SUB_ROUTINE}));
 
 			/* If the type of the current token is RETURN */
 			if (peek().m_type == TokenType::RETURN)
@@ -902,7 +903,7 @@ void Parser::parse_func_bodies_2nd_pass()
 				consume();
 
 				/* Parse and store the return expression */
-				func->m_return.m_return_expr = std::make_unique<Expr>(parse_expr());
+				func->m_return.m_return_expr = parse_expr();
 
 				/* Set member boolean to false to indicate that the function is not void */
 				func->m_is_void = false;
@@ -921,17 +922,24 @@ void Parser::parse_func_bodies_2nd_pass()
 void Parser::parse_unresolved_exprs_2nd_pass()
 {
 	/* Loop through all of the unresolved expressions */
-	for (auto& unresolved_expr_pair : m_unresolved_exprs)
+	for (auto& unresolved_expr : m_unresolved_exprs)
 	{
 		/* Resolve the type of the first element from the type of the second element */
-		unresolved_expr_pair.first->m_type = unresolved_expr_pair.second->m_type;
+		unresolved_expr.first->m_type = existing_func_lookup(unresolved_expr.second)->m_return.m_return_expr->m_type;
+	}
+
+	/* Loop through all of the unresolved declarations */
+	for (auto& unresolved_decl : m_unresolved_decls)
+	{
+		/* Resolve the type of the first element from the type of the second element */
+		unresolved_decl.first->m_type = existing_var_lookup(unresolved_decl.second)->m_expr->m_type;
 	}
 }
 
 void Parser::check_arg_count_matches(const std::string_view name, const Args &args)
 {
 	/* Create a pointer to the function declaration statement with the matching name */
-	FuncDeclStmt* func_decl_stmt{existing_func_lookup(name)};
+	std::shared_ptr<FuncDeclStmt> func_decl_stmt{existing_func_lookup(name)};
 
 	/* If the function declaration parameter count is not equal to the argument count */
 	if (func_decl_stmt->m_params.m_params.size() != args.m_exprs.size())
@@ -947,10 +955,10 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	}
 }
 
-[[nodiscard]] Expr Parser::parse_expr()
+[[nodiscard]] std::shared_ptr<Expr> Parser::parse_expr()
 {
 	/* Create the lhs expression object */
-	Expr lhs{};
+	std::shared_ptr<Expr> lhs{std::make_shared<Expr>()};
 
 	/* If the type of the current token is SQ_O_BRACKET */
 	if (peek().m_type == TokenType::SQ_O_BRACKET)
@@ -969,18 +977,18 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 		if (!list_expr.m_exprs.empty())
 		{
 			/* Set lhs type to the type of the first expression in the list expression */
-			lhs.m_type = list_expr.m_exprs[0].m_type;
+			lhs->m_type = list_expr.m_exprs[0].m_type;
 		}
 
 		/* If the list expression is empty */
 		else
 		{
 			/* Set lhs type to UNRESOLVED */
-			lhs.m_type = DataType::UNRESOLVED;
+			lhs->m_type = DataType::UNRESOLVED;
 		}
 
 		/* Set lhs to the list expression */
-		lhs = Expr{list_expr, lhs.m_type};
+		*lhs = Expr{list_expr, lhs->m_type};
 	}
 
 	/* If the type of the current token is O_PAREN */
@@ -993,47 +1001,44 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 		consume();
 
 		/* Parse and store the parentheses expression */
-		paren_expr.m_expr = std::make_unique<Expr>(parse_expr());
+		paren_expr.m_expr = parse_expr();
 
 		/* Try to consume a token of type C_PAREN */
 		try_consume(TokenType::C_PAREN);
 
 		/* Set lhs to the parentheses expression */
-		lhs = Expr{std::move(paren_expr), lhs.m_type};
+		*lhs = Expr{paren_expr, lhs->m_type};
 	}
 
 	/* If the type of the current token indicates it is a unary operator */
 	else if (is_unary(peek().m_type))
 	{
 		/* Set lhs to the unary operator expression */
-		lhs = Expr{parse_unary_op_expr(), lhs.m_type};
+		*lhs = Expr{parse_unary_op_expr(), lhs->m_type};
 	}
-	
-	/* If the type of the current token is IDENTIFIER */
-	else if (peek().m_type == TokenType::IDENTIFIER)
+
+	/* If the current token is an IDENTIFIER or a standard library function */
+	else if (peek().m_type == TokenType::IDENTIFIER && try_peek(1).m_type == TokenType::O_PAREN || is_stdlib(peek().m_value))
 	{
 		/* If the current token has a value that matches a record name */
-		if (is_record(peek().m_value)) 
+		if (is_record(peek().m_value))
 		{
 			/* Set the lhs type to USER_DEFINED_TYPE */
-			lhs.m_type = DataType::USER_DEFINED_TYPE;
+			lhs->m_type = DataType::USER_DEFINED_TYPE;
 		}
-		
+
 		/* If the current token has a value that matches a standard library function name */
 		else if (is_stdlib(peek().m_value))
 		{
 			/* Set the lhs type to the return type of that standard library function */
-			lhs.m_type = existing_func_lookup(peek().m_value)->m_return.m_return_expr->m_type;
+			lhs->m_type = existing_func_lookup(peek().m_value)->m_return.m_return_expr->m_type;
 		}
-		
-		/* Try to peek one token ahead, checking it's not end of file */
-		try_peek(1);
 
 		/* If the token ahead is of type O_PAREN */
 		if (peek(1).m_type == TokenType::O_PAREN)
 		{
 			/* Set lhs type to UNRESOLVED */
-			lhs.m_type = DataType::UNRESOLVED;
+			lhs->m_type = DataType::UNRESOLVED;
 
 			/* Add lhs to the unresolved exprs list, as it is a function call */
 			m_unresolved_exprs.emplace_back(lhs, peek().m_value);
@@ -1047,21 +1052,21 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 
 			/* Deduce the field type from a field access */
 			/* A field access expression is something such as - OUTPUT jake.age */
-			lhs.m_type = deduce_field_type_from_access(peek(), peek(2));
+			lhs->m_type = deduce_field_type_from_access(peek(), peek(2));
 		}
 
 		/* Set the lhs to the atom expression */
-		lhs = Expr{parse_atom(), lhs.m_type};
+		*lhs = Expr{parse_atom(), lhs->m_type};
 	}
 
 	/* If the expression type can be deduced easily */
 	else
 	{
 		/* Deduce the expression type from the current token */
-		lhs.m_type = deduce_expr_type(peek());
+		lhs->m_type = deduce_expr_type(peek());
 
 		/* Set the lhs to the atom expression */
-		lhs = Expr{parse_atom(), lhs.m_type};
+		*lhs = Expr{parse_atom(), lhs->m_type};
 	}
 
 	/* Loop while the current token type indicates a binary operator expression */
@@ -1071,21 +1076,21 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 		BinOpExpr bin_op_expr{};
 
 		/* Set the binary operator expression lhs to the current lhs */
-		bin_op_expr.m_lhs = std::make_unique<Expr>(lhs);
+		bin_op_expr.m_lhs = lhs;
 
 		/* Allocate heap memory for the binary operator expression rhs */
-		bin_op_expr.m_rhs = std::make_unique<Expr>();
+		bin_op_expr.m_rhs = std::make_shared<Expr>();
 
-		/* Determine and store the type of operator used */
-		bin_op_expr.m_op = determine_op();
+		/* Parse and store the type of operator used */
+		bin_op_expr.m_op = parse_op();
 
 		/* If the current token is a unary operator */
 		if (is_unary(peek().m_type))
 		{
 			/* Parse the rhs as a unary operator */
-			bin_op_expr.m_rhs = std::make_unique<Expr>(parse_unary_op_expr());
+			bin_op_expr.m_rhs = std::make_shared<Expr>(parse_unary_op_expr());
 		}
-		
+
 		/* If the current token is not a unary operator*/
 		else
 		{
@@ -1093,11 +1098,11 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 			bin_op_expr.m_rhs->m_type = deduce_expr_type(peek());
 
 			/* Parse the rhs as an atom expression */
-			bin_op_expr.m_rhs = std::make_unique<Expr>(parse_atom());
+			bin_op_expr.m_rhs = std::make_shared<Expr>(parse_atom());
 		}
 
 		/* Set the lhs to the binary operator expression */
-		lhs = Expr{std::move(bin_op_expr), lhs.m_type};
+		*lhs = Expr{bin_op_expr, lhs->m_type};
 	}
 
 	/* Return the lhs expression */
@@ -1106,8 +1111,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 
 [[nodiscard]] AtomExpr Parser::parse_atom()
 {
-	/* No need to try_peek() here as if control flow reaches this function, it means that peek() is valid */
-
 	/* If the current token type is INT */
 	if (peek().m_type == TokenType::INT)
 	{
@@ -1259,265 +1262,407 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 
 [[nodiscard]] IntExpr Parser::parse_int_expr()
 {
-	return IntExpr{std::stoi(try_consume(TokenType::INT).m_value)};
+	/* No need to use try_consume() as entering this function implies the current token is INT */
+	/* Return an integer expression, constructed using the current token value casted to an integer */
+	return IntExpr{std::stoi(consume().m_value)};
 }
 
 [[nodiscard]] RealExpr Parser::parse_real_expr()
 {
-	return RealExpr{std::stod(try_consume(TokenType::REAL).m_value)};
+	/* No need to use try_consume() as entering this function implies the current token is REAL */
+	/* Return a real expression, constructed using the current token value casted to a double */
+	return RealExpr{std::stod(consume().m_value)};
 }
 
 [[nodiscard]] StrExpr Parser::parse_str_expr()
 {
-	return StrExpr{try_consume(TokenType::STRING).m_value};
+	/* No need to use try_consume() as entering this function implies the current token is STRING */
+	/* Return a string expression, constructed using the current token value */
+	return StrExpr{consume().m_value};
 }
 
 [[nodiscard]] VarExpr Parser::parse_var_expr()
 {
-	return VarExpr{try_consume(TokenType::IDENTIFIER).m_value};
+	/* No need to use try_consume() as entering this function implies the current token is IDENTIFIER */
+	/* Return a variable expression, constructed using the current token value as the identifier */
+	return VarExpr{consume().m_value};
 }
 
 [[nodiscard]] UnaryOpExpr Parser::parse_unary_op_expr()
 {
+	/* Create a new unary operator expression object */
 	UnaryOpExpr unary_op_expr{};
 
-	unary_op_expr.m_op = determine_op();
+	/* Parse and store the type of operator used */
+	unary_op_expr.m_op = parse_op();
 
-	unary_op_expr.m_unary_expr = std::make_unique<Expr>(*parse_expr());
+	/* Parse the unary expression that comes after the operator */
+	unary_op_expr.m_unary_expr = parse_expr();
 
+	/* Return the unary operator expression */
 	return unary_op_expr;
 }
 
 [[nodiscard]] FieldAccessExpr Parser::parse_field_access_expr()
 {
+	/* Create a new field access expression object */
 	FieldAccessExpr field_access_expr{};
 
-	field_access_expr.m_name = try_consume(TokenType::IDENTIFIER).m_value;
+	/* No need to use try_consume() as entering this function implies the current token is IDENTIFIER */
+	/* Consume and store the field access expression variable name */
+	field_access_expr.m_name = consume().m_value;
 
-	try_consume(TokenType::DOT);
+	/* No need to use try_consume() for the same reason as before */
+	/* Consume a token of type DOT */
+	consume();
 
+	/* Consume and store the name of the field that the programmer is trying access */
 	field_access_expr.m_field_name = try_consume(TokenType::IDENTIFIER).m_value;
 
+	/* Return the field access expression */
 	return field_access_expr;
 }
 
 [[nodiscard]] ListAccessExpr Parser::parse_list_access_expr()
 {
+	/* Create a new list access expression object */
 	ListAccessExpr list_access_expr{};
 
+	/* No need to use try_consume() as entering this function implies the current token is IDENTIFIER */
+	/* Consume and store the name of the list */
 	list_access_expr.m_name = consume().m_value;
 
+	/* No need to use try_consume() for the same reason as before */
+	/* Consume a token of type SQ_O_BRACKET */
 	consume();
 
+	/* Parse and store the row access expression */
 	list_access_expr.m_row = parse_expr();
 
+	/* Try to consume a token of type SQ_C_BRACKET */
 	try_consume(TokenType::SQ_C_BRACKET);
 
-	if (existing_var_lookup(list_access_expr.m_name).m_is_2d_list && peek().m_type == TokenType::SQ_O_BRACKET)
+	/* If the list being accessed is two dimensional and the current token is of type SQ_O_BRACKET*/
+	if (existing_var_lookup(list_access_expr.m_name)->m_is_2d_list && peek().m_type == TokenType::SQ_O_BRACKET)
 	{
-		try_consume(TokenType::SQ_O_BRACKET);
+		/* Consume the SQ_O_BRACKET token */
+		consume();
 
+		/* Parse and store the col access expression */
 		list_access_expr.m_col = parse_expr();
 
+		/* Try to consume a token of type SQ_C_BRACKET */
 		try_consume(TokenType::SQ_C_BRACKET);
 	}
 
+	/* Return the list access expression */
 	return list_access_expr;
 }
 
 [[nodiscard]] FuncCallExpr Parser::parse_func_call_expr()
 {
+	/* Create a new function call expression object */
 	FuncCallExpr func_call_expr{};
 
-	func_call_expr.m_name = try_consume(TokenType::IDENTIFIER).m_value;
+	/* No need to use try_consume() as entering this function implies the current token is IDENTIFIER */
+	/* Consume and store the name of the called function */
+	func_call_expr.m_name = consume().m_value;
 
-	try_consume(TokenType::O_PAREN);
+	/* No need to use try_consume() for the same reason as before */
+	/* Consume a token with type O_PAREN */
+	consume();
 
+	/* Parse and store the function call arguments */
 	func_call_expr.m_args = parse_args();
 
+	/* Check that the function has been declared */
+	existing_func_lookup(func_call_expr.m_name);
+
+	/* Check that the function call argument count matches up with the function declaration */
 	check_arg_count_matches(func_call_expr.m_name, func_call_expr.m_args);
 
-	deduce_func_decl_param_types_from_expr(func_call_expr);
+	/* Deduce the types of the function declaration parameters from the types of the arguments used in this call */
+	deduce_func_decl_param_types_from_args(func_call_expr.m_name, func_call_expr.m_args);
 
+	/* Try to consume a token of type C_PAREN */
 	try_consume(TokenType::C_PAREN);
 
+	/* Return the function call expression */
 	return func_call_expr;
 }
 
 [[nodiscard]] UserInputExpr Parser::parse_user_input_expr()
 {
-	try_consume(TokenType::USER_INPUT);
-	return UserInputExpr{};
+	/* No need to use try_consume() as entering this function implies the current token is USERINPUT */
+	/* Consume a USERINPUT token */
+	consume();
+
+	return UserInputExpr{}; /* Return a new user input expression object */
 }
 
 [[nodiscard]] ObjectCreationExpr Parser::parse_object_creation_expr()
 {
+	/* Create a new object creation expression object */
 	ObjectCreationExpr object_creation_expr{};
 
-	object_creation_expr.m_record_name = try_consume(TokenType::IDENTIFIER).m_value;
+	/* No need to use try_consume() as entering this function implies the current token is a record name */
+	/* Consume and store the name of the record */
+	object_creation_expr.m_record_name = consume().m_value;
 
+	/* Try to consume a token of type O_PAREN */
 	try_consume(TokenType::O_PAREN);
 
+	/* Parse and store the object creation expression arguments */
 	object_creation_expr.m_args = parse_args();
 
+	/* Try to consume a token of type C_PAREN */
 	try_consume(TokenType::C_PAREN);
 
+	/* Return the object creation expression */
 	return object_creation_expr;
 }
 
 [[nodiscard]] LenCallExpr Parser::parse_len_call_expr()
 {
+	/* Create a new LEN() expression object */
 	LenCallExpr len_call_expr{};
 
-	try_consume(TokenType::LEN);
+	/* No need to use try_consume() as entering this function implies the current token is LEN */
+	/* Consume the LEN token */
+	consume();
+
+	/* Try to consume a token of type O_PAREN */
 	try_consume(TokenType::O_PAREN);
 
+	/* Parse and store the argument expression */
 	len_call_expr.m_expr = parse_expr();
 
+	/* Try to consume a token of type C_PAREN */
 	try_consume(TokenType::C_PAREN);
 
+	/* Return the LEN() expression */
 	return len_call_expr;
 }
 
 [[nodiscard]] PositionCallExpr Parser::parse_position_call_expr()
 {
+	/* Create a new POSITION() expression object */
 	PositionCallExpr position_call_expr{};
 
-	try_consume(TokenType::POSITION);
+	/* No need to use try_consume() as entering this function implies the current token is POSITION */
+	/* Consume the POSITION token */
+	consume();
+
+	/* Try to consume a token of type O_PAREN */
 	try_consume(TokenType::O_PAREN);
 
+	/* Parse and store the first argument expression */
 	position_call_expr.m_str_expr = parse_expr();
 
+	/* Try to consume a token of type COMMA */
 	try_consume(TokenType::COMMA);
 
+	/* Parse and store the second argument expression */
 	position_call_expr.m_char_expr = parse_expr();
 
+	/* Try to consume a token of type C_PAREN */
 	try_consume(TokenType::C_PAREN);
 
+	/* Return the POSITION() expression */
 	return position_call_expr;
 }
 
 [[nodiscard]] SubStrCallExpr Parser::parse_sub_str_call_expr()
 {
+	/* Create a new SUBSTRING() expression object */
 	SubStrCallExpr sub_str_call_expr{};
 
-	try_consume(TokenType::SUBSTRING);
+	/* No need to use try_consume() as entering this function implies the current token is SUBSTRING */
+	/* Consume a token of type SUBSTRING */
+	consume();
+
+	/* Try to consume a token of type O_PAREN */
 	try_consume(TokenType::O_PAREN);
 
+	/* Parse and store the first argument expression */
 	sub_str_call_expr.m_num1_expr = parse_expr();
 
+	/* Try to consume a token of type COMMA */
 	try_consume(TokenType::COMMA);
 
+	/* Parse and store the second argument expression */
 	sub_str_call_expr.m_num2_expr = parse_expr();
 
+	/* Try to consume a token of type COMMA */
 	try_consume(TokenType::COMMA);
 
+	/* Parse and store the third argument expression */
 	sub_str_call_expr.m_str_expr = parse_expr();
 
+	/* Try to consume a token of type C_PAREN */
 	try_consume(TokenType::C_PAREN);
 
+	/* Return the SUBSTRING() expression */
 	return sub_str_call_expr;
 }
 
 [[nodiscard]] StrToIntCallExpr Parser::parse_str_to_int_call_expr()
 {
+	/* Create a new STRING_TO_INT() expression object */
 	StrToIntCallExpr str_to_int_call_expr{};
 
-	try_consume(TokenType::STRING_TO_INT);
+	/* No need to use try_consume() as entering this function implies the current token is STRING_TO_INT */
+	/* Consume a token of type STRING_TO_INT */
+	consume();
+
+	/* Try to consume a token of type O_PAREN */
 	try_consume(TokenType::O_PAREN);
 
+	/* Parse and store the first argument expression */
 	str_to_int_call_expr.m_str_expr = parse_expr();
 
+	/* Try to consume a token of type C_PAREN */
 	try_consume(TokenType::C_PAREN);
 
+	/* Return the STRING_TO_INT() expression */
 	return str_to_int_call_expr;
 }
 
 [[nodiscard]] StrToRealCallExpr Parser::parse_str_to_real_call_expr()
 {
+	/* Create a new STRING_TO_REAL() expression object */
 	StrToRealCallExpr str_to_real_call_expr{};
 
-	try_consume(TokenType::STRING_TO_REAL);
+	/* No need to use try_consume() as entering this function implies the current token is STRING_TO_REAL */
+	/* Consume a token of type STRING_TO_REAL */
+	consume();
+
+	/* Try to consume a token of type O_PAREN */
 	try_consume(TokenType::O_PAREN);
 
+	/* Parse and store the first argument expression */
 	str_to_real_call_expr.m_str_expr = parse_expr();
 
+	/* Try to consume a token of type C_PAREN */
 	try_consume(TokenType::C_PAREN);
 
+	/* Return the STRING_TO_REAL() expression */
 	return str_to_real_call_expr;
 }
 
 [[nodiscard]] IntToStrCallExpr Parser::parse_int_to_str_call_expr()
 {
+	/* Create a new INT_TO_STRING() expression object */
 	IntToStrCallExpr int_to_str_call_expr{};
 
-	try_consume(TokenType::INT_TO_STRING);
+	/* No need to use try_consume() as entering this function implies the current token is INT_TO_STRING */
+	/* Consume a token of type INT_TO_STRING */
+	consume();
+
+	/* Try to consume a token of type O_PAREN */
 	try_consume(TokenType::O_PAREN);
 
+	/* Parse and store the first argument expression */
 	int_to_str_call_expr.m_int_expr = parse_expr();
 
+	/* Try to consume a token of type C_PAREN */
 	try_consume(TokenType::C_PAREN);
 
+	/* Return the INT_TO_STRING() expression */
 	return int_to_str_call_expr;
 }
 
 [[nodiscard]] RealToStrCallExpr Parser::parse_real_to_str_call_expr()
 {
+	/* Create a new REAL_TO_STRING() expression object */
 	RealToStrCallExpr real_to_str_call_expr{};
 
-	try_consume(TokenType::REAL_TO_STRING);
+	/* No need to use try_consume() as entering this function implies the current token is REAL_TO_STRING */
+	/* Consume a token of type REAL_TO_STRING */
+	consume();
+
+	/* Try to consume a token of type O_PAREN */
 	try_consume(TokenType::O_PAREN);
 
+	/* Parse and store the first argument expression */
 	real_to_str_call_expr.m_real_expr = parse_expr();
 
+	/* Try to consume a token of type C_PAREN */
 	try_consume(TokenType::C_PAREN);
 
+	/* Return the REAL_TO_STRING() expression */
 	return real_to_str_call_expr;
 }
 
 [[nodiscard]] CharToCodeCallExpr Parser::parse_char_to_code_call_expr()
 {
+	/* Create a new CHAR_TO_CODE() expression object */
 	CharToCodeCallExpr char_to_code_call_expr{};
 
-	try_consume(TokenType::CHAR_TO_CODE);
+	/* No need to use try_consume() as entering this function implies the current token is CHAR_TO_CODE */
+	/* Consume a token of type CHAR_TO_CODE */
+	consume();
+
+	/* Try to consume a token of type O_PAREN */
 	try_consume(TokenType::O_PAREN);
 
+	/* Parse and store the first argument expression */
 	char_to_code_call_expr.m_char_expr = parse_expr();
 
+	/* Try to consume a token of type C_PAREN */
 	try_consume(TokenType::C_PAREN);
 
+	/* Return the CHAR_TO_CODE() expression */
 	return char_to_code_call_expr;
 }
 
 [[nodiscard]] CodeToCharCallExpr Parser::parse_code_to_char_call_expr()
 {
+	/* Create a new CODE_TO_CHAR() expression object */
 	CodeToCharCallExpr code_to_char_call_expr{};
 
-	try_consume(TokenType::CODE_TO_CHAR);
+	/* No need to use try_consume() as entering this function implies the current token is CODE_TO_CHAR */
+	/* Consume a token of type CODE_TO_CHAR */
+	consume();
+
+	/* Try to consume a token of type O_PAREN */
 	try_consume(TokenType::O_PAREN);
 
+	/* Parse and store the first argument expression */
 	code_to_char_call_expr.m_int_expr = parse_expr();
 
+	/* Try to consume a token of type C_PAREN */
 	try_consume(TokenType::C_PAREN);
 
+	/* Return the CODE_TO_CHAR() expression */
 	return code_to_char_call_expr;
 }
 
 [[nodiscard]] RandomIntCallExpr Parser::parse_random_int_call_expr()
 {
+	/* Create a new RANDOM_INT() expression object */
 	RandomIntCallExpr random_int_call_expr{};
 
-	try_consume(TokenType::RANDOM_INT);
+	/* No need to use try_consume() as entering this function implies the current token is RANDOM_INT */
+	/* Consume a token of type RANDOM_INT */
+	consume();
+
+	/* Try to consume a token of type O_PAREN */
 	try_consume(TokenType::O_PAREN);
 
+	/* Parse and store the first argument expression */
 	random_int_call_expr.m_int1_expr = parse_expr();
 
+	/* Try to consume a token of type COMMA */
 	try_consume(TokenType::COMMA);
 
+	/* Parse and store the second argument expression */
 	random_int_call_expr.m_int2_expr = parse_expr();
 
+	/* Try to consume a token of type C_PAREN */
 	try_consume(TokenType::C_PAREN);
 
+	/* Return the RANDOM_INT() expression */
 	return random_int_call_expr;
 }
 
@@ -1542,14 +1687,20 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 
 [[nodiscard]] Fields Parser::parse_fields_until(const std::initializer_list<TokenType>& stop_tokens)
 {
+	/* Create a list of field statement objects */
 	std::vector<FieldStmt> field_stmts{};
 
-	while (std::find(stop_tokens.begin(), stop_tokens.end(), peek().m_type) == stop_tokens.end() &&
-		   peek().m_type != TokenType::END_OF_FILE)
+	/* Loop until the current token is not of any types listed in the initializer list */
+	while (std::find(stop_tokens.begin(), stop_tokens.end(), peek().m_type) == stop_tokens.end())
 	{
+		/* Try to peek the current token, checking it's not end of file */
+		try_peek();
+
+		/* Parse field statement and add it to the field statement list */
 		field_stmts.push_back(parse_field_stmt());
 	}
 
+	/* Return the field statement list as type Fields */
 	return Fields{field_stmts};
 }
 
@@ -1565,7 +1716,7 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 		consume();
 
 		/* Parse and store the expressions separated by commas */
-		cse.push_back(parse_expr());
+		cse.push_back(*parse_expr());
 
 	} while (peek().m_type == TokenType::COMMA); /* Loop condition */
 
@@ -1573,94 +1724,188 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	return cse;
 }
 
-[[nodiscard]] Operator Parser::determine_op()
+[[nodiscard]] Operator Parser::parse_op()
 {
-	if (peek(1).m_type == TokenType::END_OF_FILE)
+	/* If the current token type is ADDITION */
+	if (peek().m_type == TokenType::ADDITION)
 	{
-		ParseError("eof reached when looking for relational op");
+		/* Consume the ADDITION token */
+		consume();
+
+		/* Return the ADDITION operator */
+		return Operator::ADDITION;
 	}
 
-	if (peek().m_type == TokenType::PLUS)
+	/* If the current token type is SUBTRACTION */
+	else if (peek().m_type == TokenType::SUBTRACTION)
 	{
+		/* Consume the SUBTRACTION token */
 		consume();
-		return Operator::PLUS;
+
+		/* Return the SUBTRACTION operator */
+		return Operator::SUBTRACTION;
 	}
-	else if (peek().m_type == TokenType::MINUS)
+
+	/* If the current token type is MULTIPLICATION */
+	else if (peek().m_type == TokenType::MULTIPLICATION)
 	{
+		/* Consume the MULTIPLICATION token */
 		consume();
-		return Operator::MINUS;
+
+		/* Return the MULTIPLICATION operator */
+		return Operator::MULTIPLICATION;
 	}
-	else if (peek().m_type == TokenType::MULTIPLY)
+
+	/* If the current token type is DIVISION */
+	else if (peek().m_type == TokenType::DIVISION)
 	{
+		/* Consume the DIVISION token */
 		consume();
-		return Operator::MULTIPLY;
+
+		/* Return the DIVISION operator */
+		return Operator::DIVISION;
 	}
-	else if (peek().m_type == TokenType::DIVIDE)
-	{
-		consume();
-		return Operator::DIVIDE;
-	}
+
+	/* If the current token type is DIV */
 	else if (peek().m_type == TokenType::DIV)
 	{
+		/* Consume the DIV token */
 		consume();
+
+		/* Return the DIV operator */
 		return Operator::DIV;
 	}
+
+	/* If the current token type is MOD */
 	else if (peek().m_type == TokenType::MOD)
 	{
+		/* Consume the MOD token */
 		consume();
+
+		/* Return the MOD operator */
 		return Operator::MOD;
 	}
-	else if (peek().m_type == TokenType::LESS_THAN && peek(1).m_type != TokenType::EQUALS)
-	{
-		consume();
-		return Operator::LESS_THAN;
-	}
-	else if (peek().m_type == TokenType::LESS_THAN && peek(1).m_type == TokenType::EQUALS)
-	{
-		consume(2);
-		return Operator::LESS_THAN_OET;
-	}
-	else if (peek().m_type == TokenType::GREATER_THAN && peek(1).m_type != TokenType::EQUALS)
-	{
-		consume();
-		return Operator::GREATER_THAN;
-	}
-	else if (peek().m_type == TokenType::GREATER_THAN && peek(1).m_type == TokenType::EQUALS)
-	{
-		consume(2);
-		return Operator::GREATER_THAN_OET;
-	}
-	else if (peek().m_type == TokenType::EXCLAIMATION && peek(1).m_type == TokenType::EQUALS)
-	{
-		consume(2);
-		return Operator::NOT_EQUALS;
-	}
+
+	/* If the current token type is EQUALS */
 	else if (peek().m_type == TokenType::EQUALS)
 	{
+		/* Consume the EQUALS token */
 		consume();
+
+		/* Return the EQUALS operator */
 		return Operator::EQUALS;
 	}
+
+	/* If the current token type is AND */
 	else if (peek().m_type == TokenType::AND)
 	{
+		/* Consume the AND token */
 		consume();
+
+		/* Return the AND operator */
 		return Operator::AND;
 	}
+
+	/* If the current token type is OR */
 	else if (peek().m_type == TokenType::OR)
 	{
+		/* Consume the OR token */
 		consume();
+
+		/* Return the OR operator */
 		return Operator::OR;
 	}
+
+	/* If the current token type is NOT */
 	else if (peek().m_type == TokenType::NOT)
 	{
+		/* Consume the NOT token */
 		consume();
+
+		/* Return the NOT operator */
 		return Operator::NOT;
 	}
+
+	/* Try to peek one token ahead, checking it's not end of file */
+	try_peek(1);
+
+	/* If the current token type is LESS_THAN */
+	if (peek().m_type == TokenType::LESS_THAN)
+	{
+		/* If the next token type is EQUALS */
+		if (peek(1).m_type == TokenType::EQUALS)
+		{
+			/* Consume the LESS_THAN and EQUALS tokens */
+			consume(2);
+
+			/* Return the LESS_THAN_OR_EQUAL_TO operator */
+			return Operator::LESS_THAN_OET;
+		}
+
+		/* If the next token type is not EQUALS */
+		else
+		{
+			/* Consume the LESS_THAN token */
+			consume();
+
+			/* Return the LESS_THAN operator */
+			return Operator::LESS_THAN;
+		}
+	}
+
+	/* If the current token type is GREATER_THAN */
+	else if (peek().m_type == TokenType::GREATER_THAN)
+	{
+		/* If the next token type is EQUALS */
+		if (peek(1).m_type == TokenType::EQUALS)
+		{
+			/* Consume the GREATER_THAN and EQUALS tokens */
+			consume(2);
+
+			/* Return the GREATER_THAN_OR_EQUAL_TO operator */
+			return Operator::GREATER_THAN_OET;
+		}
+		/* If the next token type is not EQUALS */
+		else
+		{
+			/* Consume the GREATER_THAN token */
+			consume();
+
+			/* Return the GREATER_THAN operator */
+			return Operator::GREATER_THAN;
+		}
+	}
+
+	/* If the current token type is EXCLAMATION and if the next token type is EQUALS */
+	else if (peek().m_type == TokenType::EXCLAMATION && peek(1).m_type == TokenType::EQUALS)
+	{
+		/* Consume the EXCLAIMATION and EQUALS tokens */
+		consume(2);
+
+		/* Return the NOT_EQUALS operator */
+		return Operator::NOT_EQUALS;
+	}
+
+	/* If no operator was found */
+	/* Error out */
+	ParseError
+	{
+		"no operator found",
+		m_tokens[m_token_index].m_row,
+		m_tokens[m_token_index].m_col,
+		m_source
+	};
+
+	/* Make the compiler stop giving warnings due to possible no return */
+	return Operator{};
 }
 
 [[nodiscard]] const Token& Parser::peek(const std::size_t distance) const
 {
-	if (m_token_index + distance <= m_tokens.size())
+	/* If peek offset is out of range */
+	if (m_token_index + distance >= m_tokens.size())
 	{
+		/* Error out */
 		ParseError
 		{
 			"peek offset went out of range",
@@ -1670,31 +1915,35 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 		};
 	}
 
+	/* Return the token at the peek offset */
 	return m_tokens[m_token_index + distance];
 }
 
 const Token& Parser::try_peek(const std::size_t distance) const
 {
+	/* If the token at the peek offset is END_OF_FILE */
 	if (peek(distance).m_type == TokenType::END_OF_FILE)
 	{
+		/* Error out */
 		ParseError
 		{
-			"unexpected end of line - cannot advance further",
+			"unexpected end of file reached",
 			m_tokens[m_token_index].m_row,
 			m_tokens[m_token_index].m_col,
 			m_source
 		};
 	}
-	else
-	{
-		return peek(distance);
-	}
+
+	/* If the peeked token is not END_OF_FILE */
+	return peek(distance); /* Return the token at the peek offset */
 }
 
 const Token& Parser::consume(const std::size_t distance)
 {
-	if (m_token_index + distance <= m_tokens.size())
+	/* If consume offset is out of range */
+	if (m_token_index + distance >= m_tokens.size())
 	{
+		/* Error out */
 		ParseError
 		{
 			"consume offset went out of range",
@@ -1704,34 +1953,44 @@ const Token& Parser::consume(const std::size_t distance)
 		};
 	}
 
+	/* Advance the token index by the given distance */
 	m_token_index += distance;
 
+	/* Return the consumed token */
 	return m_tokens[m_token_index - distance];
 }
 
 const Token& Parser::try_consume(const TokenType type)
 {
+	/* If the current token does not match the expected type */
 	if (peek().m_type != type)
 	{
+		/* Error out */
 		ParseError
 		{
-			"expected '" + tt_to_string(type) + "' got '" + to_string(peek().m_type) + "'",
+			"expected '" + std::string{tt_to_string(type)} + "' got '" + std::string{tt_to_string(peek().m_type)} + "'",
 			m_tokens[m_token_index].m_row,
 			m_tokens[m_token_index].m_col,
 			m_source
 		};
 	}
-	else
-	{
-		return consume();
-	}
+
+	/* If the current token matches the expected type */
+	return consume(); /* Return the consumed token */
 }
 
 void Parser::remove_var(const std::string_view name)
 {
-	for (auto it{m_existing_vars.begin()}; it != m_existing_vars.end(); it++) {
-		if (it->m_name == name) {
+	/* Loop through all the existing variables from start to end */
+	for (auto it{m_existing_vars.begin()}; it != m_existing_vars.end(); it++)
+	{
+		/* If the current variable name matches the name specified */
+		if (it->get()->m_name == name)
+		{
+			/* Remove the variable from the existing variables list */
 			m_existing_vars.erase(it);
+
+			/* Break from the loop to avoid unnecessary cycles */
 			break;
 		}
 	}
@@ -1739,65 +1998,101 @@ void Parser::remove_var(const std::string_view name)
 
 [[nodiscard]] bool Parser::is_var_defined(const std::string_view name)
 {
+	/* Create the loop stop index */
 	std::size_t stop_index{};
 
+	/* If the scope stack is not empty */
 	if (!m_var_scope_stack.empty())
 	{
-		stop_index = m_var_scope_stack.back();
+		/* Set the stop index to the top stack element */
+		stop_index = m_var_scope_stack.top();
 	}
 
-	for (std::size_t i = m_existing_vars.size(); i-- > stop_index;)
+	/* Loop through the existing variables backwards until the stop index */
+	/* Looping backwards in order to make scope management effective */
+	for (std::size_t i = m_existing_vars.size(); i > stop_index; i--)
 	{
-		if (m_existing_vars[i].m_name == name)
+		/* If the current variable name matches the name specified */
+		if (m_existing_vars[i - 1]->m_name == name)
 		{
+			/* Return true to signify the variable is defined */
 			return true;
 		}
 	}
 
+	/* Return false to signify the variable is not defined */
 	return false;
 }
 
-[[nodiscard]] VarStmt* Parser::existing_var_lookup(const std::string_view name)
+[[nodiscard]] std::shared_ptr<VarStmt> Parser::existing_var_lookup(const std::string_view name)
 {
+	/* Loop backwards through the existing variables */
+	/* This is because a variable is likely to be used close to where it is declared */
 	for (auto it{m_existing_vars.rbegin()}; it != m_existing_vars.rend(); it++)
 	{
+		/* If the current variable name matches the name specified */
 		if (it->get()->m_name == name)
 		{
-			return it->get();
+			/* Return the variable pointer */
+			return *it;
 		}
 	}
 
-	ParseError("couldn't match name with existing variables");
+	/* If nothing was found */
+	/* Error out */
+	ParseError
+	{
+		"variable with name '" + std::string{name} + "' could not be found",
+		m_tokens[m_token_index].m_row,
+		m_tokens[m_token_index].m_col,
+		m_source
+	};
 }
 
-[[nodiscard]] FuncDeclStmt* Parser::existing_func_lookup(const std::string_view name)
+std::shared_ptr<FuncDeclStmt> Parser::existing_func_lookup(const std::string_view name)
 {
+	/* Loop through the existing functions */
 	for (auto it{m_existing_funcs.begin()}; it != m_existing_funcs.end(); it++)
 	{
+		/* If the current function name matches the name specified */
 		if (it->get()->m_name == name)
 		{
-			return it->get();
+			/* Return the function pointer */
+			return *it;
 		}
 	}
 
-	ParseError("func doesnt exist");
+	/* If nothing was found */
+	/* Error out */
+	ParseError
+	{
+		"function with name '" + std::string{name} + "' could not be found",
+		m_tokens[m_token_index].m_row,
+		m_tokens[m_token_index].m_col,
+		m_source
+	};
 }
 
 [[nodiscard]] bool Parser::is_record(const std::string_view name)
 {
-	for (const auto& i : m_existing_records)
+	/* Loop through all the existing records */
+	for (const auto& record : m_existing_records)
 	{
-		if (i.m_name == name)
+		/* If the current record name matches the name specified */
+		if (record->m_name == name)
 		{
+			/* Return true to signify that a record of the name specified exists */
 			return true;
 		}
 	}
 
+	/* Return false to signify that a record of the name specified does not exist */
 	return false;
 }
 
 [[nodiscard]] bool Parser::is_stdlib(const std::string_view name)
 {
+	/* Return whether the name specified matches with the name of any standard library functions */
 	return name == "LEN" ||
 		   name == "POSITION" ||
 		   name == "SUBSTRING" ||
@@ -1810,137 +2105,223 @@ void Parser::remove_var(const std::string_view name)
 		   name == "RANDOM_INT";
 }
 
-[[nodiscard]] bool Parser::is_stmt(TokenType token_type)
+[[nodiscard]] bool Parser::is_data_type(const TokenType token_type)
 {
-	return token_type == TokenType::IF ||
-		   token_type == TokenType::OUTPUT ||
-		   token_type == TokenType::CONSTANT ||
-		   token_type == TokenType::SUB_ROUTINE;
+	/* Return whether the token type could be represented as a data type */
+	return token_type == TokenType::REAL ||
+	       token_type == TokenType::INT ||
+	       token_type == TokenType::STRING ||
+	       token_type == TokenType::CHAR;
 }
 
 void Parser::deduce_func_decl_param_types_from_args(const std::string_view name, const Args& args)
 {
-	FuncDeclStmt& func_decl{existing_func_lookup(name)};
+	/* Store a pointer to the looked up function declaration statement */
+	std::shared_ptr<FuncDeclStmt> func_decl{existing_func_lookup(name)};
 
-	if (!func_decl.m_is_called)
+	/* If it is the first time that this function is called, deduce types */
+	if (!func_decl->m_is_called)
 	{
-		for (std::size_t i{}; i < func_decl.m_params.m_params.size(); i++)
+		/* Loop through all of the function parameters */
+		for (std::size_t i{}; i < func_decl->m_params.m_params.size(); i++)
 		{
-			func_decl.m_params.m_params[i].m_type = args.m_exprs[i].m_type;
+			/* Set each parameter type to the corresponding call argument type */
+			func_decl->m_params.m_params[i].m_type = args.m_exprs[i].m_type;
 		}
 
-		func_decl.m_is_called = true;
+		/* Set boolean to true to indicate that this function was called */
+		func_decl->m_is_called = true;
 	}
 }
 
 [[nodiscard]] DataType Parser::deduce_expr_type(const Token token)
 {
-	if (token.m_type == TokenType::REAL || token.m_type == TokenType::INT ||
-	    token.m_type == TokenType::STRING || token.m_type == TokenType::NOT)
+	/* If the current token type could be represented as a data type */
+	if (is_data_type(token.m_type))
 	{
+		/* Return the data type conversion of the current token */
 		return tt_to_dt(token.m_type);
 	}
+
+	/* If the current token is of type IDENTIFIER */
 	else if (token.m_type == TokenType::IDENTIFIER)
 	{
-		return existing_var_lookup(token.m_value).m_expr->m_type;
+		/* Return the corresponding variable's type */
+		return existing_var_lookup(token.m_value)->m_expr->m_type;
 	}
+
+	/* If the current token is of type USER_INPUT */
 	else if (token.m_type == TokenType::USER_INPUT)
 	{
+		/* Return a data type of STRING */
+		/* This is because user input is treated as a string literal by default */
 		return DataType::STRING;
 	}
-	else
+
+	/* If no type matches occured */
+	/* Error out */
+	ParseError
 	{
-		ParseError("couldn't match expression type");
-	}
+		"type of token '" + std::string{token.m_value} + "' could not be deduced",
+		m_tokens[m_token_index].m_row,
+		m_tokens[m_token_index].m_col,
+		m_source
+	};
 }
 
-[[nodiscard]] DataType Parser::deduce_field_type_from_access(Token name, Token field)
+[[nodiscard]] DataType Parser::deduce_field_type_from_access(const Token name, const Token field)
 {
-	const std::string_view record_name{existing_var_lookup(name.m_value).m_record_name};
+	/* Store the name of the record, which is deduced by an existing variable lookup */
+	const std::string_view record_name{existing_var_lookup(name.m_value)->m_record_name};
 
-	for (const auto& i : m_existing_records)
+	/* Store the name of the field attempting to be accessed */
+	const std::string_view field_name{field.m_value};
+
+	/* Loop through all of the existing records */
+	for (const auto& record : m_existing_records)
 	{
-		if (i.m_name == record_name)
+		/* If the current record name matches the specified name */
+		if (record->m_name == record_name)
 		{
-			for (const auto& j : i.m_fields)
+			/* Loop through all of that record's fields */
+			for (const auto& field : record->m_fields.m_fields)
 			{
-				if (j.m_name == field.m_value)
+				/* If the field name matches the specified name */
+				if (field.m_name == field_name)
 				{
-					return j.m_type;
+					/* Return the type of that field */
+					return field.m_type;
 				}
 			}
 		}
 	}
+
+	/* If no matches are made */
+	/* Error out */
+	ParseError
+	{
+		"field '" + std::string{field_name} + "' not found in record '" + std::string{record_name} + "'",
+		m_tokens[m_token_index].m_row,
+		m_tokens[m_token_index].m_col,
+		m_source
+	};
 }
 
-[[nodiscard]] DataType Parser::tt_to_dt(const Token token)
+[[nodiscard]] DataType Parser::tt_to_dt(const TokenType token_type)
 {
-	if (token.m_type == TokenType::REAL || token.m_type == TokenType::REAL_TYPE)
+	/* Switch through all of the possible token types that can be converted directly into a data type */
+	switch (token_type)
 	{
-		return DataType::REAL;
+		/* If the current token is of type INT_TYPE */
+		case (TokenType::INT_TYPE): /* Fall through to next case */
+
+		/* If the current token is of type INT */
+		case (TokenType::INT):
+			/* Return a data type of INT */
+			return DataType::INT;
+
+		/* If the current token is of type REAL_TYPE */
+		case (TokenType::REAL_TYPE): /* Fall through to next case */
+
+		/* If the current token is of type REAL */
+		case (TokenType::REAL):
+			/* Return a data type of REAL */
+			return DataType::REAL;
+
+		/* If the current token is of type STRING_TYPE */
+		case (TokenType::STRING_TYPE): /* Fall through to next case */
+
+		/* If the current token is of type STRING */
+		case (TokenType::STRING):
+			/* Return a data type of STRING */
+			return DataType::STRING;
+
+		/* If the current token is of type CHAR_TYPE */
+		case (TokenType::CHAR_TYPE): /* Fall through to next case */
+
+		/* If the current token is of type CHAR */
+		case (TokenType::CHAR):
+			/* Return a data type of CHAR */
+			return DataType::CHAR;
+
+		/* If no matches are made */
+		default:
+			break; /* Fall through to error */
 	}
-	else if (token.m_type == TokenType::INT || token.m_type == TokenType::INT_TYPE)
+
+	/* Error out */
+	ParseError
 	{
-		return DataType::INT;
-	}
-	else if (token.m_type == TokenType::STRING || token.m_type == TokenType::STRING_TYPE)
-	{
-		return DataType::STRING;
-	}
-	ParseError("no match type");
+		"the token type '" + std::string{tt_to_string(token_type)} + "' cannot be converted to a data type",
+		m_tokens[m_token_index].m_row,
+		m_tokens[m_token_index].m_col,
+		m_source
+	};
 }
 
-[[nodiscard]] bool Parser::is_bin_op(TokenType token_type)
+[[nodiscard]] bool Parser::is_bin_op(const TokenType token_type)
 {
+	/* Return whether the current token type indicates a binary operator is present */
 	return token_type == TokenType::ADDITION ||
-		   token_type == TokenType::SUBTRACTION ||
-		   token_type == TokenType::MULTIPLICATION ||
-		   token_type == TokenType::DIVISION ||
-		   token_type == TokenType::DIV ||
-		   token_type == TokenType::MOD ||
-		   token_type == TokenType::LESS_THAN ||
-		   token_type == TokenType::GREATER_THAN ||
-		   token_type == TokenType::EQUALS ||
-		   token_type == TokenType::EXCLAMATION ||
-		   token_type == TokenType::OR ||
-		   token_type == TokenType::AND;
+	       token_type == TokenType::SUBTRACTION ||
+	       token_type == TokenType::MULTIPLICATION ||
+	       token_type == TokenType::DIVISION ||
+	       token_type == TokenType::DIV ||
+	       token_type == TokenType::MOD ||
+	       token_type == TokenType::LESS_THAN ||
+	       token_type == TokenType::GREATER_THAN ||
+	       token_type == TokenType::EQUALS ||
+	       token_type == TokenType::EXCLAMATION ||
+	       token_type == TokenType::OR ||
+	       token_type == TokenType::AND;
 }
 
-[[nodiscard]] bool Parser::is_unary(TokenType token_type)
+[[nodiscard]] bool Parser::is_unary(const TokenType token_type)
 {
+	/* Return whether the current token type indicates a unary operator is present */
 	return token_type == TokenType::NOT ||
 	       token_type == TokenType::SUBTRACTION;
 }
 
 void Parser::populate_stdlib_funcs()
 {
-	add_stdlib_func("LEN",            {DataType::STRING}, DataType::INT);
-	add_stdlib_func("POSITION",       {DataType::STRING, DataType::CHAR}, DataType::INT);
-	add_stdlib_func("SUBSTRING",      {DataType::INT, DataType::INT, DataType::STRING}, DataType::STRING);
-	add_stdlib_func("STRING_TO_INT",  {DataType::STRING}, DataType::INT);
+	/* Add all of the standard library functions to the existing functions list */
+	add_stdlib_func("LEN", {DataType::STRING}, DataType::INT);
+	add_stdlib_func("POSITION", {DataType::STRING, DataType::CHAR}, DataType::INT);
+	add_stdlib_func("SUBSTRING", {DataType::INT, DataType::INT, DataType::STRING}, DataType::STRING);
+	add_stdlib_func("STRING_TO_INT", {DataType::STRING}, DataType::INT);
 	add_stdlib_func("STRING_TO_REAL", {DataType::STRING}, DataType::REAL);
-	add_stdlib_func("INT_TO_STRING",  {DataType::INT}, DataType::STRING);
+	add_stdlib_func("INT_TO_STRING", {DataType::INT}, DataType::STRING);
 	add_stdlib_func("REAL_TO_STRING", {DataType::REAL}, DataType::STRING);
-	add_stdlib_func("CHAR_TO_CODE",   {DataType::CHAR}, DataType::INT);
-	add_stdlib_func("CODE_TO_CHAR",   {DataType::INT}, DataType::STRING);
-	add_stdlib_func("RANDOM_INT",     {DataType::INT, DataType::INT}, DataType::INT);
+	add_stdlib_func("CHAR_TO_CODE", {DataType::CHAR}, DataType::INT);
+	add_stdlib_func("CODE_TO_CHAR", {DataType::INT}, DataType::STRING);
+	add_stdlib_func("RANDOM_INT", {DataType::INT, DataType::INT}, DataType::INT);
 }
 
 void Parser::add_stdlib_func(const std::string_view name, const std::initializer_list<DataType>& param_types, const DataType return_type)
 {
-	std::unique_ptr<FuncDeclStmt> func{std::make_unique<FuncDeclStmt>()};
+	/* Create a new function declaration pointer and allocate memory for it */
+	std::shared_ptr<FuncDeclStmt> func{std::make_shared<FuncDeclStmt>()};
 
+	/* Initialize the function name */
 	func->m_name = name;
 
+	/* Loop through all of the parameter types given */
 	for (const auto& param_type : param_types)
 	{
+		/* Add them to the function parameter list */
 		func->m_params.m_params.push_back(Param{"", param_type});
 	}
 
+	/* Set boolean to false to indicate that the function is not void */
 	func->m_is_void = false;
 
-	func->m_return.m_return_expr = std::make_unique<Expr>();
+	/* Allocate heap memory for the return expression */
+	func->m_return.m_return_expr = std::make_shared<Expr>();
+
+	/* Set the return expression type to the type provided */
 	func->m_return.m_return_expr->m_type = return_type;
 
-	m_existing_funcs.push_back(std::move(func));
+	/* Add the function to the existing functions list */
+	m_existing_funcs.push_back(func);
 }

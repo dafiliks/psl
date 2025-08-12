@@ -6,11 +6,16 @@
 
 #include <vector>
 #include <utility>
+#include <cassert>
+#include <algorithm>
+#include <memory>
+#include <format>
 
 #include "lexer.hpp"
 #include "ast.hpp"
 #include "../compiler/compilation_stage.hpp"
 #include "../utils/stack.hpp"
+#include "../utils/error_types.hpp"
 
 /* The main parser class, responsible for converting the token stream into an AST */
 /* Due to the nature of AQA pseudocode, semantic analysis is performed here */
@@ -54,20 +59,24 @@ public:
 	[[nodiscard]] const std::string& get_source_path() const;
 
 	/* Getter function for the existing program variables */
-	/* Returns: const std::vector<std::unique_ptr<VarStmt>>& - a dynamic array of the existing variable */
-	[[nodiscard]] const std::vector<std::unique_ptr<VarStmt>>& get_existing_vars() const;
+	/* Returns: const std::vector<std::shared_ptr<VarStmt>>& - a dynamic array of the existing variable */
+	[[nodiscard]] const std::vector<std::shared_ptr<VarStmt>>& get_existing_vars() const;
 
 	/* Getter function for the existing program functions */
-	/* Returns: const std::vector<std::unique_ptr<FuncDeclStmt>>& - a dynamic array of the existing function */
-	[[nodiscard]] const std::vector<std::unique_ptr<FuncDeclStmt>>& get_existing_funcs() const;
+	/* Returns: const std::vector<std::shared_ptr<FuncDeclStmt>>& - a dynamic array of the existing function */
+	[[nodiscard]] const std::vector<std::shared_ptr<FuncDeclStmt>>& get_existing_funcs() const;
 
 	/* Getter function for the existing program records */
-	/* Returns: const std::vector<std::unique_ptr<RecordStmt>>& - a dynamic array of the existing record */
-	[[nodiscard]] const std::vector<std::unique_ptr<RecordStmt>>& get_existing_records() const;
+	/* Returns: const std::vector<std::shared_ptr<RecordStmt>>& - a dynamic array of the existing record */
+	[[nodiscard]] const std::vector<std::shared_ptr<RecordStmt>>& get_existing_records() const;
 
 	/* Getter function for the unresolved expressions */
-	/* Returns: const std::vector<std::pair<std::unique_ptr<Expr>, std::unique_ptr<Expr>>>& - a dynamic array of pairs of unresolved expression */
-	[[nodiscard]] const std::vector<std::pair<std::unique_ptr<Expr>, std::unique_ptr<Expr>>>& get_unresolved_exprs() const;
+	/* Returns: const std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>>& - a dynamic array of unresolved expression pairs */
+	[[nodiscard]] const std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>>& get_unresolved_exprs() const;
+
+	/* Getter function for the unresolved declarations */
+	/* Returns: const std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>>& - a dynamic array of unresolved declaration pairs */
+	[[nodiscard]] const std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>>& get_unresolved_decls() const;
 
 	/* Getter function for the variable scope stack */
 	/* Returns: const Scope& - a dynamic stack of variable scope indexes */
@@ -85,8 +94,8 @@ private:
 
 	/* Parses a variable statement */
 	/* E.g. a <- 10 */
-	/* Returns: VarStmt& - the variable statement */
-	[[nodiscard]] VarStmt& parse_var_stmt();
+	/* Returns: VarStmt - the variable statement */
+	[[nodiscard]] VarStmt parse_var_stmt();
 
 	/* Parses a field access statement */
 	/* E.g. jake.age <- 20 */
@@ -100,8 +109,8 @@ private:
 
 	/* Parses a function declaration statement */
 	/* E.g. SUBROUTINE func(a, b) ... ENDSUBROUTINE */
-	/* Returns: FuncDeclStmt& - the function declaration statement */
-	[[nodiscard]] FuncDeclStmt& parse_func_decl_stmt();
+	/* Returns: FuncDeclStmt - the function declaration statement */
+	[[nodiscard]] FuncDeclStmt parse_func_decl_stmt();
 
 	/* Parses a function call statement */
 	/* E.g. func(10, 'str') */
@@ -146,8 +155,8 @@ private:
 
 	/* Parses a record statement */
 	/* E.g. RECORD Human ... ENDRECORD */
-	/* Returns: RecordStmt& - the record statement */
-	[[nodiscard]] RecordStmt& parse_record_stmt();
+	/* Returns: RecordStmt - the record statement */
+	[[nodiscard]] RecordStmt parse_record_stmt();
 
 	/* Parses a field statement */
 	/* E.g. name : String */
@@ -184,8 +193,8 @@ private:
 	void check_arg_count_matches(const std::string_view name, const Args& args);
 
 	/* Parses an arbitrary expression */
-	/* Returns: Expr - the expression */
-	[[nodiscard]] Expr parse_expr();
+	/* Returns: std::shared_ptr<Expr> - the expression */
+	[[nodiscard]] std::shared_ptr<Expr> parse_expr();
 
 	/* Parses an atom expression */
 	/* Returns: AtomExpr - the atom expression */
@@ -296,9 +305,9 @@ private:
 	/* Returns: std::vector<Expr> - the parsed expressions */
 	[[nodiscard]] std::vector<Expr> parse_cse();
 
-	/* Determines the operator present at the current token index */
+	/* Parses the operator present at the current token index */
 	/* Returns: Operator - the operator present */
-	[[nodiscard]] Operator determine_op();
+	[[nodiscard]] Operator parse_op();
 
 	/* Peeks a certain distance away from the current token index */
 	/* Param: const std::size_t - distance to peek */
@@ -331,13 +340,13 @@ private:
 
 	/* Looks up an existing variable */
 	/* Param: const std::string_view - the name of the variable */
-	/* Returns: VarStmt* - the variable statement */
-	[[nodiscard]] VarStmt* existing_var_lookup(const std::string_view name);
+	/* Returns: std::shared_ptr<VarStmt> - the variable statement */
+	[[nodiscard]] std::shared_ptr<VarStmt> existing_var_lookup(const std::string_view name);
 
 	/* Looks up an existing function */
 	/* Param: const std::string_view - the name of the function */
-	/* Returns: FuncDeclStmt* - the function declaration statement */
-	[[nodiscard]] FuncDeclStmt* existing_func_lookup(const std::string_view name);
+	/* Returns: std::shared_ptr<FuncDeclStmt> - the function declaration statement */
+	std::shared_ptr<FuncDeclStmt> existing_func_lookup(const std::string_view name);
 
 	/* Checks whether a record with the following name exists */
 	/* Param: const std::string_view - the name of suspected record */
@@ -349,10 +358,10 @@ private:
 	/* Returns: bool - whether any standard library function has the same name */
 	[[nodiscard]] bool is_stdlib(const std::string_view name);
 
-	/* Checks whether the token type indicates a statement */
+	/* Checks whether a given token type could be represented as a data type */
 	/* Param: const TokenType - the type of the token */
-	/* Returns: bool - whether the token type indicates a statement */
-	[[nodiscard]] bool is_stmt(const TokenType token_type);
+	/* Returns: bool - whether the token type could be represented as a data type */
+	[[nodiscard]] bool is_data_type(const TokenType token_type);
 
 	/* Deduces function declaration parameter types from an argument list */
 	/* Param: const std::string_view - the name of the function */
@@ -371,9 +380,9 @@ private:
 	[[nodiscard]] DataType deduce_field_type_from_access(const Token name, const Token field);
 
 	/* Returns the corresponding data type equivalent for a particular token type */
-	/* Param: const Token - the token containing it's value and type information */
+	/* Param: const TokenType - the token type */
 	/* Returns: DataType - the data type equivalent */
-	[[nodiscard]] DataType tt_to_dt(const Token token);
+	[[nodiscard]] DataType tt_to_dt(const TokenType token_type);
 
 	/* Checks whether a token type indicates the presence of a binary operator */
 	/* Param: const TokenType - the token type */
@@ -404,12 +413,15 @@ private:
 	std::string m_source{}; /* The source contents */
 	std::string m_source_path{}; /* The source file path */
 
-	[[maybe_unused]] std::vector<std::unique_ptr<VarStmt>> m_existing_vars{}; /* A dynamic array of existing variable */
-	[[maybe_unused]] std::vector<std::unique_ptr<FuncDeclStmt>> m_existing_funcs{}; /* A dynamic array of existing function */
-	[[maybe_unused]] std::vector<std::unique_ptr<RecordStmt>> m_existing_records{}; /* A dynamic array of existing record */
+	[[maybe_unused]] std::vector<std::shared_ptr<VarStmt>> m_existing_vars{}; /* A dynamic array of existing variable */
+	[[maybe_unused]] std::vector<std::shared_ptr<FuncDeclStmt>> m_existing_funcs{}; /* A dynamic array of existing function */
+	[[maybe_unused]] std::vector<std::shared_ptr<RecordStmt>> m_existing_records{}; /* A dynamic array of existing record */
 
-	/* A dynamic array of a pair of unresolved expression */
-	[[maybe_unused]] std::vector<std::pair<std::unique_ptr<Expr>, std::unique_ptr<Expr>>> m_unresolved_exprs{};
+	/* A dynamic array of a pair of a unresolved expression and the function name used to resolve it */
+	[[maybe_unused]] std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>> m_unresolved_exprs{};
+
+	/* A dynamic array of a pair of a unresolved declaration and the variable name used to resolve it */
+	[[maybe_unused]] std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>> m_unresolved_decls{};
 
 	[[maybe_unused]] Stack<std::size_t> m_var_scope_stack{}; /* An index stack, used to manage variable scopes */
 };

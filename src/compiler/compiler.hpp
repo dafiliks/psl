@@ -6,10 +6,12 @@
 
 #include <string>
 
-#include "../frontend/lexer.hpp"
-#include "../frontend/parser.hpp"
-#include "../backend/gen.hpp"
 #include "../utils/cliargs.hpp"
+#include "../frontend/parser.hpp"
+#include "../compiler/compilation_targets.hpp"
+#include "../frontend/lexer.hpp"
+#include "../backend/gen.hpp"
+#include "../utils/error_types.hpp"
 
 /* Compiler class, responsible for executing all compilation stages and outputting target ouput */
 class Compiler

@@ -5,6 +5,10 @@
 #define CLIARGS_HPP
 
 #include <string>
+#include <filesystem>
+#include <fstream>
+
+#include "../utils/error_types.hpp"
 
 class CLIArgs
 {

@@ -1,13 +1,10 @@
+/* compiler/compiler.cpp by David Filiks */
+/* The compiler interface implementation for the PsL compiler */
+
 #include "compiler.hpp"
-#include "../utils/cliargs.hpp"
-#include "../frontend/parser.hpp"
-#include "../compiler/compilation_targets.hpp"
-#include "../frontend/lexer.hpp"
-#include "../backend/gen.hpp"
-#include "../utils/error_types.hpp"
 
 Compiler::Compiler(const CLIArgs& args)
-: m_args(args), m_lexer(m_args), m_parser(m_lexer), m_gen(m_parser) /* Initializes all member variables */ {}
+: m_args(args), m_lexer(m_args), m_parser(m_lexer), m_gen(m_parser) /* Initializes member variables */ {}
 
 void Compiler::compile()
 {
@@ -20,20 +17,17 @@ void Compiler::compile()
 
 void Compiler::compile_to_cpp()
 {
-	/* Create a vector of CompilationStage references, each of which represents a stage in compilation */
-	std::vector<std::reference_wrapper<CompilationStage>> compilation_stages
-	{
-		std::ref(m_lexer), /* Reference to lexer object */
-		std::ref(m_parser), /* Reference to parser object */
-		std::ref(m_gen) /* Reference to generator object */
-	};
+	/* Construct and execute lexing process */
+	m_lexer = Lexer{m_args};
+	m_lexer.execute();
 
-	/* Loop through the compilation stages */
-	for (CompilationStage& compilation_stage : compilation_stages)
-	{
-		/* Execute each compilation stage sequentially */
-		compilation_stage.execute();
-	}
+	/* Construct and execute parsing process */
+	m_parser = Parser{m_lexer};
+	m_parser.execute();
+
+	/* Construct and execute code generation process */
+	m_gen = Generator{m_parser};
+	m_gen.execute();
 }
 
 void Compiler::compile_to_output_target(const std::string_view cpp_file)

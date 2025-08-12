@@ -1,13 +1,23 @@
+/* backend/gen.hpp by David Filiks */
+/* The generator header for the PsL compiler */
+
 #ifndef GEN_H
 #define GEN_H
 
 #include <fstream>
 #include <sstream>
 #include <array>
+#include <cctype>
+#include <filesystem>
+#include <algorithm>
+#include <iostream>
+#include <variant>
 
 #include "../frontend/parser.hpp"
 #include "../frontend/ast.hpp"
 #include "../compiler/compilation_stage.hpp"
+#include "../utils/error_types.hpp"
+#include "../utils/vec_ptrs_unwrap.hpp"
 
 /* The main generator class, responsible for converting the valid AST into a C++20 source file */
 /* Due to the nature of AQA pseudocode, semantic analysis is performed here */
@@ -24,7 +34,7 @@ public:
 
 private:
 	void gen_stmt(const Stmt &stmt);
-	void gen_type(const Data_Type &type);
+	void gen_type(const DataType &type);
 	void gen_expr(const Expr &expr);
 	void gen_atom_expr(const AtomExpr &atom_expr);
 	void gen_bin_op_expr(const BinOpExpr &bin_op_expr);
@@ -37,13 +47,13 @@ private:
 
 	void gen_fields(const RecordStmt& record_stmt);
 
-	[[nodiscard]] Data_Type get_field_type_from_access(const FieldAccessStmt& field_access_stmt);
+	[[nodiscard]] DataType get_field_type_from_access(const FieldAccessStmt& field_access_stmt);
 
-	void type_check(const Data_Type &type1, const Data_Type &type2);
+	void type_check(const DataType &type1, const DataType &type2);
 	void type_check_func_args(std::string_view name, const Args &args);
 	void type_check_record_args(const ObjectCreationExpr& object_creation_expr);
 	void type_check_list(const ListExpr& list_expr) const;
-	void op_check(const Data_Type &type1, const Operator &op, const Data_Type &type2);
+	void op_check(const DataType &type1, const Operator &op, const DataType &type2);
 
 	void require_lib(const std::string library);
 	void change_stream(std::ostringstream &new_stream);
@@ -65,14 +75,15 @@ private:
 	void check_record_arg_length_matches(const std::string_view name, const Args &args);
 
 	void check_var_not_list(const VarStmt& var_stmt) const;
-	void check_expr_is_type(const Expr &expr, Data_Type data_type);
-	void check_expr_is_not_type(const Expr& expr, Data_Type data_type) const;
+	void check_expr_is_type(const Expr &expr, DataType data_type);
+	void check_expr_is_not_type(const Expr& expr, DataType data_type) const;
 	void check_expr_is_not_str(const Expr &expr);
 
 	[[nodiscard]] VarStmt &existing_var_lookup(std::string_view name);
 	[[nodiscard]] Param &existing_param_lookup(std::string_view name);
 	[[nodiscard]] FuncDeclStmt &existing_func_lookup(std::string_view name);
 	[[nodiscard]] RecordStmt& existing_record_lookup(std::string_view name);
+
 //	[[nodiscard]] FieldStmt& existing_field_lookup(const RecordStmt& record_stmt, const std::string_view name);
 
 	[[nodiscard]] bool is_lib_loaded(std::string_view library);

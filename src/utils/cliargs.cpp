@@ -1,11 +1,7 @@
 /* utils/cliargs.cpp by David Filiks */
 /* The cli args implementation for the PsL compiler */
 
-#include <filesystem>
-#include <fstream>
-
 #include "../utils/cliargs.hpp"
-#include "../utils/error_types.hpp"
 
 CLIArgs::CLIArgs(int argc, char **argv) : m_argc(argc), m_argv(argv) /* Initializes members, argc and argv */ {}
 
@@ -46,7 +42,7 @@ void CLIArgs::handle()
 void CLIArgs::validate_args()
 {
 	/* If the argument count is not equal to two */
-	if (m_argc != 2)
+	if (m_argc != 3)
 	{
 		/* Error out */
 		CLIArgsError
@@ -115,5 +111,5 @@ void CLIArgs::file_to_source(const std::string& path)
 
 [[nodiscard]] bool CLIArgs::is_valid_output_target(const std::string_view output_target)
 {
-	return output_target == "exe"; /* Return whether the output target is valid */
+	return output_target == "-exe"; /* Return whether the output target is valid */
 }

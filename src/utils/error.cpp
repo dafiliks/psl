@@ -1,9 +1,6 @@
 /* utils/error.cpp by David Filiks */
 /* The error implementation for the PsL compiler */
 
-#include <string>
-#include <iostream>
-
 #include "error.hpp"
 
 std::string_view et_to_string(const ErrorType type)

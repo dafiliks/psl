@@ -1,26 +1,20 @@
 /* frontend/lexer.cpp by David Filiks */
 /* The lexer implementation for the PsL compiler */
 
-#include <vector>
-#include <cctype>
-#include <cstring>
-#include <cassert>
-
 #include "lexer.hpp"
-#include "../utils/error_types.hpp"
 
 std::string_view tt_to_string(const TokenType type)
 {
-	/* Output the corresponding string for the TokenType */
+	/* Switch through all of the possible token types */
 	switch (type)
 	{
 		/* Simple language constructs */
 
-		case TokenType::IDENTIFIER:         return "IDENTIFIER";
-		case TokenType::INT:                return "INT";
-		case TokenType::REAL:               return "REAL";
-		case TokenType::STRING:             return "STRING";
-		case TokenType::CHAR:               return "CHAR";
+		case TokenType::IDENTIFIER:         return "identifier";
+		case TokenType::INT:                return "integer";
+		case TokenType::REAL:               return "real";
+		case TokenType::STRING:             return "string";
+		case TokenType::CHAR:               return "char";
 
 		/* Single character tokens */
 
@@ -376,6 +370,9 @@ char Lexer::consume()
 	/* Check that the consume offset is not out of range */
 	assert(m_index + 1 <= m_source.size());
 
+	/* Store the current character */
+	char consumed{peek()};
+
 	/* If the current character is a newline */
 	if (peek() == '\n')
 	{
@@ -398,5 +395,5 @@ char Lexer::consume()
 	m_index++;
 
 	/* Return the character that was consumed */
-	return peek(-1);
+	return consumed;
 }

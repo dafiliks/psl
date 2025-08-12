@@ -1,18 +1,13 @@
-#include <fstream>
-#include <cctype>
-#include <filesystem>
-#include <algorithm>
-#include <iostream>
-#include <variant>
+/* backend/gen.cpp by David Filiks */
+/* The generator implementation for the PsL compiler */
 
 #include "gen.hpp"
-#include "../frontend/ast.hpp"
-#include "../utils/error.hpp"
-#include "../frontend/parser.hpp"
+
 
 Generator::Generator(Parser &parser) : m_ast(parser.get_ast()), m_source(parser.get_source()), m_source_path(parser.get_source_path()),
-                                       m_existing_vars(parser.get_existing_vars()), m_existing_funcs(parser.get_existing_funcs()),
-                                       m_existing_records(parser.get_existing_records()) {}
+                                       m_existing_vars(VecPtrsUnwrapper<VarStmt>{parser.get_existing_vars()}.unwrap()),
+                                       m_existing_funcs(VecPtrsUnwrapper<FuncDeclStmt>{parser.get_existing_funcs()}.unwrap()),
+                                       m_existing_records(VecPtrsUnwrapper<RecordStmt>{parser.get_existing_records()}.unwrap()) {}
 
 void Generator::execute()
 {
@@ -406,7 +401,7 @@ void Generator::gen_type(const DataType &type)
 		*m_current_stream << "auto";
 		break;
 	default:
-		gen_error_l("couldn't gen type");
+		GenError("couldn't gen type");
 	}
 }
 
@@ -716,16 +711,16 @@ void Generator::gen_op(const Operator &op)
 {
 	switch (op)
 	{
-	case (Operator::PLUS):
+	case (Operator::ADDITION):
 		*m_current_stream << "+";
 		break;
-	case (Operator::MINUS):
+	case (Operator::SUBTRACTION):
 		*m_current_stream << "-";
 		break;
-	case (Operator::MULTIPLY):
+	case (Operator::MULTIPLICATION):
 		*m_current_stream << "*";
 		break;
-	case (Operator::DIVIDE):
+	case (Operator::DIVISION):
 		*m_current_stream << "/";
 		break;
 	case (Operator::DIV):
@@ -818,7 +813,7 @@ void Generator::gen_body(const Body &body)
 
 void Generator::gen_fields(const RecordStmt& record_stmt)
 {
-	for (const auto& i : record_stmt.m_fields)
+	for (const auto& i : record_stmt.m_fields.m_fields)
 	{
 		*m_current_stream << "	";
 		gen_stmt(Stmt{i});
@@ -834,7 +829,7 @@ DataType Generator::get_field_type_from_access(const FieldAccessStmt& field_acce
 	{
 		if (i.m_name == record_name)
 		{
-			for (const auto& j : i.m_fields)
+			for (const auto& j : i.m_fields.m_fields)
 			{
 				if (j.m_name == field_access_stmt.m_field_name)
 				{
@@ -849,7 +844,7 @@ void Generator::type_check(const DataType &type1, const DataType &type2)
 {
 	if (type1 != type2 || type1 == DataType::USER_DEFINED_TYPE && type2 == DataType::USER_DEFINED_TYPE)
 	{
-		gen_error_l("type mismatch");
+		GenError("type mismatch");
 	}
 }
 
@@ -861,7 +856,7 @@ void Generator::type_check_func_args(std::string_view name, const Args &args)
 	{
 		if (args.m_exprs[i].m_type != func_call_stmt.m_params.m_params[i].m_type)
 		{
-			gen_error_l("type mismatch when parsing function call arguments");
+			GenError("type mismatch when parsing function call arguments");
 		}
 	}
 }
@@ -872,9 +867,9 @@ void Generator::type_check_record_args(const ObjectCreationExpr& object_creation
 	{
 		if (i.m_name == object_creation_expr.m_record_name)
 		{
-			for (std::size_t j{}; j < i.m_fields.size(); j++)
+			for (std::size_t j{}; j < i.m_fields.m_fields.size(); j++)
 			{
-				type_check(i.m_fields[j].m_type,
+				type_check(i.m_fields.m_fields[j].m_type,
 				           object_creation_expr.m_args.m_exprs[j].m_type);
 			}
 		}
@@ -889,22 +884,22 @@ void Generator::type_check_list(const ListExpr& list_expr) const
 	{
 		if (i.m_type != list_type)
 		{
-			gen_error_l("mismatch in types of list");
+			GenError("mismatch in types of list");
 		}
 	}
 }
 
 void Generator::op_check(const DataType &type1, const Operator &op, const DataType &type2)
 {
-	if (type1 == DataType::STRING && type2 == DataType::STRING && op != Operator::PLUS &&
+	if (type1 == DataType::STRING && type2 == DataType::STRING && op != Operator::ADDITION &&
 		op != Operator::EQUALS && op != Operator::NOT_EQUALS)
 	{
-		gen_error_l("only concatenation can be performed between strings");
+		GenError("only concatenation can be performed between strings");
 	}
 
 	if (type1 == DataType::REAL && type2 == DataType::REAL && op == Operator::MOD)
 	{
-		gen_error_l("mod can only be performed between ints, not reals");
+		GenError("mod can only be performed between ints, not reals");
 	}
 }
 
@@ -926,7 +921,7 @@ void Generator::check_not_constant_reassignment(const VarStmt &var_stmt)
 {
 	if (var_stmt.m_is_constant && var_stmt.m_is_reassignment)
 	{
-		gen_error_l("cannot reassign to constant");
+		GenError("cannot reassign to constant");
 	}
 }
 
@@ -934,7 +929,7 @@ void Generator::check_reassignment_same_type(const VarStmt &var_stmt)
 {
 	if (var_stmt.m_expr->m_type != var_stmt.m_previous_expr->m_type)
 	{
-		gen_error_l("cannot reassign to a different type");
+		GenError("cannot reassign to a different type");
 	}
 }
 
@@ -944,7 +939,7 @@ void Generator::check_capital_name(const VarStmt &var_stmt)
 					 { return isupper(c); }) &&
 		var_stmt.m_is_constant)
 	{
-		gen_error_l("constants must be named with captial letters");
+		GenError("constants must be named with captial letters");
 	}
 }
 
@@ -963,7 +958,7 @@ void Generator::check_var_exists(const std::string_view name)
 
 	if (!found)
 	{
-		gen_error_l("record lacks field");
+		GenError("record lacks field");
 	}
 }
 
@@ -982,7 +977,7 @@ void Generator::check_record_exists(const std::string_view record_name)
 
 	if (!does_exist)
 	{
-		gen_error_l("record doesn't exist");
+		GenError("record doesn't exist");
 	}
 }
 
@@ -990,7 +985,7 @@ void Generator::check_record_has_field(const std::string_view record_name, const
 {
 	bool found{false};
 
-	for (const auto& i : existing_record_lookup(record_name).m_fields)
+	for (const auto& i : existing_record_lookup(record_name).m_fields.m_fields)
 	{
 		if (i.m_name == field_name)
 		{
@@ -1001,7 +996,7 @@ void Generator::check_record_has_field(const std::string_view record_name, const
 
 	if (!found)
 	{
-		gen_error_l("record lacks field");
+		GenError("record lacks field");
 	}
 }
 
@@ -1020,7 +1015,7 @@ void Generator::check_func_defined(const std::string_view name)
 
 	if (!found)
 	{
-		gen_error_l("function not defined");
+		GenError("function not defined");
 	}
 }
 
@@ -1042,7 +1037,7 @@ void Generator::check_func_defined_once(const std::string_view name)
 
 	if (count != 1)
 	{
-		gen_error_l("function can only be defined once");
+		GenError("function can only be defined once");
 	}
 }
 
@@ -1058,7 +1053,7 @@ void Generator::check_record_defined_once(const std::string_view name)
 
 	if (count != 1)
 	{
-		gen_error_l("record can only be defined one time");
+		GenError("record can only be defined one time");
 	}
 }
 
@@ -1068,7 +1063,7 @@ void Generator::check_func_non_void(const std::string_view name)
 
 	if (func_decl_stmt.m_is_void)
 	{
-		gen_error_l("function call used in expression cannot return nothing");
+		GenError("function call used in expression cannot return nothing");
 	}
 }
 
@@ -1078,7 +1073,7 @@ void Generator::check_arg_length_matches(const std::string_view name, const Args
 
 	if (args.m_exprs.size() != func_decl_stmt.m_params.m_params.size())
 	{
-		gen_error_l("amount of arguments given in function call doesn't match definition");
+		GenError("amount of arguments given in function call doesn't match definition");
 	}
 }
 
@@ -1086,9 +1081,9 @@ void Generator::check_record_arg_length_matches(const std::string_view name, con
 {
 	RecordStmt& record_stmt{existing_record_lookup(name)};
 
-	if (args.m_exprs.size() != record_stmt.m_fields.size())
+	if (args.m_exprs.size() != record_stmt.m_fields.m_fields.size())
 	{
-		gen_error_l("amount of arguments given in function call doesn't match definition");
+		GenError("amount of arguments given in function call doesn't match definition");
 	}
 }
 
@@ -1096,7 +1091,7 @@ void Generator::check_var_not_list(const VarStmt& var_stmt) const
 {
 	if (var_stmt.m_is_1d_list || var_stmt.m_is_2d_list)
 	{
-		gen_error_l("variable used in loop declaration cannot be a list");
+		GenError("variable used in loop declaration cannot be a list");
 	}
 }
 
@@ -1104,7 +1099,7 @@ void Generator::check_expr_is_type(const Expr &expr, const DataType DataType)
 {
 	if (expr.m_type != DataType)
 	{
-		gen_error_l("expr doesn't eval to correct data type");
+		GenError("expr doesn't eval to correct data type");
 	}
 }
 
@@ -1112,7 +1107,7 @@ void Generator::check_expr_is_not_type(const Expr& expr, DataType DataType) cons
 {
 	if (expr.m_type == DataType)
 	{
-		gen_error_l("cannot be that data type");
+		GenError("cannot be that data type");
 	}
 }
 
@@ -1120,7 +1115,7 @@ void Generator::check_expr_is_not_str(const Expr &expr)
 {
 	if (expr.m_type == DataType::STRING)
 	{
-		gen_error_l("expr cannot be string");
+		GenError("expr cannot be string");
 	}
 }
 

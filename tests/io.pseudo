@@ -1,0 +1,3 @@
+a <- USERINPUT
+OUTPUT a
+OUTPUT a, 'test'

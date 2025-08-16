@@ -59,24 +59,24 @@ public:
 	[[nodiscard]] const std::string& get_source_path() const;
 
 	/* Getter function for the existing program variables */
-	/* Returns: const std::vector<std::shared_ptr<VarStmt>>& - a dynamic array of the existing variable */
+	/* Returns: const std::vector<std::shared_ptr<VarStmt>>& - a list of the existing variables */
 	[[nodiscard]] const std::vector<std::shared_ptr<VarStmt>>& get_existing_vars() const;
 
 	/* Getter function for the existing program functions */
-	/* Returns: const std::vector<std::shared_ptr<FuncDeclStmt>>& - a dynamic array of the existing function */
+	/* Returns: const std::vector<std::shared_ptr<FuncDeclStmt>>& - a list of the existing functions */
 	[[nodiscard]] const std::vector<std::shared_ptr<FuncDeclStmt>>& get_existing_funcs() const;
 
 	/* Getter function for the existing program records */
-	/* Returns: const std::vector<std::shared_ptr<RecordStmt>>& - a dynamic array of the existing record */
+	/* Returns: const std::vector<std::shared_ptr<RecordStmt>>& - a list of the existing records */
 	[[nodiscard]] const std::vector<std::shared_ptr<RecordStmt>>& get_existing_records() const;
 
 	/* Getter function for the unresolved expressions */
-	/* Returns: const std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>>& - a dynamic array of unresolved expression pairs */
-	[[nodiscard]] const std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>>& get_unresolved_exprs() const;
+	/* Returns: const std::vector<std::pair<std::shared_ptr<Expr>, const std::string>>& - a list of unresolved expression pairs */
+	[[nodiscard]] const std::vector<std::pair<std::shared_ptr<Expr>, const std::string>>& get_unresolved_exprs() const;
 
 	/* Getter function for the unresolved declarations */
-	/* Returns: const std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>>& - a dynamic array of unresolved declaration pairs */
-	[[nodiscard]] const std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>>& get_unresolved_decls() const;
+	/* Returns: const std::vector<std::pair<std::shared_ptr<Expr>, const std::string>>& - a list of unresolved declaration pairs */
+	[[nodiscard]] const std::vector<std::pair<std::shared_ptr<Expr>, const std::string>>& get_unresolved_decls() const;
 
 	/* Getter function for the variable scope stack */
 	/* Returns: const Scope& - a dynamic stack of variable scope indexes */
@@ -177,14 +177,10 @@ private:
 	/* Returns: Params - the function declaration parameters */
 	[[nodiscard]] Params parse_func_decl_params();
 
-	/* Parses arguments */
-	/* Returns: Args - the arguments */
-	[[nodiscard]] Args parse_args();
-
 	/* Parses function bodies on the second pass, after previous skip */
 	void parse_func_bodies_2nd_pass();
 
-	/* Parses all expressions in the unresolved expressions dynamic array */
+	/* Parses all expressions in the unresolved expressions list */
 	void parse_unresolved_exprs_2nd_pass();
 
 	/* Checks function call argument length matches function declaration */
@@ -214,6 +210,11 @@ private:
 	/* E.g. 'str' */
 	/* Returns: StrExpr - the string expression */
 	[[nodiscard]] StrExpr parse_str_expr();
+
+	/* Parses a character expression */
+	/* E.g. 'c' */
+	/* Returns: CharExpr - the character expression */
+	[[nodiscard]] CharExpr parse_char_expr();
 
 	/* Parses a variable expression */
 	/* E.g. var_name */
@@ -301,9 +302,29 @@ private:
 	/* Returns: FieldStmt - the record fields */
 	[[nodiscard]] Fields parse_fields_until(const std::initializer_list<TokenType>& stop_tokens);
 
+	/* Template makes it possible to reuse the function for different wrapper types via meta programming */
+	template <typename T>
 	/* Parses comma seperated expressions */
-	/* Returns: std::vector<Expr> - the parsed expressions */
-	[[nodiscard]] std::vector<Expr> parse_cse();
+	/* Returns: std::vector<Element> - the expressions wrapper */
+	[[nodiscard]] std::vector<T> parse_cse()
+	{
+		/* Create a list of T objects */
+		std::vector<T> cse{};
+
+		/* Do until the type of the current token is not COMMA */
+		do
+		{
+			/* Consume the current token */
+			consume();
+
+			/* Parse and store the expressions separated by commas in wrapper object */
+			cse.push_back(T{parse_expr()});
+
+		} while (peek().m_type == TokenType::COMMA); /* Loop condition */
+
+		/* Return the parsed expressions wrapper */
+		return cse;
+	}
 
 	/* Parses the operator present at the current token index */
 	/* Returns: Operator - the operator present */
@@ -413,15 +434,15 @@ private:
 	std::string m_source{}; /* The source contents */
 	std::string m_source_path{}; /* The source file path */
 
-	[[maybe_unused]] std::vector<std::shared_ptr<VarStmt>> m_existing_vars{}; /* A dynamic array of existing variable */
-	[[maybe_unused]] std::vector<std::shared_ptr<FuncDeclStmt>> m_existing_funcs{}; /* A dynamic array of existing function */
-	[[maybe_unused]] std::vector<std::shared_ptr<RecordStmt>> m_existing_records{}; /* A dynamic array of existing record */
+	[[maybe_unused]] std::vector<std::shared_ptr<VarStmt>> m_existing_vars{}; /* A list of existing variables */
+	[[maybe_unused]] std::vector<std::shared_ptr<FuncDeclStmt>> m_existing_funcs{}; /* A list of existing functions */
+	[[maybe_unused]] std::vector<std::shared_ptr<RecordStmt>> m_existing_records{}; /* A list of existing records */
 
-	/* A dynamic array of a pair of a unresolved expression and the function name used to resolve it */
-	[[maybe_unused]] std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>> m_unresolved_exprs{};
+	/* A list of a pair of a unresolved expression and the function name used to resolve it */
+	[[maybe_unused]] std::vector<std::pair<std::shared_ptr<Expr>, const std::string>> m_unresolved_exprs{};
 
-	/* A dynamic array of a pair of a unresolved declaration and the variable name used to resolve it */
-	[[maybe_unused]] std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>> m_unresolved_decls{};
+	/* A list of a pair of a unresolved declaration and the variable name used to resolve it */
+	[[maybe_unused]] std::vector<std::pair<std::shared_ptr<Expr>, const std::string>> m_unresolved_decls{};
 
 	[[maybe_unused]] Stack<std::size_t> m_var_scope_stack{}; /* An index stack, used to manage variable scopes */
 };

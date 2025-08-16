@@ -1,0 +1,16 @@
+SUBROUTINE showAdd(a, b)
+	result <- a + b
+	OUTPUT result
+ENDSUBROUTINE
+
+SUBROUTINE sayHi()
+	OUTPUT 'Hi'
+ENDSUBROUTINE
+
+SUBROUTINE add(a, b)
+	result <- a + b
+	RETURN result
+ENDSUBROUTINE
+
+showAdd(2, 3)
+answer <- add(2, 3) * 6

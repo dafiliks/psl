@@ -12,10 +12,8 @@ GCCTarget::GCCTarget(const OutputTarget& target)
 void GCCTarget::compile(const std::string_view cpp_file)
 {
 	/* Deduce output file name, by removing the ".cpp" from the file name */
-	const std::string output_file
-	{
-		std::string{cpp_file}.substr(0, std::string{cpp_file}.find("."))
-	};
+	std::filesystem::path output_file{cpp_file};
+	output_file.replace_extension("");
 
 	/* Variable that holds the final command that will be executed */
 	std::string command_str{};
@@ -26,7 +24,7 @@ void GCCTarget::compile(const std::string_view cpp_file)
 		/* If the output target is EXE */
 		case (OutputTarget::EXE):
 			/* CLI command to compile ".cpp" file to EXE with GCC */
-			command_str = "g++ " + output_file + ".cpp -std=c++20 -o " + output_file + " && ./" + output_file;
+			command_str = "g++ " + output_file.string() + ".cpp -std=c++20 -o " + output_file.string() + " && ./" + output_file.string();
 
 			/* Break from switch case */
 			break;
@@ -34,7 +32,7 @@ void GCCTarget::compile(const std::string_view cpp_file)
 		/* If the output target is ASM */
 		case (OutputTarget::ASM):
 			/* CLI command to compile ".cpp" file to ASM with GCC */
-			command_str = "g++ -S " + output_file + ".cpp -std=c++20 -o " + output_file + ".s";
+			command_str = "g++ -S " + output_file.string() + ".cpp -std=c++20 -o " + output_file.string() + ".s";
 
 			/* Break from switch case */
 			break;
@@ -42,7 +40,7 @@ void GCCTarget::compile(const std::string_view cpp_file)
 		/* If the output target is OBJ */
 		case (OutputTarget::OBJ):
 			/* CLI command to compile ".cpp" file to OBJ with GCC */
-			command_str = "g++ -c " + output_file + ".cpp -std=c++20 -o " + output_file + ".o";
+			command_str = "g++ -c " + output_file.string() + ".cpp -std=c++20 -o " + output_file.string() + ".o";
 
 			/* Break from switch case */
 			break;

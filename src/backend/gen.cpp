@@ -4,14 +4,31 @@
 #include "gen.hpp"
 
 
-Generator::Generator(Parser &parser) : m_ast(parser.get_ast()), m_source(parser.get_source()), m_source_path(parser.get_source_path()),
-                                       m_existing_vars(VecPtrsUnwrapper<VarStmt>{parser.get_existing_vars()}.unwrap()),
-                                       m_existing_funcs(VecPtrsUnwrapper<FuncDeclStmt>{parser.get_existing_funcs()}.unwrap()),
-                                       m_existing_records(VecPtrsUnwrapper<RecordStmt>{parser.get_existing_records()}.unwrap()) {}
+std::string_view dt_to_string(const DataType type)
+{
+	switch (type)
+	{
+		case (DataType::UNRESOLVED):        return "unresolved";
+		case (DataType::INT):               return "integer";
+		case (DataType::REAL):              return "real";
+		case (DataType::STRING):            return "string";
+		case (DataType::CHAR):              return "char";
+		case (DataType::USER_DEFINED_TYPE): return "user defined type";
+		default:                            return "no matching type found";
+	}
+}
+
+Generator::Generator(const Parser& parser)
+: m_ast(parser.get_ast()),
+  m_source(parser.get_source()),
+  m_source_path(parser.get_source_path()),
+  m_existing_vars(VecPtrsUnwrapper<VarStmt>{parser.get_existing_vars()}.unwrap()),
+  m_existing_funcs(VecPtrsUnwrapper<FuncDeclStmt>{parser.get_existing_funcs()}.unwrap()),
+  m_existing_records(VecPtrsUnwrapper<RecordStmt>{parser.get_existing_records()}.unwrap()) {}
 
 void Generator::execute()
 {
-	/* Executes the gen() function */
+	/* Execute the gen() function */
 	gen();
 }
 
@@ -48,13 +65,13 @@ void Generator::gen()
 	m_output_file.close();
 }
 
-void Generator::gen_stmt(const Stmt &stmt)
+void Generator::gen_stmt(const Stmt& stmt)
 {
 	struct StmtVisitor
 	{
-		Generator &gen;
+		Generator& gen;
 
-		void operator()(const VarStmt &var_stmt)
+		void operator()(const VarStmt& var_stmt)
 		{
 			if (var_stmt.m_is_reassignment)
 			{
@@ -102,7 +119,7 @@ void Generator::gen_stmt(const Stmt &stmt)
 			*gen.m_current_stream << ";";
 		}
 
-		void operator()(const OutputStmt &output_stmt)
+		void operator()(const OutputStmt& output_stmt)
 		{
 			gen.require_lib("iostream");
 			*gen.m_current_stream << "std::cout << ";
@@ -110,11 +127,11 @@ void Generator::gen_stmt(const Stmt &stmt)
 			*gen.m_current_stream << ";";
 		}
 
-		void operator()(const FuncDeclStmt &func_decl_stmt)
+		void operator()(const FuncDeclStmt& func_decl_stmt)
 		{
 			gen.change_stream(gen.m_func_stream);
 
-			FuncDeclStmt &table_func_decl_stmt{gen.existing_func_lookup(func_decl_stmt.m_name)};
+			FuncDeclStmt& table_func_decl_stmt{gen.existing_func_lookup(func_decl_stmt.m_name)};
 
 			gen.check_func_defined_once(table_func_decl_stmt.m_name);
 
@@ -152,7 +169,7 @@ void Generator::gen_stmt(const Stmt &stmt)
 			gen.change_stream(gen.m_main_stream);
 		}
 
-		void operator()(const FuncCallStmt &func_call_stmt)
+		void operator()(const FuncCallStmt& func_call_stmt)
 		{
 			*gen.m_current_stream << func_call_stmt.m_name;
 			*gen.m_current_stream << "(";
@@ -161,12 +178,12 @@ void Generator::gen_stmt(const Stmt &stmt)
 			gen.check_arg_length_matches(func_call_stmt.m_name, func_call_stmt.m_args);
 			gen.type_check_func_args(func_call_stmt.m_name, func_call_stmt.m_args);
 
-			gen.gen_args(func_call_stmt.m_args.m_exprs);
+			gen.gen_args(func_call_stmt.m_args.m_args);
 
 			*gen.m_current_stream << ");";
 		}
 
-		void operator()(const RepeatUntilStmt &repeat_until_stmt)
+		void operator()(const RepeatUntilStmt& repeat_until_stmt)
 		{
 			*gen.m_current_stream << "do\n";
 
@@ -183,7 +200,7 @@ void Generator::gen_stmt(const Stmt &stmt)
 			*gen.m_current_stream << "));";
 		}
 
-		void operator()(const WhileStmt &while_stmt)
+		void operator()(const WhileStmt& while_stmt)
 		{
 			*gen.m_current_stream << "while (";
 
@@ -199,7 +216,7 @@ void Generator::gen_stmt(const Stmt &stmt)
 			*gen.m_current_stream << "}";
 		}
 
-		void operator()(const IfStmt &if_stmt)
+		void operator()(const IfStmt& if_stmt)
 		{
 			*gen.m_current_stream << "if (";
 			gen.gen_expr(*if_stmt.m_condition_expr);
@@ -213,7 +230,7 @@ void Generator::gen_stmt(const Stmt &stmt)
 			*gen.m_current_stream << "}";
 		}
 
-		void operator()(const ElseIfStmt &else_if_stmt)
+		void operator()(const ElseIfStmt& else_if_stmt)
 		{
 			*gen.m_current_stream << "else if (";
 			gen.gen_expr(*else_if_stmt.m_condition_expr);
@@ -227,7 +244,7 @@ void Generator::gen_stmt(const Stmt &stmt)
 			*gen.m_current_stream << "}";
 		}
 
-		void operator()(const ElseStmt &else_stmt)
+		void operator()(const ElseStmt& else_stmt)
 		{
 			*gen.m_current_stream << "else {\n";
 			gen.gen_body(*else_stmt.m_body);
@@ -235,7 +252,7 @@ void Generator::gen_stmt(const Stmt &stmt)
 			*gen.m_current_stream << "}";
 		}
 
-		void operator()(const ForToStmt &for_to_stmt)
+		void operator()(const ForToStmt& for_to_stmt)
 		{
 			*gen.m_current_stream << "for (";
 
@@ -280,12 +297,10 @@ void Generator::gen_stmt(const Stmt &stmt)
 		{
 			*gen.m_current_stream << "for (const auto& ";
 
-			*gen.m_current_stream << for_in_stmt.m_declaration;
+			*gen.m_current_stream << for_in_stmt.m_declaration->m_name;
 
 			*gen.m_current_stream << " : ";
 
-			gen.check_expr_is_not_type(*for_in_stmt.m_range, DataType::INT);
-			gen.check_expr_is_not_type(*for_in_stmt.m_range, DataType::REAL);
 			gen.gen_expr(*for_in_stmt.m_range);
 
 			*gen.m_current_stream << ")\n";
@@ -381,7 +396,7 @@ void Generator::gen_stmt(const Stmt &stmt)
 	std::visit(stmt_visitor, stmt.m_stmt);
 }
 
-void Generator::gen_type(const DataType &type)
+void Generator::gen_type(const DataType& type)
 {
 	switch (type)
 	{
@@ -397,7 +412,6 @@ void Generator::gen_type(const DataType &type)
 		break;
 	case (DataType::USER_DEFINED_TYPE):
 	case (DataType::UNRESOLVED):
-	case (DataType::NONE):
 		*m_current_stream << "auto";
 		break;
 	default:
@@ -405,27 +419,28 @@ void Generator::gen_type(const DataType &type)
 	}
 }
 
-void Generator::gen_expr(const Expr &expr)
+void Generator::gen_expr(const Expr& expr)
 {
 	struct ExprVisitor
 	{
-		Generator &gen;
+		Generator& gen;
 
-		void operator()(const AtomExpr &atom_expr)
+		void operator()(const AtomExpr& atom_expr)
 		{
 			gen.gen_atom_expr(atom_expr);
 		}
 
-		void operator()(const BinOpExpr &bin_op_expr)
+		void operator()(const BinOpExpr& bin_op_expr)
 		{
-			const DataType &type1{bin_op_expr.m_lhs->m_type};
-			const DataType &type2{bin_op_expr.m_rhs->m_type};
+			const DataType& type1{bin_op_expr.m_lhs->m_type};
+			const DataType& type2{bin_op_expr.m_rhs->m_type};
 
 			if (bin_op_expr.m_op != Operator::AND && bin_op_expr.m_op != Operator::OR)
 			{
 				gen.type_check(type1, type2);
 			}
 
+			/* If op is DIV, check that both are ints */
 			gen.op_check(type1, bin_op_expr.m_op, type2);
 
 			gen.gen_expr(*bin_op_expr.m_lhs);
@@ -433,15 +448,15 @@ void Generator::gen_expr(const Expr &expr)
 			gen.gen_expr(*bin_op_expr.m_rhs);
 		}
 
-		void operator()(const UnaryOpExpr &unary_op_expr)
+		void operator()(const UnaryOpExpr& unary_op_expr)
 		{
 			gen.gen_op(unary_op_expr.m_op);
 
-			gen.check_expr_is_not_str(*unary_op_expr.m_unary_expr);
+			gen.check_expr_is_not_type(*unary_op_expr.m_unary_expr, DataType::STRING);
 			gen.gen_expr(*unary_op_expr.m_unary_expr);
 		}
 
-		void operator()(const ParenExpr &paren_expr)
+		void operator()(const ParenExpr& paren_expr)
 		{
 			*gen.m_current_stream << "(";
 			gen.gen_expr(*paren_expr.m_expr);
@@ -453,7 +468,7 @@ void Generator::gen_expr(const Expr &expr)
 			*gen.m_current_stream << "{";
 
 			gen.type_check_list(list_expr);
-			gen.gen_args(list_expr.m_exprs);
+			gen.gen_args(list_expr.m_list.m_list);
 
 			*gen.m_current_stream << "}";
 		}
@@ -463,41 +478,46 @@ void Generator::gen_expr(const Expr &expr)
 	std::visit(expr_visitor, expr.m_expr);
 }
 
-void Generator::gen_atom_expr(const AtomExpr &atom_expr)
+void Generator::gen_atom_expr(const AtomExpr& atom_expr)
 {
 	struct AtomExprVisitor
 	{
-		Generator &gen;
+		Generator& gen;
 
-		void operator()(const StrExpr &str_expr)
+		void operator()(const StrExpr& str_expr)
 		{
 			gen.require_lib("string");
 			*gen.m_current_stream << "std::string(\"" << str_expr.m_value << "\")";
 		}
 
-		void operator()(const IntExpr &int_expr)
+		void operator()(const CharExpr& char_expr)
+		{
+			*gen.m_current_stream << "'" << char_expr.m_value << "'";
+		}
+
+		void operator()(const IntExpr& int_expr)
 		{
 			*gen.m_current_stream << int_expr.m_value;
 		}
 
-		void operator()(const RealExpr &float_expr)
+		void operator()(const RealExpr& float_expr)
 		{
 			*gen.m_current_stream << float_expr.m_value;
 		}
 
-		void operator()(const VarExpr &var_expr)
+		void operator()(const VarExpr& var_expr)
 		{
 			*gen.m_current_stream << var_expr.m_name;
 		}
 
-		void operator()(const UserInputExpr &user_input_expr)
+		void operator()(const UserInputExpr& user_input_expr)
 		{
 			gen.require_lib("string");
 			gen.require_lib("iostream");
 			*gen.m_current_stream << "[](){ std::string s; std::getline(std::cin, s); return s; }()";
 		}
 
-		void operator()(const FuncCallExpr &func_call_expr)
+		void operator()(const FuncCallExpr& func_call_expr)
 		{
 
 			*gen.m_current_stream << func_call_expr.m_name;
@@ -508,12 +528,12 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 			gen.check_arg_length_matches(func_call_expr.m_name, func_call_expr.m_args);
 			gen.type_check_func_args(func_call_expr.m_name, func_call_expr.m_args);
 
-			gen.gen_args(func_call_expr.m_args.m_exprs);
+			gen.gen_args(func_call_expr.m_args.m_args);
 
 			*gen.m_current_stream << ")";
 		}
 
-		void operator()(const LenCallExpr &len_call_expr)
+		void operator()(const LenCallExpr& len_call_expr)
 		{
 			*gen.m_current_stream << "(";
 
@@ -523,7 +543,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 			*gen.m_current_stream << ".size()";
 		}
 
-		void operator()(const PositionCallExpr &position_call_expr)
+		void operator()(const PositionCallExpr& position_call_expr)
 		{
 			*gen.m_current_stream << "(";
 
@@ -539,7 +559,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 			*gen.m_current_stream << ")";
 		}
 
-		void operator()(const SubStrCallExpr &sub_str_call_expr)
+		void operator()(const SubStrCallExpr& sub_str_call_expr)
 		{
 			*gen.m_current_stream << "(";
 
@@ -561,7 +581,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 			*gen.m_current_stream << ")";
 		}
 
-		void operator()(const StrToIntCallExpr &str_to_int_call_expr)
+		void operator()(const StrToIntCallExpr& str_to_int_call_expr)
 		{
 			*gen.m_current_stream << "std::stoi(";
 
@@ -571,7 +591,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 			*gen.m_current_stream << ")";
 		}
 
-		void operator()(const StrToRealCallExpr &str_to_real_call_expr)
+		void operator()(const StrToRealCallExpr& str_to_real_call_expr)
 		{
 			*gen.m_current_stream << "std::stod(";
 
@@ -581,7 +601,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 			*gen.m_current_stream << ")";
 		}
 
-		void operator()(const IntToStrCallExpr &int_to_str_call_expr)
+		void operator()(const IntToStrCallExpr& int_to_str_call_expr)
 		{
 			*gen.m_current_stream << "std::to_string(";
 
@@ -591,7 +611,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 			*gen.m_current_stream << ")";
 		}
 
-		void operator()(const RealToStrCallExpr &real_to_str_call_expr)
+		void operator()(const RealToStrCallExpr& real_to_str_call_expr)
 		{
 			*gen.m_current_stream << "std::to_string(";
 
@@ -601,7 +621,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 			*gen.m_current_stream << ")";
 		}
 
-		void operator()(const CharToCodeCallExpr &char_to_code_call_expr)
+		void operator()(const CharToCodeCallExpr& char_to_code_call_expr)
 		{
 			*gen.m_current_stream << "static_cast<int>((";
 
@@ -612,7 +632,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 			*gen.m_current_stream << ")";
 		}
 
-		void operator()(const CodeToCharCallExpr &code_to_char_call_expr)
+		void operator()(const CodeToCharCallExpr& code_to_char_call_expr)
 		{
 			*gen.m_current_stream << "static_cast<char>(";
 
@@ -622,7 +642,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 			*gen.m_current_stream << ")";
 		}
 
-		void operator()(const RandomIntCallExpr &random_int_call_expr)
+		void operator()(const RandomIntCallExpr& random_int_call_expr)
 		{
 			gen.require_lib("random");
 
@@ -697,7 +717,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 			gen.check_record_defined_once(object_creation_expr.m_record_name);
 			gen.check_record_arg_length_matches(object_creation_expr.m_record_name, object_creation_expr.m_args);
 			gen.type_check_record_args(object_creation_expr);
-			gen.gen_args(object_creation_expr.m_args.m_exprs);
+			gen.gen_args(object_creation_expr.m_args.m_args);
 
 			*gen.m_current_stream << "}";
 		}
@@ -707,7 +727,7 @@ void Generator::gen_atom_expr(const AtomExpr &atom_expr)
 	std::visit(atom_expr_visitor, atom_expr.m_atom);
 }
 
-void Generator::gen_op(const Operator &op)
+void Generator::gen_op(const Operator& op)
 {
 	switch (op)
 	{
@@ -721,10 +741,8 @@ void Generator::gen_op(const Operator &op)
 		*m_current_stream << "*";
 		break;
 	case (Operator::DIVISION):
-		*m_current_stream << "/";
-		break;
 	case (Operator::DIV):
-		*m_current_stream << "//";
+		*m_current_stream << "/";
 		break;
 	case (Operator::MOD):
 		*m_current_stream << "%";
@@ -759,7 +777,7 @@ void Generator::gen_op(const Operator &op)
 	}
 }
 
-void Generator::gen_params(const Params &params)
+void Generator::gen_params(const Params& params)
 {
 	for (std::size_t i{0}; i < params.m_params.size(); i++)
 	{
@@ -775,35 +793,24 @@ void Generator::gen_params(const Params &params)
 	}
 }
 
-void Generator::gen_output_stmt_args(const Args &args)
+void Generator::gen_output_stmt_args(const Args& args)
 {
-	for (std::size_t i{0}; i < args.m_exprs.size(); i++)
+	for (std::size_t i{0}; i < args.m_args.size(); i++)
 	{
-		check_expr_is_not_type(args.m_exprs[i], DataType::USER_DEFINED_TYPE);
-		gen_expr(args.m_exprs[i]);
+		//check_expr_is_not_type(args.m_exprs[i], DataType::USER_DEFINED_TYPE);
+		/* Check that it's not a comparsion (a > 10)*/
+		gen_expr(*args.m_args[i].m_expr);
 
-		if (i < args.m_exprs.size() - 1)
+		if (i < args.m_args.size() - 1)
 		{
 			*m_current_stream << " << ";
 		}
 	}
 }
 
-void Generator::gen_args(const std::vector<Expr>& v_expr)
+void Generator::gen_body(const Body& body)
 {
-	for (std::size_t i{0}; i < v_expr.size(); i++)
-	{
-		gen_expr(v_expr[i]);
-		if (i < v_expr.size() - 1)
-		{
-			*m_current_stream << ", ";
-		}
-	}
-}
-
-void Generator::gen_body(const Body &body)
-{
-	for (const auto &i : body.m_stmts)
+	for (const auto& i : body.m_stmts)
 	{
 		*m_current_stream << "	";
 		gen_stmt(i);
@@ -840,21 +847,24 @@ DataType Generator::get_field_type_from_access(const FieldAccessStmt& field_acce
 	}
 }
 
-void Generator::type_check(const DataType &type1, const DataType &type2)
+void Generator::type_check(const DataType& type1, const DataType& type2)
 {
 	if (type1 != type2 || type1 == DataType::USER_DEFINED_TYPE && type2 == DataType::USER_DEFINED_TYPE)
 	{
-		GenError("type mismatch");
+		GenError
+		(
+			"type mismatch between '" + std::string{dt_to_string(type1)} + "' and '" + std::string{dt_to_string(type2)} + "'"
+		);
 	}
 }
 
-void Generator::type_check_func_args(std::string_view name, const Args &args)
+void Generator::type_check_func_args(std::string_view name, const Args& args)
 {
-	FuncDeclStmt &func_call_stmt{existing_func_lookup(name)};
+	FuncDeclStmt& func_call_stmt{existing_func_lookup(name)};
 
 	for (std::size_t i{0}; i < func_call_stmt.m_params.m_params.size(); i++)
 	{
-		if (args.m_exprs[i].m_type != func_call_stmt.m_params.m_params[i].m_type)
+		if (args.m_args[i].m_expr->m_type != func_call_stmt.m_params.m_params[i].m_type)
 		{
 			GenError("type mismatch when parsing function call arguments");
 		}
@@ -870,7 +880,7 @@ void Generator::type_check_record_args(const ObjectCreationExpr& object_creation
 			for (std::size_t j{}; j < i.m_fields.m_fields.size(); j++)
 			{
 				type_check(i.m_fields.m_fields[j].m_type,
-				           object_creation_expr.m_args.m_exprs[j].m_type);
+				           object_creation_expr.m_args.m_args[j].m_expr->m_type);
 			}
 		}
 	}
@@ -878,22 +888,23 @@ void Generator::type_check_record_args(const ObjectCreationExpr& object_creation
 
 void Generator::type_check_list(const ListExpr& list_expr) const
 {
-	DataType list_type{list_expr.m_exprs[0].m_type};
+	DataType list_type{list_expr.m_list.m_list[0].m_expr->m_type};
 
-	for (const auto& i : list_expr.m_exprs)
+	for (const auto& i : list_expr.m_list.m_list)
 	{
-		if (i.m_type != list_type)
+		if (i.m_expr->m_type != list_type)
 		{
 			GenError("mismatch in types of list");
 		}
 	}
 }
 
-void Generator::op_check(const DataType &type1, const Operator &op, const DataType &type2)
+void Generator::op_check(const DataType& type1, const Operator& op, const DataType& type2)
 {
-	if (type1 == DataType::STRING && type2 == DataType::STRING && op != Operator::ADDITION &&
+	if (type1 == DataType::STRING && type2 == DataType::STRING && op != Operator::ADDITION && 
 		op != Operator::EQUALS && op != Operator::NOT_EQUALS)
 	{
+		/* Make it so relational ops can be performed also - 'adam' < 'adele' */
 		GenError("only concatenation can be performed between strings");
 	}
 
@@ -912,12 +923,12 @@ void Generator::require_lib(const std::string library)
 	}
 }
 
-void Generator::change_stream(std::ostringstream &new_stream)
+void Generator::change_stream(std::ostringstream& new_stream)
 {
-	m_current_stream = &new_stream;
+	m_current_stream =& new_stream;
 }
 
-void Generator::check_not_constant_reassignment(const VarStmt &var_stmt)
+void Generator::check_not_constant_reassignment(const VarStmt& var_stmt)
 {
 	if (var_stmt.m_is_constant && var_stmt.m_is_reassignment)
 	{
@@ -925,7 +936,7 @@ void Generator::check_not_constant_reassignment(const VarStmt &var_stmt)
 	}
 }
 
-void Generator::check_reassignment_same_type(const VarStmt &var_stmt)
+void Generator::check_reassignment_same_type(const VarStmt& var_stmt)
 {
 	if (var_stmt.m_expr->m_type != var_stmt.m_previous_expr->m_type)
 	{
@@ -933,12 +944,13 @@ void Generator::check_reassignment_same_type(const VarStmt &var_stmt)
 	}
 }
 
-void Generator::check_capital_name(const VarStmt &var_stmt)
+void Generator::check_capital_name(const VarStmt& var_stmt)
 {
 	if (!std::all_of(var_stmt.m_name.begin(), var_stmt.m_name.end(), [](char c)
-					 { return isupper(c); }) &&
+					 { return isupper(c) || c == '_'; }) && 
 		var_stmt.m_is_constant)
 	{
+		/* Make it so _ are allowed */
 		GenError("constants must be named with captial letters");
 	}
 }
@@ -1004,7 +1016,7 @@ void Generator::check_func_defined(const std::string_view name)
 {
 	bool found{false};
 
-	for (const auto &i : m_existing_funcs)
+	for (const auto& i : m_existing_funcs)
 	{
 		if (i.m_name == name)
 		{
@@ -1023,15 +1035,9 @@ void Generator::check_func_defined_once(const std::string_view name)
 {
 	std::size_t count{};
 
-	for (const auto &i : m_existing_funcs)
+	for (const auto& i : m_existing_funcs)
 	{
 		if (i.m_name == name)
-			count++;
-	}
-
-	for (const auto &i : m_reserved_func_names)
-	{
-		if (i == name)
 			count++;
 	}
 
@@ -1045,7 +1051,7 @@ void Generator::check_record_defined_once(const std::string_view name)
 {
 	std::size_t count{};
 
-	for (const auto &i : m_existing_records)
+	for (const auto& i : m_existing_records)
 	{
 		if (i.m_name == name)
 			count++;
@@ -1059,7 +1065,7 @@ void Generator::check_record_defined_once(const std::string_view name)
 
 void Generator::check_func_non_void(const std::string_view name)
 {
-	FuncDeclStmt &func_decl_stmt{existing_func_lookup(name)};
+	FuncDeclStmt& func_decl_stmt{existing_func_lookup(name)};
 
 	if (func_decl_stmt.m_is_void)
 	{
@@ -1067,21 +1073,21 @@ void Generator::check_func_non_void(const std::string_view name)
 	}
 }
 
-void Generator::check_arg_length_matches(const std::string_view name, const Args &args)
+void Generator::check_arg_length_matches(const std::string_view name, const Args& args)
 {
-	FuncDeclStmt &func_decl_stmt{existing_func_lookup(name)};
+	FuncDeclStmt& func_decl_stmt{existing_func_lookup(name)};
 
-	if (args.m_exprs.size() != func_decl_stmt.m_params.m_params.size())
+	if (args.m_args.size() != func_decl_stmt.m_params.m_params.size())
 	{
 		GenError("amount of arguments given in function call doesn't match definition");
 	}
 }
 
-void Generator::check_record_arg_length_matches(const std::string_view name, const Args &args)
+void Generator::check_record_arg_length_matches(const std::string_view name, const Args& args)
 {
 	RecordStmt& record_stmt{existing_record_lookup(name)};
 
-	if (args.m_exprs.size() != record_stmt.m_fields.m_fields.size())
+	if (args.m_args.size() != record_stmt.m_fields.m_fields.size())
 	{
 		GenError("amount of arguments given in function call doesn't match definition");
 	}
@@ -1095,7 +1101,7 @@ void Generator::check_var_not_list(const VarStmt& var_stmt) const
 	}
 }
 
-void Generator::check_expr_is_type(const Expr &expr, const DataType DataType)
+void Generator::check_expr_is_type(const Expr& expr, const DataType DataType)
 {
 	if (expr.m_type != DataType)
 	{
@@ -1111,7 +1117,7 @@ void Generator::check_expr_is_not_type(const Expr& expr, DataType DataType) cons
 	}
 }
 
-void Generator::check_expr_is_not_str(const Expr &expr)
+void Generator::check_expr_is_not_str(const Expr& expr)
 {
 	if (expr.m_type == DataType::STRING)
 	{
@@ -1130,21 +1136,7 @@ void Generator::check_expr_is_not_str(const Expr &expr)
 	}
 }
 
-[[nodiscard]] Param &Generator::existing_param_lookup(std::string_view name)
-{
-	for (auto it{m_existing_funcs.begin()}; it != m_existing_funcs.end(); it++)
-	{
-		for (std::size_t i{0}; i < it->m_params.m_params.size(); i++)
-		{
-			if (it->m_params.m_params[i].m_name == name)
-			{
-				return it->m_params.m_params[i];
-			}
-		}
-	}
-}
-
-[[nodiscard]] FuncDeclStmt &Generator::existing_func_lookup(std::string_view name)
+[[nodiscard]] FuncDeclStmt& Generator::existing_func_lookup(std::string_view name)
 {
 	for (auto it{m_existing_funcs.begin()}; it != m_existing_funcs.end(); it++)
 	{
@@ -1168,7 +1160,7 @@ void Generator::check_expr_is_not_str(const Expr &expr)
 
 [[nodiscard]] bool Generator::is_lib_loaded(std::string_view library)
 {
-	for (const auto &i : m_used_libs)
+	for (const auto& i : m_used_libs)
 	{
 		if (i == library)
 		{

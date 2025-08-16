@@ -1,0 +1,37 @@
+a <- 1
+IF (a MOD 2) = 0 THEN
+	OUTPUT 'even'
+ENDIF
+
+a <- 1
+IF (a MOD 2) = 0 THEN
+	OUTPUT 'even'
+ELSE
+	OUTPUT 'odd'
+ENDIF
+
+a <- 1
+IF (a MOD 4) = 0 THEN
+	OUTPUT 'multiple of 4'
+ELSE
+	IF (a MOD 4) = 1 THEN
+		OUTPUT 'leaves a remainder of 1'
+	ELSE
+		IF (a MOD 4) = 2 THEN
+			OUTPUT 'leaves a remainder of 2'
+		ELSE
+			OUTPUT 'leaves a remainder of 3'
+		ENDIF
+	ENDIF
+ENDIF
+
+a <- 1
+IF (a MOD 4) = 0 THEN
+	OUTPUT 'multiple of 4'
+ELSE IF (a MOD 4) = 1  THEN
+	OUTPUT 'leaves a remainder of 1'
+ELSE IF (a MOD 4) = 2 THEN
+	OUTPUT 'leaves a remainder of 2'
+ELSE
+	OUTPUT 'leaves a remainder of 3'
+ENDIF

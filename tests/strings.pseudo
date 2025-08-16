@@ -1,0 +1,12 @@
+OUTPUT LEN('computer science')
+OUTPUT POSITION('computer science', 'm')
+OUTPUT SUBSTRING(2, 9, 'computer science')
+
+OUTPUT 'computer' + 'science'
+
+OUTPUT STRING_TO_INT('16')
+OUTPUT STRING_TO_REAL('16.3')
+OUTPUT INT_TO_STRING(16)
+OUTPUT REAL_TO_STRING(16.3)
+OUTPUT CHAR_TO_CODE('a')
+OUTPUT CODE_TO_CHAR(97)

@@ -1,0 +1,15 @@
+OUTPUT 4 < 6
+OUTPUT 'A' < 'B'
+OUTPUT 'adam' < 'adele'
+
+OUTPUT 4.1 > 4.0
+
+OUTPUT 3 = 3
+
+OUTPUT 7 != 7
+
+OUTPUT 3 <= 4
+OUTPUT 4 <= 4
+
+OUTPUT 4 >= 3
+OUTPUT 4.5 >= 4.5

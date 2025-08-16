@@ -4,9 +4,10 @@
 #include "parser.hpp"
 
 Parser::Parser(const Lexer& lexer)
+/* Initialize private members */
 : m_tokens(lexer.get_tokens()),
   m_source(lexer.get_source()),
-  m_source_path(lexer.get_source_path()) /* Initialize private members */ {}
+  m_source_path(lexer.get_source_path()) {}
 
 void Parser::execute()
 {
@@ -70,12 +71,12 @@ void Parser::parse()
 	return m_existing_records; /* Return the existing records list */
 }
 
-[[nodiscard]] const std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>>& Parser::get_unresolved_exprs() const
+[[nodiscard]] const std::vector<std::pair<std::shared_ptr<Expr>, const std::string>>& Parser::get_unresolved_exprs() const
 {
 	return m_unresolved_exprs; /* Return the unresolved expressions list */
 }
 
-[[nodiscard]] const std::vector<std::pair<std::shared_ptr<Expr>, const std::string_view>>& Parser::get_unresolved_decls() const
+[[nodiscard]] const std::vector<std::pair<std::shared_ptr<Expr>, const std::string>>& Parser::get_unresolved_decls() const
 {
 	return m_unresolved_exprs; /* Return the unresolved declarations list */
 }
@@ -132,9 +133,6 @@ void Parser::parse()
 			break;
 	}
 
-	/* Try to peek one token ahead, checking it's not end of file */
-	try_peek(1);
-
 	/* If the current token type is IDENTIFIER */
 	if (peek().m_type == TokenType::IDENTIFIER)
 	{
@@ -175,23 +173,20 @@ void Parser::parse()
 	/* If the current token type is ELSE */
 	if (peek().m_type == TokenType::ELSE)
 	{
-		/* If the next token is IF */
-		if (peek(1).m_type == TokenType::IF)
+		/* If the next token is IF and previous token is on the same row (line) */
+		if (peek(1).m_type == TokenType::IF && peek().m_row == peek(1).m_row)
 		{
 			/* Parse the remainder as an else if statement */
 			return Stmt{parse_else_if_stmt()};
 		}
 
-		/* If the next token is not IF */
+		/* If the next token is not IF or not on the same row (line) */
 		else
 		{
 			/* Parse the remainder as an else statement */
 			return Stmt{parse_else_stmt()};
 		}
 	}
-
-	/* Try to peek two tokens ahead, checking it's not end of file */
-	try_peek(2);
 
 	/* If the current token type is FOR */
 	/* If the token after the next token is of type IN */
@@ -213,10 +208,10 @@ void Parser::parse()
 	}
 
 	/* If no statement was found */
-	/* Error out */
-	ParseError
+	/* Throw parse error */
+	throw ParseError
 	{
-		"no statement found",
+		"no matching statement found for '" + std::string{tt_to_string(peek().m_type)} + "'",
 		m_tokens[m_token_index].m_row,
 		m_tokens[m_token_index].m_col,
 		m_source
@@ -248,9 +243,6 @@ void Parser::parse()
 	try_consume(TokenType::LESS_THAN);
 	try_consume(TokenType::SUBTRACTION);
 
-	/* Try to peek the current token, checking it's not end of file */
-	try_peek();
-
 	/* If the token value after the arrow symbol matches with an existing record name */
 	if (is_record(peek().m_value))
 	{
@@ -264,27 +256,21 @@ void Parser::parse()
 		/* Safely assume that the user is creating a one dimensional list */
 		var_stmt->m_is_1d_list = true;
 
-		/* Try to peek one token ahead, checking it's not end of file */
-		try_peek(1);
-
 		/* If the token type after the SQ_O_BRACKET is also SQ_O_BRACKET */
 		if (peek(1).m_type == TokenType::SQ_O_BRACKET)
 		{
 			/* Safely assume that the user is creating a two dimensional list */
 			var_stmt->m_is_2d_list = true;
 
-			/* Try to peek two tokens ahead, checking it's not end of file */
-			try_peek(2);
-
 			/* If the there are three tokens in a row with a type of SQ_O_BRACKET */
 			if (peek(2).m_type == TokenType::SQ_O_BRACKET)
 			{
 				/* Indicates that the user is trying to create a three dimensional list */
 				/* E.g. list <- [[[...]]] */
-				/* Error out */
-				ParseError
+				/* Throw parse error */
+				throw ParseError
 				{
-					"three dimensional lists are not supported",
+					"only one and two dimensional lists are supported, not > 2D",
 					m_tokens[m_token_index].m_row,
 					m_tokens[m_token_index].m_col,
 					m_source
@@ -363,8 +349,8 @@ void Parser::parse()
 	OutputStmt output_stmt{};
 
 	/* No consume of the OUTPUT token as it is done in parse_cse() */
-	/* Parse the output statement arguments as comma separated values */
-	output_stmt.m_args.m_exprs = parse_cse();
+	/* Parse and store the output statement arguments */
+	output_stmt.m_args.m_args = parse_cse<Arg>();
 
 	/* Return the output statement */
 	return output_stmt;
@@ -416,12 +402,11 @@ void Parser::parse()
 	/* Consume and store the function name */
 	func_call_stmt.m_name = consume().m_value;
 
-	/* No try_consume() for the same reason as before */
-	/* Consume a token of type O_PAREN */
-	consume();
-
 	/* Parse the function call arguments */
-	func_call_stmt.m_args = parse_args();
+	func_call_stmt.m_args.m_args = parse_cse<Arg>();
+
+	/* Try consume a token of type C_PAREN */
+	try_consume(TokenType::C_PAREN);
 
 	/* Check that the function has been declared */
 	existing_func_lookup(func_call_stmt.m_name);
@@ -431,9 +416,6 @@ void Parser::parse()
 
 	/* Deduce the types of the function declaration parameters from the types of the arguments used in this call */
 	deduce_func_decl_param_types_from_args(func_call_stmt.m_name, func_call_stmt.m_args);
-
-	/* Try to consume a token of type C_PAREN */
-	try_consume(TokenType::C_PAREN);
 
 	/* Return the function call statement */
 	return func_call_stmt;
@@ -710,9 +692,6 @@ void Parser::parse()
 	/* Consume a COLON token */
 	consume();
 
-	/* Try to peek the current token, checking it's not end of file */
-	try_peek();
-
 	/* Set the field to a valid data type */
 	/* tt_to_dt() errors out if the token is unable to represent a valid data type */
 	field_stmt.m_type = tt_to_dt(consume().m_type);
@@ -812,10 +791,10 @@ void Parser::skip_over_function_body()
 
 			/* If no valid parameter tokens were received */
 			default:
-				/* Error out */
-				ParseError
+				/* Throw parse error */
+				throw ParseError
 				{
-					"expected an identifier as function parameter",
+					"expected parameter identifier, got '" + std::string{tt_to_string(peek().m_type)} + "'",
 					m_tokens[m_token_index].m_row,
 					m_tokens[m_token_index].m_col,
 					m_source
@@ -825,39 +804,6 @@ void Parser::skip_over_function_body()
 
 	/* Return the parameter list as type Params */
 	return Params{params};
-}
-
-[[nodiscard]] Args Parser::parse_args()
-{
-	/* Create argument list */
-	std::vector<Expr> args{};
-
-	/* Loop until the argument list is over, and a token of type C_PAREN is reached */
-	while (peek().m_type != TokenType::C_PAREN)
-	{
-		/* Try to peek to the current token, checking if index has reached end of file */
-		try_peek();
-
-		/* Switch through the current token type */
-		switch (peek().m_type)
-		{
-			/* If the current token is of type COMMA */
-			case (TokenType::COMMA):
-				/* Consume the comma */
-				consume();
-
-				/* Break from the switch case */
-				break;
-
-			/* If the current token is not of type COMMA */
-			default:
-				/* Parse the expression and add it to the argument list */
-				args.push_back(*parse_expr());
-		}
-	}
-
-	/* Return the argument list as type Args */
-	return Args{args};
 }
 
 void Parser::parse_func_bodies_2nd_pass()
@@ -942,12 +888,13 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	std::shared_ptr<FuncDeclStmt> func_decl_stmt{existing_func_lookup(name)};
 
 	/* If the function declaration parameter count is not equal to the argument count */
-	if (func_decl_stmt->m_params.m_params.size() != args.m_exprs.size())
+	if (func_decl_stmt->m_params.m_params.size() != args.m_args.size())
 	{
-		/* Error out */
-		ParseError
+		/* Throw parse error */
+		throw ParseError
 		{
-			"wrong number of arguments provided",
+			"expected '" + std::to_string(func_decl_stmt->m_params.m_params.size()) + "' arguments" +
+			", got '" + std::to_string(args.m_args.size()) + "' arguments",
 			m_tokens[m_token_index].m_row,
 			m_tokens[m_token_index].m_col,
 			m_source
@@ -968,16 +915,16 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 
 		/* No consume of the SQ_O_BRACKET token as it is done in parse_cse() */
 		/* Parse the list expression as comma separated expressions */
-		list_expr.m_exprs = parse_cse();
+		list_expr.m_list.m_list = parse_cse<Element>();
 
 		/* Try to consume a token of type SQ_C_BRACKET */
 		try_consume(TokenType::SQ_C_BRACKET);
 
 		/* If the list expression is not empty */
-		if (!list_expr.m_exprs.empty())
+		if (!list_expr.m_list.m_list.empty())
 		{
 			/* Set lhs type to the type of the first expression in the list expression */
-			lhs->m_type = list_expr.m_exprs[0].m_type;
+			lhs->m_type = list_expr.m_list.m_list[0].m_expr->m_type;
 		}
 
 		/* If the list expression is empty */
@@ -1006,6 +953,9 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 		/* Try to consume a token of type C_PAREN */
 		try_consume(TokenType::C_PAREN);
 
+		/* Set the lhs type to the type of the parentheses expression */
+		lhs->m_type = paren_expr.m_expr->m_type;
+
 		/* Set lhs to the parentheses expression */
 		*lhs = Expr{paren_expr, lhs->m_type};
 	}
@@ -1013,12 +963,21 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* If the type of the current token indicates it is a unary operator */
 	else if (is_unary(peek().m_type))
 	{
+		/* Create a unary operator expression object */
+		UnaryOpExpr unary_op_expr{};
+
+		/* Parse and store the unary operator expression */
+		unary_op_expr = parse_unary_op_expr();
+
+		/* Set the lhs type to the type of the unary operator expression */
+		lhs->m_type = unary_op_expr.m_unary_expr->m_type;
+
 		/* Set lhs to the unary operator expression */
-		*lhs = Expr{parse_unary_op_expr(), lhs->m_type};
+		*lhs = Expr{unary_op_expr, lhs->m_type};
 	}
 
 	/* If the current and next token suggest a function call expression, a record, or a standard library function */
-	else if (peek().m_type == TokenType::IDENTIFIER && try_peek(1).m_type == TokenType::O_PAREN || is_stdlib(peek().m_value))
+	else if (peek().m_type == TokenType::IDENTIFIER && peek(1).m_type == TokenType::O_PAREN || is_stdlib(peek().m_value))
 	{
 		/* If the current token has a value that matches a record name */
 		if (is_record(peek().m_value))
@@ -1035,7 +994,7 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 		}
 
 		/* If the token ahead is of type O_PAREN */
-		if (peek(1).m_type == TokenType::O_PAREN)
+		else if (peek(1).m_type == TokenType::O_PAREN)
 		{
 			/* Set lhs type to UNRESOLVED */
 			lhs->m_type = DataType::UNRESOLVED;
@@ -1047,9 +1006,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 		/* If the token ahead is of type DOT */
 		else if (peek(1).m_type == TokenType::DOT)
 		{
-			/* Try to peek two tokens ahead, checking it's not end of file */
-			try_peek(2);
-
 			/* Deduce the field type from a field access */
 			/* A field access expression is something such as - OUTPUT jake.age */
 			lhs->m_type = deduce_field_type_from_access(peek(), peek(2));
@@ -1076,30 +1032,13 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 		BinOpExpr bin_op_expr{};
 
 		/* Set the binary operator expression lhs to the current lhs */
-		bin_op_expr.m_lhs = lhs;
-
-		/* Allocate heap memory for the binary operator expression rhs */
-		bin_op_expr.m_rhs = std::make_shared<Expr>();
-
+		bin_op_expr.m_lhs = std::make_shared<Expr>(*lhs);
+	
 		/* Parse and store the type of operator used */
 		bin_op_expr.m_op = parse_op();
 
-		/* If the current token is a unary operator */
-		if (is_unary(peek().m_type))
-		{
-			/* Parse the rhs as a unary operator */
-			bin_op_expr.m_rhs = std::make_shared<Expr>(parse_unary_op_expr());
-		}
-
-		/* If the current token is not a unary operator*/
-		else
-		{
-			/* Deduce the type of the rhs expression */
-			bin_op_expr.m_rhs->m_type = deduce_expr_type(peek());
-
-			/* Parse the rhs as an atom expression */
-			bin_op_expr.m_rhs = std::make_shared<Expr>(parse_atom());
-		}
+		/* Parse the rhs expression */
+		bin_op_expr.m_rhs = parse_expr();
 
 		/* Set the lhs to the binary operator expression */
 		*lhs = Expr{bin_op_expr, lhs->m_type};
@@ -1130,6 +1069,13 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	{
 		/* Parse the remainder as a string expression */
 		return AtomExpr{parse_str_expr()};
+	}
+
+	/* If the current token type is CHAR */
+	else if (peek().m_type == TokenType::CHAR)
+	{
+		/* Parse the remainder as a character expression */
+		return AtomExpr{parse_char_expr()};
 	}
 
 	/* If the current token type is USER_INPUT */
@@ -1216,9 +1162,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 		return AtomExpr{parse_object_creation_expr()};
 	}
 
-	/* Try to peek one token ahead, checking it's not end of file */
-	try_peek(1);
-
 	/* If the current token type is IDENTIFIER */
 	if (peek().m_type == TokenType::IDENTIFIER)
 	{
@@ -1248,9 +1191,9 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	}
 
 	/* If no atom expression was found */
-	ParseError
+	throw ParseError
 	{
-		"no atom expression found",
+		"no matching atom expression found for '" + std::string{tt_to_string(peek().m_type)} + "'",
 		m_tokens[m_token_index].m_row,
 		m_tokens[m_token_index].m_col,
 		m_source
@@ -1279,6 +1222,13 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* No need to use try_consume() as entering this function implies the current token is STRING */
 	/* Return a string expression, constructed using the current token value */
 	return StrExpr{consume().m_value};
+}
+
+[[nodiscard]] CharExpr Parser::parse_char_expr()
+{
+	/* No need to use try_consume() as entering this function implies the current token is CHAR */
+	/* Return a character expression, constructed using the current token's value at index zero */
+	return CharExpr{consume().m_value[0]};
 }
 
 [[nodiscard]] VarExpr Parser::parse_var_expr()
@@ -1368,12 +1318,11 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Consume and store the name of the called function */
 	func_call_expr.m_name = consume().m_value;
 
-	/* No need to use try_consume() for the same reason as before */
-	/* Consume a token with type O_PAREN */
-	consume();
-
 	/* Parse and store the function call arguments */
-	func_call_expr.m_args = parse_args();
+	func_call_expr.m_args.m_args = parse_cse<Arg>();
+
+	/* Try to consume a token of type C_PAREN */
+	try_consume(TokenType::C_PAREN);
 
 	/* Check that the function has been declared */
 	existing_func_lookup(func_call_expr.m_name);
@@ -1383,9 +1332,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 
 	/* Deduce the types of the function declaration parameters from the types of the arguments used in this call */
 	deduce_func_decl_param_types_from_args(func_call_expr.m_name, func_call_expr.m_args);
-
-	/* Try to consume a token of type C_PAREN */
-	try_consume(TokenType::C_PAREN);
 
 	/* Return the function call expression */
 	return func_call_expr;
@@ -1409,11 +1355,8 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Consume and store the name of the record */
 	object_creation_expr.m_record_name = consume().m_value;
 
-	/* Try to consume a token of type O_PAREN */
-	try_consume(TokenType::O_PAREN);
-
 	/* Parse and store the object creation expression arguments */
-	object_creation_expr.m_args = parse_args();
+	object_creation_expr.m_args.m_args = parse_cse<Arg>();
 
 	/* Try to consume a token of type C_PAREN */
 	try_consume(TokenType::C_PAREN);
@@ -1704,26 +1647,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	return Fields{field_stmts};
 }
 
-[[nodiscard]] std::vector<Expr> Parser::parse_cse()
-{
-	/* Create a list of expression objects */
-	std::vector<Expr> cse{};
-
-	/* Do until the type of the current token is not COMMA */
-	do
-	{
-		/* Consume the current token */
-		consume();
-
-		/* Parse and store the expressions separated by commas */
-		cse.push_back(*parse_expr());
-
-	} while (peek().m_type == TokenType::COMMA); /* Loop condition */
-
-	/* Return the parsed comma separated expressions */
-	return cse;
-}
-
 [[nodiscard]] Operator Parser::parse_op()
 {
 	/* If the current token type is ADDITION */
@@ -1826,9 +1749,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 		return Operator::NOT;
 	}
 
-	/* Try to peek one token ahead, checking it's not end of file */
-	try_peek(1);
-
 	/* If the current token type is LESS_THAN */
 	if (peek().m_type == TokenType::LESS_THAN)
 	{
@@ -1887,10 +1807,10 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	}
 
 	/* If no operator was found */
-	/* Error out */
-	ParseError
+	/* Throw parse error */
+	throw ParseError
 	{
-		"no operator found",
+		"no matching operator found for '" + std::string{tt_to_string(peek().m_type)} + "'",
 		m_tokens[m_token_index].m_row,
 		m_tokens[m_token_index].m_col,
 		m_source
@@ -1905,10 +1825,10 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* If peek offset is out of range */
 	if (m_token_index + distance >= m_tokens.size())
 	{
-		/* Error out */
-		ParseError
+		/* Throw parse error */
+		throw ParseError
 		{
-			"peek offset went out of range",
+			"peek offset out of range",
 			m_tokens[m_token_index].m_row,
 			m_tokens[m_token_index].m_col,
 			m_source
@@ -1924,8 +1844,8 @@ const Token& Parser::try_peek(const std::size_t distance) const
 	/* If the token at the peek offset is END_OF_FILE */
 	if (peek(distance).m_type == TokenType::END_OF_FILE)
 	{
-		/* Error out */
-		ParseError
+		/* Throw parse error */
+		throw ParseError
 		{
 			"unexpected end of file reached",
 			m_tokens[m_token_index].m_row,
@@ -1943,10 +1863,10 @@ const Token& Parser::consume(const std::size_t distance)
 	/* If consume offset is out of range */
 	if (m_token_index + distance >= m_tokens.size())
 	{
-		/* Error out */
-		ParseError
+		/* Throw parse error */
+		throw ParseError
 		{
-			"consume offset went out of range",
+			"consume offset out of range",
 			m_tokens[m_token_index].m_row,
 			m_tokens[m_token_index].m_col,
 			m_source
@@ -1965,10 +1885,10 @@ const Token& Parser::try_consume(const TokenType type)
 	/* If the current token does not match the expected type */
 	if (peek().m_type != type)
 	{
-		/* Error out */
-		ParseError
+		/* Throw parse error */
+		throw ParseError
 		{
-			"expected '" + std::string{tt_to_string(type)} + "' got '" + std::string{tt_to_string(peek().m_type)} + "'",
+			"expected '" + std::string{tt_to_string(type)} + "', got '" + std::string{tt_to_string(peek().m_type)} + "'",
 			m_tokens[m_token_index].m_row,
 			m_tokens[m_token_index].m_col,
 			m_source
@@ -2039,10 +1959,10 @@ void Parser::remove_var(const std::string_view name)
 	}
 
 	/* If nothing was found */
-	/* Error out */
-	ParseError
+	/* Throw parse error */
+	throw ParseError
 	{
-		"variable with name '" + std::string{name} + "' could not be found",
+		"variable named '" + std::string{name} + "' could not be found",
 		m_tokens[m_token_index].m_row,
 		m_tokens[m_token_index].m_col,
 		m_source
@@ -2063,10 +1983,10 @@ std::shared_ptr<FuncDeclStmt> Parser::existing_func_lookup(const std::string_vie
 	}
 
 	/* If nothing was found */
-	/* Error out */
-	ParseError
+	/* Throw parse error */
+	throw ParseError
 	{
-		"function with name '" + std::string{name} + "' could not be found",
+		"function named '" + std::string{name} + "' could not be found",
 		m_tokens[m_token_index].m_row,
 		m_tokens[m_token_index].m_col,
 		m_source
@@ -2126,7 +2046,7 @@ void Parser::deduce_func_decl_param_types_from_args(const std::string_view name,
 		for (std::size_t i{}; i < func_decl->m_params.m_params.size(); i++)
 		{
 			/* Set each parameter type to the corresponding call argument type */
-			func_decl->m_params.m_params[i].m_type = args.m_exprs[i].m_type;
+			func_decl->m_params.m_params[i].m_type = args.m_args[i].m_expr->m_type;
 		}
 
 		/* Set boolean to true to indicate that this function was called */
@@ -2159,8 +2079,8 @@ void Parser::deduce_func_decl_param_types_from_args(const std::string_view name,
 	}
 
 	/* If no type matches occured */
-	/* Error out */
-	ParseError
+	/* Throw parse error */
+	throw ParseError
 	{
 		"type of token '" + std::string{token.m_value} + "' could not be deduced",
 		m_tokens[m_token_index].m_row,
@@ -2197,8 +2117,8 @@ void Parser::deduce_func_decl_param_types_from_args(const std::string_view name,
 	}
 
 	/* If no matches are made */
-	/* Error out */
-	ParseError
+	/* Throw parse error */
+	throw ParseError
 	{
 		"field '" + std::string{field_name} + "' not found in record '" + std::string{record_name} + "'",
 		m_tokens[m_token_index].m_row,
@@ -2249,10 +2169,10 @@ void Parser::deduce_func_decl_param_types_from_args(const std::string_view name,
 			break; /* Fall through to error */
 	}
 
-	/* Error out */
-	ParseError
+	/* Throw parse error */
+	throw ParseError
 	{
-		"the token type '" + std::string{tt_to_string(token_type)} + "' cannot be converted to a data type",
+		"token type '" + std::string{tt_to_string(token_type)} + "' cannot be converted to a data type",
 		m_tokens[m_token_index].m_row,
 		m_tokens[m_token_index].m_col,
 		m_source

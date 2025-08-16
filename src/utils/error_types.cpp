@@ -6,36 +6,52 @@
 
 /* CLI Args errors */
 
-CLIArgsError::CLIArgsError(const std::string_view message) : Error(message, ErrorType::CLI_ARGS) /* Initializes Error object */ {}
+CLIArgsError::CLIArgsError(const std::string_view message)
+/* Initialize Error object */
+: Error(message, ErrorType::CLI_ARGS) {}
 
 /* Lexing errors */
 
-LexError::LexError(const std::string_view message) : Error(message, ErrorType::LEX) /* Initializes Error object */ {}
+LexError::LexError(const std::string_view message)
+/* Initialize Error object */
+: Error(message, ErrorType::LEX) {}
 
 LexError::LexError(const std::string_view message, const std::size_t row, const std::size_t col, const std::string& source)
-: Error(message, row, col, source, ErrorType::LEX) /* Initializes Error object */ {}
+/* Initialize Error object */
+: Error(message, row, col, source, ErrorType::LEX) {}
 
 /* Parsing errors */
 
-ParseError::ParseError(const std::string_view message) : Error(message, ErrorType::PARSE) /* Initializes Error object */ {}
+ParseError::ParseError(const std::string_view message)
+/* Initialize Error object */
+: Error(message, ErrorType::PARSE) {}
 
 ParseError::ParseError(const std::string_view message, const std::size_t row, const std::size_t col, const std::string& source)
-: Error(message, row, col, source, ErrorType::PARSE) /* Initializes Error object */ {}
+/* Initialize Error object */
+: Error(message, row, col, source, ErrorType::PARSE) {}
 
 /* Stack errors */
 
-StackError::StackError(const std::string_view message) : Error(message, ErrorType::STACK) /* Initializes Error object */ {}
+StackError::StackError(const std::string_view message)
+/* Initialize Error object */
+: Error(message, ErrorType::STACK) {}
 
 /* Generator errors */
 
-GenError::GenError(const std::string_view message) : Error(message, ErrorType::GEN) /* Initializes Error object */ {}
+GenError::GenError(const std::string_view message)
+/* Initialize Error object */
+: Error(message, ErrorType::GEN) {}
 
 GenError::GenError(const std::string_view message, const std::size_t row, const std::size_t col, const std::string& source)
-: Error(message, row, col, source, ErrorType::GEN) /* Initializes Error object */ {}
+/* Initialize Error object */
+: Error(message, row, col, source, ErrorType::GEN) {}
 
 /* Compilation errors */
 
-CompileError::CompileError(const std::string_view message) : Error(message, ErrorType::COMPILE) /* Initializes Error object */ {}
+CompileError::CompileError(const std::string_view message)
+/* Initialize Error object */
+: Error(message, ErrorType::COMPILE) {}
 
 CompileError::CompileError(const std::string_view message, const std::size_t row, const std::size_t col, const std::string& source)
-: Error(message, row, col, source, ErrorType::COMPILE) /* Initializes Error object */ {}
+/* Initialize Error object */
+: Error(message, row, col, source, ErrorType::COMPILE) {}

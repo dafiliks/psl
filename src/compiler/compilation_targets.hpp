@@ -5,6 +5,7 @@
 #define COMPILATION_TARGETS_HPP
 
 #include <string>
+#include <filesystem>
 
 #include "../utils/error_types.hpp"
 

@@ -1,0 +1,19 @@
+primes <- [2, 3, 5, 7, 11, 13]
+OUTPUT primes[0]
+primes[5] <- 17
+
+table <- [[1, 2], [2, 4], [3, 6], [4, 8]]
+OUTPUT table[3][1]
+table[3][1] <- 16
+
+OUTPUT LEN(primes)
+OUTPUT LEN(table)
+OUTPUT LEN(table[0])
+
+total <- 0
+FOR prime IN primes
+	total <- total + prime
+ENDFOR
+
+OUTPUT 'Sum of the values in primes is: '
+OUTPUT total

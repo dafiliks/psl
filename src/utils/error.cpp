@@ -27,24 +27,18 @@ std::string_view et_to_string(const ErrorType type)
 Error::Error(const std::string_view message, const ErrorType type)
 : m_type(type) /* Initialize error type */
 {
-	/* Display appropriate error message */
-	std::cerr << et_to_string(m_type) << " error: " <<  message << "\n";
-
-	/* Terminate program execution with EXIT_FAILURE */
-	std::exit(EXIT_FAILURE);
+	/* Store appropriate error message */
+	m_error << et_to_string(m_type) << " error: " <<  message << "\n";
 }
 
 Error::Error(const std::string_view message, const std::size_t row, const std::size_t col, const std::string& source,
              const ErrorType type) : m_source(std::move(source)), m_type(type) /* Initialize members */
 {
-	/* Display appropriate error message */
-	std::cerr << et_to_string(m_type) << " error: " << row << ":" << col << ": " << message << "\n";
+	/* Store appropriate error message */
+	m_error << et_to_string(m_type) << " error: " << row << ":" << col << ": " << message << "\n";
 
-	/* Show the part of the source code which caused the error */
-	show_source_error(row, col);
-
-	/* Terminate program execution with EXIT_FAILURE */
-	std::exit(EXIT_FAILURE);
+	/* Add the part of the source code which caused the error */
+	m_error << add_source_error(row, col).str();
 }
 
 [[nodiscard]] const std::string& Error::get_source() const
@@ -57,8 +51,15 @@ Error::Error(const std::string_view message, const std::size_t row, const std::s
 	return m_type; /* Return error type */
 }
 
-void Error::show_source_error(const std::size_t row, const std::size_t col) const
+[[nodiscard]] std::string Error::what() const
 {
+	return m_error.str(); /* Return final error message */
+}
+
+std::ostringstream Error::add_source_error(const std::size_t row, const std::size_t col) const
+{
+	std::ostringstream m_source_error{}; /* Holds the source error */
+
 	std::size_t start{}; /* Source error start index */
 	std::size_t end{}; /* Source error end index */
 
@@ -83,8 +84,11 @@ void Error::show_source_error(const std::size_t row, const std::size_t col) cons
 	}
 
 	/* Print the row number next to source */
-	std::cerr << row << " | ";
+	m_source_error << row << " | ";
 
 	/* Print the entire line containing the error to standard error output */
-	std::cerr << m_source.substr(start, end - start) << "\n";
+	m_source_error << m_source.substr(start, end - start) << "\n";
+
+	/* Return the source error stream */
+	return m_source_error;
 }

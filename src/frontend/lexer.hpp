@@ -15,7 +15,7 @@
 #include "../compiler/compilation_stage.hpp"
 #include "../utils/error_types.hpp"
 
-/* Enum class of all the token types used in AQA pseudocode */
+/* Enum class of all the token types used in the language */
 enum class TokenType
 {
 	/* Simple language constructs */
@@ -91,13 +91,12 @@ enum class TokenType
 	REAL_TO_STRING, /* Represents the "REAL_TO_STRING()" standard library function call */
 	CHAR_TO_CODE, /* Represents the "CHAR_TO_CODE()" standard library function call */
 	CODE_TO_CHAR, /* Represents the "CODE_TO_CHAR()" standard library function call */
-	OUTPUT, /* Represents the "OUTPUT" standard library function call
-	           NOTE: "OUTPUT" does not take arguments surrounded by parentheses */
+	OUTPUT, /* Represents the "OUTPUT" standard library function call */
 	RANDOM_INT, /* Represents the "RANDOM_INT()" standard library function call */
 
 	/* Extra useful tokens */
 
-	END_OF_FILE, /* Represents the null "\0" character, signifying EOF */
+	END_OF_FILE, /* Represents the null "\0" character */
 };
 
 /* A map between known symbols, identifiers, and keywords and their TokenType equivalent */

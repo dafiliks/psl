@@ -17,42 +17,42 @@ class VecPtrsUnwrapper
 /* Public members */
 public:
 
-    /* Functions */
+	/* Functions */
 
-    /* Constructs a VecPtrsUnwrapper object */
-    /* Param: const std::vector<std::shared_ptr<T>>& - the vector of pointers */
-    VecPtrsUnwrapper(const std::vector<std::shared_ptr<T>>& vec_ptrs)
-    : m_vec_ptrs(vec_ptrs) /* Initialize member */ {}
+	/* Constructs a VecPtrsUnwrapper object */
+	/* Param: const std::vector<std::shared_ptr<T>>& - the vector of pointers */
+	VecPtrsUnwrapper(const std::vector<std::shared_ptr<T>>& vec_ptrs)
+	: m_vec_ptrs(vec_ptrs) /* Initialize member */ {}
 
-    /* Unwraps the vector of pointers that was initialized earlier */
-    /* Returns: std::vector<T> - the unwrapper vector */
-    std::vector<T> unwrap()
-    {
-        /* Create a storage container for the vector of dereferenced pointers */
-        std::vector<T> unwrapped_vec{};
+	/* Unwraps the vector of pointers that was initialized earlier */
+	/* Returns: std::vector<T> - the unwrapper vector */
+	std::vector<T> unwrap()
+	{
+		/* Create a storage container for the vector of dereferenced pointers */
+		std::vector<T> unwrapped_vec{};
 
-        /* Loop through the whole vector of pointers */
-        for (const auto& element : m_vec_ptrs)
-        {
-            /* Dereference each element and add it to the unwrapped vector */
-            unwrapped_vec.push_back(*element);
-        }
+		/* Loop through the whole vector of pointers */
+		for (const auto& element : m_vec_ptrs)
+		{
+			/* Dereference each element and add it to the unwrapped vector */
+			unwrapped_vec.push_back(*element);
+		}
 
-        /* Return the unwrapped vector */
-        return unwrapped_vec;
-    }
+		/* Return the unwrapped vector */
+		return unwrapped_vec;
+	}
 
-    /* Getter function for the vector of pointers */
+	/* Getter function for the vector of pointers */
 	/* Returns: const std::vector<std::shared_ptr<T>> - the vector of pointers */
-    [[nodiscard]] const std::vector<std::shared_ptr<T>> get_vec_ptrs() const
-    {
-        return m_vec_ptrs; /* Return the wrapped vector of pointers */
-    }
+	[[nodiscard]] const std::vector<std::shared_ptr<T>> get_vec_ptrs() const
+	{
+		return m_vec_ptrs; /* Return the wrapped vector of pointers */
+	}
 
 /* Private members*/
 private:
 
-    /* Variables */
+	/* Variables */
 
-    std::vector<std::shared_ptr<T>> m_vec_ptrs{}; /* The vector of pointers to unwrap */
+	std::vector<std::shared_ptr<T>> m_vec_ptrs{}; /* The vector of pointers to unwrap */
 };

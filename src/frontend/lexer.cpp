@@ -95,7 +95,9 @@ std::string_view tt_to_string(const TokenType type)
 }
 
 Lexer::Lexer(const CLIArgs& args)
-: m_source(args.get_source() + '\0'), m_source_path(args.get_source_path()) /* Initialize source string */ {}
+/* Initialize source related members */
+: m_source(args.get_source() + '\0'),
+  m_source_path(args.get_source_path()) {}
 
 void Lexer::execute()
 {
@@ -154,8 +156,8 @@ void Lexer::lex()
 		/* In the case that no matching token can be found */
 		else
 		{
-			/* Error out */
-			LexError
+			/* Throw lex error */
+			throw LexError
 			{
 				"no matching token found for '" + std::string{peek()} + "'",
 				m_row,
@@ -289,32 +291,18 @@ void Lexer::lex_number()
 
 void Lexer::lex_string_lit_or_char()
 {
-	/* Consume the opening "'" character in the string literal */
+	/* Consume the opening quote character in the string literal */
 	consume();
 
-	/* Do until the current character does not imply it is part of the string literal */
-	do
+	/* Loop while the string is not yet terminated */
+	while (peek() != '\0' && peek() != '\'')
 	{
-		/* Concatenate string literal characters into the token buffer */
+		/* Consume the current character and append to the buffer */
 		m_buffer += consume();
-	} while (peek() != '\0' && peek() != '\''); /* Loop condition */
-
-	/* If the current character signifies an end of file */
-	if (peek() == '\0')
-	{
-		/* Error out */
-		LexError
-		{
-			"closing quote could not be found for string literal",
-			m_row,
-			m_col,
-			m_source
-		};
-
 	}
 
-	/* If the current character is the closing "'" character */
-	else if (peek() == '\'')
+	/* If the current character is the closing quote character */
+	if (peek() == '\'')
 	{
 		/* Consume the closing single quote */
 		consume();
@@ -358,8 +346,18 @@ void Lexer::lex_comment()
 
 [[nodiscard]] char Lexer::peek(const std::size_t distance) const
 {
-	/* Check that the peek offset is not out of range */
-	assert(m_index + distance <= m_source.size());
+	/* If the peek offset is out of range */
+	if (m_index + distance >= m_source.size())
+	{
+		/* Throw lex error */
+		throw LexError
+		{
+			"peek offset out of range",
+			m_row,
+			m_col,
+			m_source
+		};
+	}
 
 	/* Return the character present at the specified distance */
 	return m_source[m_index + distance];
@@ -367,8 +365,18 @@ void Lexer::lex_comment()
 
 char Lexer::consume()
 {
-	/* Check that the consume offset is not out of range */
-	assert(m_index + 1 <= m_source.size());
+	/* If the consume offset is out of range */
+	if (m_index + 1 >= m_source.size())
+	{
+		/* Throw lex error */
+		throw LexError
+		{
+			"consume offset out of range",
+			m_row,
+			m_col,
+			m_source
+		};
+	}
 
 	/* Store the current character */
 	char consumed{peek()};

@@ -6,6 +6,7 @@
 
 #include <string>
 #include <iostream>
+#include <sstream>
 
 /* Enum class of all the possible error stages for the PsL compiler */
 enum class ErrorType
@@ -54,21 +55,28 @@ public:
 	/* Returns: const ErrorType& - the error type */
 	[[nodiscard]] const ErrorType& get_type() const;
 
+	/* Getter function for the error message */
+	/* Returns: std::string - the error message */
+	[[nodiscard]] std::string what() const;
+
 /* Private members */
 private:
 
 	/* Functions */
 
-	/* Shows the line in the source code that the error occurs at */
+	/* Returns the line in the source code that the error occurs at */
 	/* Param: const std::size_t - the row that the error occurs on */
 	/* Param: const std::size_t - the col that the error occurs on */
-	void show_source_error(const std::size_t row, const std::size_t col) const;
+	/* Returns: std::ostringstream - the source error string stream */
+	std::ostringstream add_source_error(const std::size_t row, const std::size_t col) const;
 
 
 	/* Variables */
 
 	std::string m_source{}; /* The program source for displaying the error */
 	ErrorType m_type{}; /* The type of error that is to be displayed */
+
+	std::ostringstream m_error{}; /* The final error message */
 };
 
 #endif

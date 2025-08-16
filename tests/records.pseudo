@@ -1,0 +1,13 @@
+RECORD Car
+	make : String
+	model : String
+	reg : String
+	price : Real
+	noOfDoors : Integer
+ENDRECORD
+
+myCar <- Car('Ford', 'Focus', 'DX17 GYT', 1399.99, 5)
+
+myCar.model <- 'Fiesta'
+
+OUTPUT myCar.model

@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 	catch (const Error& e) 
 	{
 		/* Handle any compilation process error */
-		std::cerr << e.what() << std::endl;
+		std::cerr << e.what();
 
 		/* Return EXIT_FAILURE to signify failure */
 		return EXIT_FAILURE;
@@ -39,7 +39,7 @@ int main(int argc, char** argv)
 	catch (const std::exception& e)
 	{
 		/* Handle any standard exception */
-		std::cerr << "standard exception: " << e.what() << std::endl;
+		std::cerr << "standard exception: " << e.what() << "\n";
 
 		/* Return EXIT_FAILURE to signify failure */
 		return EXIT_FAILURE;

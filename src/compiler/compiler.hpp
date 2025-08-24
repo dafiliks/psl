@@ -13,7 +13,7 @@
 #include "../backend/gen.hpp"
 #include "../utils/error_types.hpp"
 
-/* Compiler class, responsible for executing all compilation stages and outputting target ouput */
+/* Compiler class, responsible for executing all compilation stages and outputting the target ouput */
 class Compiler
 {
 
@@ -26,7 +26,7 @@ public:
 	/* Param: const CLIArgs& - the CLI arguments passed to the program */
 	Compiler(const CLIArgs& args);
 
-	/* Carry out all compilation stages */
+	/* Carry out all of the compilation stages */
 	void compile();
 
 /* Private members */
@@ -37,7 +37,7 @@ private:
 	/* Compiles source file to a C++20 compliant ".cpp" file */
 	void compile_to_cpp();
 
-	/* Compiles a ".cpp" file to the output target as specified by CLI argument flags */
+	/* Compiles a ".cpp" file to the output target as specified by the CLI argument flag */
 	/* Param: const std::string_view - the path to the cpp file */
 	void compile_to_output_target(const std::string_view cpp_file);
 

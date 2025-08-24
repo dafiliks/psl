@@ -22,11 +22,12 @@ public:
 	/* Constructs a VecPtrsUnwrapper object */
 	/* Param: const std::vector<std::shared_ptr<T>>& - the vector of pointers */
 	VecPtrsUnwrapper(const std::vector<std::shared_ptr<T>>& vec_ptrs)
-	: m_vec_ptrs(vec_ptrs) /* Initialize member */ {}
+	/* Initialize member */
+	: m_vec_ptrs(vec_ptrs) {}
 
 	/* Unwraps the vector of pointers that was initialized earlier */
-	/* Returns: std::vector<T> - the unwrapper vector */
-	std::vector<T> unwrap()
+	/* Returns: std::vector<T> - the unwrapped vector */
+	[[nodiscard]] std::vector<T> unwrap()
 	{
 		/* Create a storage container for the vector of dereferenced pointers */
 		std::vector<T> unwrapped_vec{};
@@ -46,7 +47,8 @@ public:
 	/* Returns: const std::vector<std::shared_ptr<T>> - the vector of pointers */
 	[[nodiscard]] const std::vector<std::shared_ptr<T>> get_vec_ptrs() const
 	{
-		return m_vec_ptrs; /* Return the wrapped vector of pointers */
+		/* Return the wrapped vector of pointers */
+		return m_vec_ptrs;
 	}
 
 /* Private members*/

@@ -12,14 +12,36 @@
 /* Enum class for every data type in the language */
 enum class DataType
 {
-	UNRESOLVED, /* Represents a data type that is currently unresolved */
-	USER_DEFINED_TYPE, /* Represents a user defined type */
-
 	INT, /* Represents an integer type */
 	REAL, /* Represents a real type */
 	STRING, /* Represents a string type */
 	CHAR, /* Represents a character type */
+	UNRESOLVED, /* Represents an unresolved type */
+	USER_DEFINED_TYPE, /* Represents a user defined type */
+	VOID, /* Represents a void type */
 };
+
+/* Returns the corresponding string equivalent for a particular data type */
+/* Param: const DataType - the data type */
+/* Returns: std::string_view - the string equivalent */
+inline std::string_view dt_to_string(const DataType type)
+{
+	/* Switch through all of the possible data types */
+	switch (type)
+	{
+		/* Return the corresponding string */
+		case (DataType::INT):               return "integer";
+		case (DataType::REAL):              return "real";
+		case (DataType::STRING):            return "string";
+		case (DataType::CHAR):              return "char";
+		case (DataType::UNRESOLVED):        return "unresolved";
+		case (DataType::USER_DEFINED_TYPE): return "user defined type";
+		case (DataType::VOID):              return "void";
+
+		/* No match made */
+		default:                            return "no matching type found";
+	}
+}
 
 /* Enum class for every type of operator */
 enum class Operator
@@ -28,21 +50,48 @@ enum class Operator
 	SUBTRACTION, /* Represents the subtraction "-" character */
 	MULTIPLICATION, /* Represents the multiplication "*" character */
 	DIVISION, /* Represents the division "/" character */
-
 	DIV, /* Represents the "DIV" operator */
 	MOD, /* Represents the "MOD" operator */
-
 	LESS_THAN, /* Represents the less than "<" character */
 	GREATER_THAN, /* Represents the greater than ">" character */
 	EQUALS, /* Represents the equals "=" character */
 	NOT_EQUALS,  /* Represents the not equals "!=" operator */
 	LESS_THAN_OET, /* Represents the less than or equal to "<=" operator */
 	GREATER_THAN_OET, /* Represents the greater than or equal to ">=" operator */
-
 	AND, /* Represents the "AND" operator */
 	OR, /* Represents the "OR" operator */
 	NOT, /* Represents the "NOT" operator */
 };
+
+/* Returns the corresponding string equivalent for a particular operator type */
+/* Param: const Operator - the operator */
+/* Returns: std::string_view - the string equivalent */
+inline std::string_view op_to_string(const Operator op)
+{
+	/* Switch through all of the possible operators */
+	switch (op)
+	{
+		/* Return the corresponding string */
+		case (Operator::ADDITION):             return "addition";
+		case (Operator::SUBTRACTION):          return "subtraction";
+		case (Operator::MULTIPLICATION):       return "multiplication";
+		case (Operator::DIVISION):             return "division";
+		case (Operator::DIV):                  return "DIV";
+		case (Operator::MOD):                  return "DIV";
+		case (Operator::LESS_THAN):            return "less than";
+		case (Operator::GREATER_THAN):         return "greater than";
+		case (Operator::EQUALS):               return "equals";
+		case (Operator::NOT_EQUALS):           return "not equals";
+		case (Operator::LESS_THAN_OET):        return "less than or equal to";
+		case (Operator::GREATER_THAN_OET):     return "greater than or equal to";
+		case (Operator::AND):                  return "AND";
+		case (Operator::OR):                   return "OR";
+		case (Operator::NOT):                  return "NOT";
+
+		/* No match made */
+		default:                               return "no matching operator found";
+	}
+}
 
 struct Expr; /* Declaration for the Expr struct */
 struct StrExpr; /* Declaration for the StrExpr struct */
@@ -94,20 +143,20 @@ struct Args
 	std::vector<Arg> m_args{}; /* The list of argument expressions */
 };
 
-/* Struct representing a return statement */
-struct Return
-{
-	std::shared_ptr<Expr> m_return_expr{}; /* The return expression */
-};
-
 /* Struct representing an output statement */
 struct OutputStmt
 {
 	Args m_args{}; /* The arguments to be output */
 };
 
-/* Struct representing a function declaration */
-struct FuncDeclStmt
+/* Struct representing a return statement */
+struct ReturnStmt
+{
+	std::shared_ptr<Expr> m_return_expr{}; /* The return expression */
+};
+
+/* Struct representing a function definition */
+struct FuncDefStmt
 {
 	std::string m_name{}; /* The name of the function */
 	Params m_params{}; /* The list of parameters */
@@ -115,9 +164,8 @@ struct FuncDeclStmt
 	std::size_t m_token_index_start{}; /* The token index where the function starts */
 
 	std::shared_ptr<Body> m_body{}; /* The body of the function */
-	Return m_return{}; /* The return expression or value */
+	ReturnStmt m_return{}; /* The return statement */
 
-	bool m_is_void{true}; /* Is the function void (has no return value) */
 	bool m_is_called{}; /* Has the function been called */
 };
 
@@ -167,7 +215,7 @@ struct ForToStmt
 {
 	VarStmt m_var_stmt{}; /* The variable declaration or initialization */
 	std::shared_ptr<Expr> m_boundary{}; /* The boundary expression */
-	[[maybe_unused]] std::shared_ptr<Expr> m_step{}; /* The optional step expression */
+	std::shared_ptr<Expr> m_step{}; /* The optional step expression */
 	std::shared_ptr<Body> m_body{}; /* The body of the loop */
 };
 
@@ -184,7 +232,7 @@ struct ListAccessStmt
 {
 	std::string m_name{}; /* The name of the list variable */
 	std::shared_ptr<Expr> m_row{}; /* The row index expression */
-	[[maybe_unused]] std::shared_ptr<Expr> m_col{}; /* The column index expression (if 2D) */
+	std::shared_ptr<Expr> m_col{}; /* The column index expression (if 2D) */
 	std::shared_ptr<Expr> m_expr{}; /* The value to assign */
 };
 
@@ -216,12 +264,13 @@ struct FieldAccessStmt
 	std::shared_ptr<Expr> m_expr{}; /* The expression assigned to the field */
 };
 
-/* Struct representing a generic statement */
+/* Struct representing a statement */
 struct Stmt
 {
 	std::variant<VarStmt,
 	             OutputStmt,
-	             FuncDeclStmt,
+	             FuncDefStmt,
+		     ReturnStmt,
 	             FuncCallStmt,
 	             RepeatUntilStmt,
 	             WhileStmt,
@@ -233,7 +282,7 @@ struct Stmt
 	             ListAccessStmt,
 	             FieldStmt,
 	             RecordStmt,
-	             FieldAccessStmt> m_stmt{}; /* The specific statement */
+	             FieldAccessStmt> m_stmt{}; /* The statement variant */
 };
 
 /* Struct representing a body (block of statements) */
@@ -352,7 +401,7 @@ struct ListAccessExpr
 {
 	std::string m_name{}; /* The name of the list variable */
 	std::shared_ptr<Expr> m_row{}; /* The row index */
-	[[maybe_unused]] std::shared_ptr<Expr> m_col{}; /* The column index (if 2D) */
+	std::shared_ptr<Expr> m_col{}; /* The column index (if 2D) */
 };
 
 /* Struct representing a field access expression */
@@ -391,7 +440,7 @@ struct AtomExpr
 	             RandomIntCallExpr,
 	             ListAccessExpr,
 	             FieldAccessExpr,
-	             ObjectCreationExpr> m_atom{}; /* The atom expression */
+	             ObjectCreationExpr> m_atom{}; /* The atom expression variant */
 };
 
 /* Struct representing a binary operation expression */

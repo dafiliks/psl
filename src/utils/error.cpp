@@ -6,11 +6,9 @@
 std::string_view et_to_string(const ErrorType type)
 {
 	/* Output corresponding string from ErrorType */
-
 	switch (type)
 	{
 		/* Typical error types */
-
 		case (ErrorType::CLI_ARGS): return "cli args";
 		case (ErrorType::LEX):      return "lex";
 		case (ErrorType::PARSE):    return "parse";
@@ -19,20 +17,22 @@ std::string_view et_to_string(const ErrorType type)
 		case (ErrorType::COMPILE):  return "compile";
 
 		/* Unknown error type */
-
 		default:                    return "unknown";
 	}
 }
 
 Error::Error(const std::string_view message, const ErrorType type)
-: m_type(type) /* Initialize error type */
+/* Initialize error type */
+: m_type(type)
 {
 	/* Store appropriate error message */
 	m_error << et_to_string(m_type) << " error: " <<  message << "\n";
 }
 
-Error::Error(const std::string_view message, const std::size_t row, const std::size_t col, const std::string& source,
-             const ErrorType type) : m_source(std::move(source)), m_type(type) /* Initialize members */
+Error::Error(const std::string_view message, const std::size_t row, const std::size_t col, const std::string& source, const ErrorType type)
+/* Initialize members */
+: m_source(std::move(source)),
+  m_type(type)
 {
 	/* Store appropriate error message */
 	m_error << et_to_string(m_type) << " error: " << row << ":" << col << ": " << message << "\n";
@@ -83,10 +83,10 @@ std::ostringstream Error::add_source_error(const std::size_t row, const std::siz
 		end = m_source.find('\0', start);
 	}
 
-	/* Print the row number next to source */
+	/* Add the row number next to the source error */
 	m_source_error << row << " | ";
 
-	/* Print the entire line containing the error to standard error output */
+	/* Add the entire line containing the error to the source error */
 	m_source_error << m_source.substr(start, end - start) << "\n";
 
 	/* Return the source error stream */

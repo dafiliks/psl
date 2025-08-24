@@ -12,5 +12,5 @@ SUBROUTINE add(a, b)
 	RETURN result
 ENDSUBROUTINE
 
-showAdd(2, 3)
-answer <- add(2, 3) * 6
+answer <- -7 + 9
+showAdd(2.2, 3.6)

@@ -63,8 +63,8 @@ public:
 	[[nodiscard]] const std::vector<std::shared_ptr<VarStmt>>& get_existing_vars() const;
 
 	/* Getter function for the existing program functions */
-	/* Returns: const std::vector<std::shared_ptr<FuncDeclStmt>>& - a list of the existing functions */
-	[[nodiscard]] const std::vector<std::shared_ptr<FuncDeclStmt>>& get_existing_funcs() const;
+	/* Returns: const std::vector<std::shared_ptr<FuncDefStmt>>& - a list of the existing functions */
+	[[nodiscard]] const std::vector<std::shared_ptr<FuncDefStmt>>& get_existing_funcs() const;
 
 	/* Getter function for the existing program records */
 	/* Returns: const std::vector<std::shared_ptr<RecordStmt>>& - a list of the existing records */
@@ -88,7 +88,7 @@ private:
 
 	/* Functions */
 
-	/* Parses an arbitrary statement */
+	/* Parses a statement */
 	/* Returns: Stmt - the statement */
 	[[nodiscard]] Stmt parse_stmt();
 
@@ -107,14 +107,19 @@ private:
 	/* Returns: OutputStmt - the output statement */
 	[[nodiscard]] OutputStmt parse_output_stmt();
 
-	/* Parses a function declaration statement */
+	/* Parses a function definition statement */
 	/* E.g. SUBROUTINE func(a, b) ... ENDSUBROUTINE */
-	/* Returns: FuncDeclStmt - the function declaration statement */
-	[[nodiscard]] FuncDeclStmt parse_func_decl_stmt();
+	/* Returns: FuncDefStmt - the function definition statement */
+	[[nodiscard]] FuncDefStmt parse_func_def_stmt();
+
+	/* Parses a return statement */
+	/* E.g. RETURN 420 */
+	/* Returns: ReturnStmt - the return statement */
+	[[nodiscard]] ReturnStmt parse_return_stmt();
 
 	/* Parses a function call statement */
 	/* E.g. func(10, 'str') */
-	/* Returns: FuncDeclStmt - the function declaration statement */
+	/* Returns: FuncCallStmt - the function call statement */
 	[[nodiscard]] FuncCallStmt parse_func_call_stmt();
 
 	/* Parses a repeat until statement */
@@ -173,8 +178,8 @@ private:
 	/* Skips over the entire function body, in order to parse it on the second pass */
 	void skip_over_function_body();
 
-	/* Parses function declaration parameters */
-	/* Returns: Params - the function declaration parameters */
+	/* Parses function definition parameters */
+	/* Returns: Params - the function definition parameters */
 	[[nodiscard]] Params parse_func_decl_params();
 
 	/* Parses function bodies on the second pass, after previous skip */
@@ -183,12 +188,12 @@ private:
 	/* Parses all expressions in the unresolved expressions list */
 	void parse_unresolved_exprs_2nd_pass();
 
-	/* Checks function call argument length matches function declaration */
+	/* Checks function call argument length matches function definition */
 	/* Param: const std::string_view - the name of the function */
 	/* Param: const Args& - the function call arguments */
 	void check_arg_count_matches(const std::string_view name, const Args& args);
 
-	/* Parses an arbitrary expression */
+	/* Parses an expression */
 	/* Returns: std::shared_ptr<Expr> - the expression */
 	[[nodiscard]] std::shared_ptr<Expr> parse_expr();
 
@@ -366,8 +371,8 @@ private:
 
 	/* Looks up an existing function */
 	/* Param: const std::string_view - the name of the function */
-	/* Returns: std::shared_ptr<FuncDeclStmt> - the function declaration statement */
-	std::shared_ptr<FuncDeclStmt> existing_func_lookup(const std::string_view name);
+	/* Returns: std::shared_ptr<FuncDefStmt> - the function definition statement */
+	std::shared_ptr<FuncDefStmt> existing_func_lookup(const std::string_view name);
 
 	/* Checks whether a record with the following name exists */
 	/* Param: const std::string_view - the name of suspected record */
@@ -384,7 +389,7 @@ private:
 	/* Returns: bool - whether the token type could be represented as a data type */
 	[[nodiscard]] bool is_data_type(const TokenType token_type);
 
-	/* Deduces function declaration parameter types from an argument list */
+	/* Deduces function definition parameter types from an argument list */
 	/* Param: const std::string_view - the name of the function */
 	/* Param: const Args& - the argument list */
 	void deduce_func_decl_param_types_from_args(const std::string_view name, const Args& args);
@@ -435,7 +440,7 @@ private:
 	std::string m_source_path{}; /* The source file path */
 
 	[[maybe_unused]] std::vector<std::shared_ptr<VarStmt>> m_existing_vars{}; /* A list of existing variables */
-	[[maybe_unused]] std::vector<std::shared_ptr<FuncDeclStmt>> m_existing_funcs{}; /* A list of existing functions */
+	[[maybe_unused]] std::vector<std::shared_ptr<FuncDefStmt>> m_existing_funcs{}; /* A list of existing functions */
 	[[maybe_unused]] std::vector<std::shared_ptr<RecordStmt>> m_existing_records{}; /* A list of existing records */
 
 	/* A list of a pair of a unresolved expression and the function name used to resolve it */

@@ -12,8 +12,8 @@
 /* Enum class of all the possible output format targets */
 enum class OutputTarget
 {
-	EXE, /* Represents a desired output target of an executable/binary */
-	ASM, /* Represents a desired output target of assembly langauge */
+	EXE, /* Represents a desired output target of an executable */
+	ASM, /* Represents a desired output target of assembly language */
 	OBJ, /* Represents a desired output target of an object file */
 };
 
@@ -44,6 +44,30 @@ struct GCCTarget : public CompilationTarget
 	GCCTarget(const OutputTarget& target);
 
 	/* Compile the ".cpp" file into the output target using GCC */
+	/* Param: const std::string_view - the name of the ".cpp" file */
+	void compile(const std::string_view cpp_file) override;
+};
+
+/* The Microsoft Visual C++ target, inherits from CompilationTarget as it is a compilation target */
+struct MSVCTarget : public CompilationTarget
+{
+	/* Constructs a MSVCTarget object */
+	/* Param: const OutputTarget& - the output target */
+	MSVCTarget(const OutputTarget& target);
+
+	/* Compile the ".cpp" file into the output target using MSVC */
+	/* Param: const std::string_view - the name of the ".cpp" file */
+	void compile(const std::string_view cpp_file) override;
+};
+
+/* The Apple Clang target, inherits from CompilationTarget as it is a compilation target */
+struct AppleClangTarget : public CompilationTarget
+{
+	/* Constructs a AppleClangTarget object */
+	/* Param: const OutputTarget& - the output target */
+	AppleClangTarget(const OutputTarget& target);
+
+	/* Compile the ".cpp" file into the output target using XCode */
 	/* Param: const std::string_view - the name of the ".cpp" file */
 	void compile(const std::string_view cpp_file) override;
 };

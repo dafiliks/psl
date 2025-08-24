@@ -38,14 +38,13 @@ public:
 	/* Param: const ErrorType - the type of error */
 	Error(const std::string_view message, const ErrorType type);
 
-	/* Constructs an Error object with more data */
+	/* Constructs an Error object using more data */
 	/* Param: const std::string_view - the message to be displayed upon error */
 	/* Param: const std::size_t - the row that the error occurs on */
 	/* Param: const std::size_t - the col that the error occurs on */
 	/* Param: const std::string& - the source code in which the error occurs */
 	/* Param: const ErrorType - the type of error */
-	Error(const std::string_view message, const std::size_t row, const std::size_t col, const std::string& source,
-	      const ErrorType type);
+	Error(const std::string_view message, const std::size_t row, const std::size_t col, const std::string& source, const ErrorType type);
 
 	/* Getter function for the source file contents */
 	/* Returns: const std::string& - the source file contents */
@@ -69,7 +68,6 @@ private:
 	/* Param: const std::size_t - the col that the error occurs on */
 	/* Returns: std::ostringstream - the source error string stream */
 	std::ostringstream add_source_error(const std::size_t row, const std::size_t col) const;
-
 
 	/* Variables */
 

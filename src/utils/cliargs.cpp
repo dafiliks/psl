@@ -44,8 +44,8 @@ void CLIArgs::validate_args()
 	/* If the argument count is not equal to two */
 	if (m_argc != 3)
 	{
-		/* Error out */
-		CLIArgsError
+		/* Throw cli args error */
+		throw CLIArgsError
 		{
 			"wrong number of arguments provided"
 		};
@@ -54,8 +54,8 @@ void CLIArgs::validate_args()
 	/* If the file does not exist */
 	if (!std::filesystem::exists(get_source_path()))
 	{
-		/* Error out */
-		CLIArgsError
+		/* Throw cli args error */
+		throw CLIArgsError
 		{
 			"file '" + get_source_path() + "' does not exist"
 		};
@@ -65,8 +65,8 @@ void CLIArgs::validate_args()
 	/* If the file extension is not ".pseudo" */
 	if (std::filesystem::path(get_source_path()).extension() != ".pseudo")
 	{
-		/* Error out */
-		CLIArgsError
+		/* Throw cli args error */
+		throw CLIArgsError
 		{
 			"file '" + get_source_path() + "' lacks '.pseudo' extension"
 		};
@@ -75,8 +75,8 @@ void CLIArgs::validate_args()
 	/* If the target output flag is not valid */
 	if (!is_valid_output_target(get_target_output_flag()))
 	{
-		/* Error out */
-		CLIArgsError
+		/* Throw cli args error */
+		throw CLIArgsError
 		{
 			"target output flag '" + get_target_output_flag() + "' unrecognized"
 		};
@@ -94,8 +94,8 @@ void CLIArgs::file_to_source(const std::string& path)
 	/* If the file did not open properly */
 	if (!file.is_open())
 	{
-		/* Error out */
-		CLIArgsError
+		/* Throw cli args error */
+		throw CLIArgsError
 		{
 			"file '" + get_source_path() + "' could not be opened"
 		};
@@ -111,5 +111,8 @@ void CLIArgs::file_to_source(const std::string& path)
 
 [[nodiscard]] bool CLIArgs::is_valid_output_target(const std::string_view output_target)
 {
-	return output_target == "-exe"; /* Return whether the output target is valid */
+	/* Return whether the output target is valid */
+	return output_target == "-exe" ||
+	       output_target == "-asm" ||
+	       output_target == "-obj";
 }

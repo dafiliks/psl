@@ -4,7 +4,11 @@
 #include "compiler.hpp"
 
 Compiler::Compiler(const CLIArgs& args)
-: m_args(args), m_lexer(m_args), m_parser(m_lexer), m_gen(m_parser) /* Initializes member variables */ {}
+/* Initialize member variables */ 
+: m_args(args),
+  m_lexer(m_args),
+  m_parser(m_lexer),
+  m_gen(m_parser) {}
 
 void Compiler::compile()
 {
@@ -38,11 +42,61 @@ void Compiler::compile_to_output_target(const std::string_view cpp_file)
 	/* If the target output flag is "-exe" */
 	if (m_args.get_target_output_flag() == "-exe")
 	{
-/* If the user is using the G++ compiler */
-#if defined(__GNUC__) && defined(__cplusplus)
-		/* Set the target compiler to GCC (G++) and the output target to EXE */
-		target = std::make_unique<GCCTarget>(OutputTarget::EXE);
-#endif
+		/* If the user is using the G++ compiler */
+		#if defined(__GNUG__)
+			/* Set the target compiler to GCC (G++) and the output target to EXE */
+			target = std::make_unique<GCCTarget>(OutputTarget::EXE);
+
+		/* If the user is using the MSVC compiler */
+		#elif defined(_MSC_VER)
+			/* Set the target compiler to MSVC and the output target to EXE */
+			target = std::make_unique<MSVCTarget>(OutputTarget::EXE);
+
+		/* If the user is using the Apple Clang compiler */
+		#elif defined(__clang__) && defined(__apple_build_version__)
+			/* Set the target compiler to Apple Clang and the output target to EXE */
+			target = std::make_unique<AppleClangTarget>(OutputTarget::EXE);
+		#endif
+	}
+
+	/* If the target output flag is "-asm" */
+	else if (m_args.get_target_output_flag() == "-asm")
+	{
+		/* If the user is using the G++ compiler */
+		#if defined(__GNUG__)
+			/* Set the target compiler to GCC (G++) and the output target to ASM */
+			target = std::make_unique<GCCTarget>(OutputTarget::ASM);
+
+		/* If the user is using the MSVC compiler */
+		#elif defined(_MSC_VER)
+			/* Set the target compiler to MSVC and the output target to ASM */
+			target = std::make_unique<MSVCTarget>(OutputTarget::ASM);
+
+		/* If the user is using the Apple Clang compiler */
+		#elif defined(__clang__) && defined(__apple_build_version__)
+			/* Set the target compiler to Apple Clang and the output target to ASM */
+			target = std::make_unique<AppleClangTarget>(OutputTarget::ASM);
+		#endif
+	}
+
+	/* If the target output flag is "-obj" */
+	else if (m_args.get_target_output_flag() == "-obj")
+	{
+		/* If the user is using the G++ compiler */
+		#if defined(__GNUG__)
+			/* Set the target compiler to GCC (G++) and the output target to OBJ */
+			target = std::make_unique<GCCTarget>(OutputTarget::OBJ);
+
+		/* If the user is using the MSVC compiler */
+		#elif defined(_MSC_VER)
+			/* Set the target compiler to MSVC and the output target to OBJ */
+			target = std::make_unique<MSVCTarget>(OutputTarget::OBJ);
+
+		/* If the user is using the Apple Clang compiler */
+		#elif defined(__clang__) && defined(__apple_build_version__)
+			/* Set the target compiler to Apple Clang and the output target to OBJ */
+			target = std::make_unique<AppleClangTarget>(OutputTarget::OBJ);
+		#endif
 	}
 
 	/* If the target was set */
@@ -55,10 +109,12 @@ void Compiler::compile_to_output_target(const std::string_view cpp_file)
 	/* If the target was not set */
 	else
 	{
-		/* Error out */
-		CompileError
+		/* Throw compilation error */
+		throw CompileError
 		{
-			"no valid compilation target found for flag " + m_args.get_target_output_flag()
+			"no valid compilation target found for flag '" +
+			m_args.get_target_output_flag() +
+			"'"
 		};
 	}
 }

@@ -46,8 +46,8 @@ public:
 		/* If the stack is empty */
 		if (empty())
 		{
-			/* Error out */
-			StackError
+			/* Throw stack error */
+			throw StackError
 			{
 				"cannot pop from an empty stack"
 			};
@@ -60,14 +60,14 @@ public:
 
 	/* Gets the data that lies at the top of the stack */
 	/* Returns: T - the data at the top of the stack */
-	T top()
+	[[nodiscard]] T top()
 	{
 		return m_data[m_size -  1]; /* Return the data at the top of the stack */
 	}
 
 	/* Checks whether the stack is empty or not */
 	/* Returns: bool - whether the stack is empty */
-	bool empty()
+	[[nodiscard]] bool empty()
 	{
 		/* Return true if size is equal to zero, false if not */
 		return m_size == 0 ? true : false;

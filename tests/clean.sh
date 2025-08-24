@@ -1,0 +1,1 @@
+find . -maxdepth 1 -type f ! -name "*.pseudo" ! -name "$(basename "$0")" -exec rm -f {} \;

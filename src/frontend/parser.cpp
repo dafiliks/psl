@@ -17,7 +17,7 @@ void Parser::execute()
 
 void Parser::parse()
 {
-	/* Add the standard function declaration statements onto the beginning of AST */
+	/* Add the standard function definition statements onto the beginning of AST */
 	/* Populate the existing functions array with standard library functions */
 	populate_stdlib_funcs();
 
@@ -61,7 +61,7 @@ void Parser::parse()
 	return m_existing_vars; /* Return the existing variables list */
 }
 
-[[nodiscard]] const std::vector<std::shared_ptr<FuncDeclStmt>>& Parser::get_existing_funcs() const
+[[nodiscard]] const std::vector<std::shared_ptr<FuncDefStmt>>& Parser::get_existing_funcs() const
 {
 	return m_existing_funcs; /* Return the existing functions list */
 }
@@ -124,8 +124,13 @@ void Parser::parse()
 
 		/* If the current token type is SUB_ROUTINE */
 		case (TokenType::SUB_ROUTINE):
-			/* Parse the remainder as a function declaration statement */
-			return Stmt{parse_func_decl_stmt()};
+			/* Parse the remainder as a function definition statement */
+			return Stmt{parse_func_def_stmt()};
+
+		/* If the current token type is SUB_ROUTINE */
+		case (TokenType::RETURN):
+			/* Parse the remainder as a return statement */
+			return Stmt{parse_return_stmt()};
 
 		/* In the case of no matches */
 		default:
@@ -297,9 +302,6 @@ void Parser::parse()
 
 		/* Parse and set the new variable expression */
 		var_stmt->m_expr = parse_expr();
-
-		/* Return the variable statement */
-		return *var_stmt;
 	}
 
 	/* If the variable was not previously defined */
@@ -310,10 +312,10 @@ void Parser::parse()
 
 		/* Append the variable pointer to the existing variables array */
 		m_existing_vars.push_back(var_stmt);
-
-		/* Return the variable statement from list */
-		return *m_existing_vars.back();
 	}
+
+	/* Return the variable statement */
+	return *var_stmt;
 }
 
 [[nodiscard]] FieldAccessStmt Parser::parse_field_access_stmt()
@@ -321,7 +323,6 @@ void Parser::parse()
 	/* Create a new field access statement object */
 	FieldAccessStmt field_access_stmt{};
 
-	/* No need to use try_consume() as entering this function implies the current token is IDENTIFIER */
 	/* Consume and store a variable identifier */
 	field_access_stmt.m_name = consume().m_value;
 
@@ -356,41 +357,53 @@ void Parser::parse()
 	return output_stmt;
 }
 
-[[nodiscard]] FuncDeclStmt Parser::parse_func_decl_stmt()
+[[nodiscard]] FuncDefStmt Parser::parse_func_def_stmt()
 {
-	/* Create a new function declaration statement pointer */
-	std::shared_ptr<FuncDeclStmt> func_decl_stmt{std::make_shared<FuncDeclStmt>()};
+	/* Create a new function definition statement pointer */
+	std::shared_ptr<FuncDefStmt> func_def_stmt{std::make_shared<FuncDefStmt>()};
 
 	/* Consume the SUBROUTINE token */
-	/* No need to use try_consume() as entering this function implies that the current token is SUBROUTINE */
 	consume();
 
 	/* Try to consume and store a function name */
-	func_decl_stmt->m_name = try_consume(TokenType::IDENTIFIER).m_value;
+	func_def_stmt->m_name = try_consume(TokenType::IDENTIFIER).m_value;
 
 	/* Try to consume a token of type O_PAREN */
 	try_consume(TokenType::O_PAREN);
 
-	/* Parse the function declaration parameters */
-	func_decl_stmt->m_params = parse_func_decl_params();
+	/* Parse the function definition parameters */
+	func_def_stmt->m_params = parse_func_decl_params();
 
-	/* No need to use try_consume() for same reason as before */
 	/* Consume a C_PAREN token */
 	consume();
 
 	/* Save index position and skip over function body to parse it on the second pass */
-	func_decl_stmt->m_token_index_start = m_token_index;
+	func_def_stmt->m_token_index_start = m_token_index;
 	skip_over_function_body();
 
-	/* No need to use try_consume() for the same reasons as before */
 	/* Consume a ENDSUBROUTINE token */
 	consume();
 
 	/* Append the function to the existing functions list */
-	m_existing_funcs.push_back(func_decl_stmt);
+	m_existing_funcs.push_back(func_def_stmt);
 
-	/* Return the function declaration statement */
-	return *m_existing_funcs.back();
+	/* Return the function definition statement */
+	return *func_def_stmt;
+}
+
+[[nodiscard]] ReturnStmt Parser::parse_return_stmt()
+{
+	/* Create a new return statement object */
+	ReturnStmt return_stmt{};
+
+	/* Consume the RETURN token */
+	consume();
+
+	/* Parse and store the return expression */
+	return_stmt.m_return_expr = parse_expr();
+
+	/* Return the return statement */
+	return return_stmt;
 }
 
 [[nodiscard]] FuncCallStmt Parser::parse_func_call_stmt()
@@ -398,7 +411,6 @@ void Parser::parse()
 	/* Create a new function call statement object */
 	FuncCallStmt func_call_stmt{};
 
-	/* No need to use try_consume() as entering this function implies the current token is IDENTIFIER */
 	/* Consume and store the function name */
 	func_call_stmt.m_name = consume().m_value;
 
@@ -411,10 +423,10 @@ void Parser::parse()
 	/* Check that the function has been declared */
 	existing_func_lookup(func_call_stmt.m_name);
 
-	/* Check that the function call argument count matches up with the function declaration */
+	/* Check that the function call argument count matches up with the function definition */
 	check_arg_count_matches(func_call_stmt.m_name, func_call_stmt.m_args);
 
-	/* Deduce the types of the function declaration parameters from the types of the arguments used in this call */
+	/* Deduce the types of the function definition parameters from the types of the arguments used in this call */
 	deduce_func_decl_param_types_from_args(func_call_stmt.m_name, func_call_stmt.m_args);
 
 	/* Return the function call statement */
@@ -426,7 +438,6 @@ void Parser::parse()
 	/* Create a new repeat until statement object */
 	RepeatUntilStmt repeat_until_stmt{};
 
-	/* No need to use try_consume() as entering this function implies the current token is REPEAT */
 	/* Consume a token of type REPEAT */
 	consume();
 
@@ -449,7 +460,6 @@ void Parser::parse()
 	/* Create a new while statement object */
 	WhileStmt while_stmt{};
 
-	/* No need to use try_consume() as entering this function implies the current token is WHILE */
 	/* Consume a token of type WHILE */
 	consume();
 
@@ -472,7 +482,6 @@ void Parser::parse()
 	/* Create a new if statement object */
 	IfStmt if_stmt{};
 
-	/* No need to use try_consume() as entering this function implies the current token is IF */
 	/* Consume a token of type IF */
 	consume();
 
@@ -503,7 +512,6 @@ void Parser::parse()
 	/* Create a new else if statement object */
 	ElseIfStmt else_if_stmt{};
 
-	/* No need to use try_consume() as entering this function implies the current token is ELSE and the next token is IF */
 	/* Consume the ELSE and IF tokens */
 	consume(2);
 
@@ -533,7 +541,6 @@ void Parser::parse()
 	/* Create a new else statement object */
 	ElseStmt else_stmt{};
 
-	/* No need to use try_consume() as entering this function implies the current token is ELSE */
 	/* Consume an ELSE token */
 	consume();
 
@@ -553,7 +560,6 @@ void Parser::parse()
 	/* Create a new for to statement object */
 	ForToStmt for_to_stmt{};
 
-	/* No need to use try_consume() as entering this function implies the current token is FOR */
 	/* Consume a FOR token */
 	consume();
 
@@ -595,7 +601,6 @@ void Parser::parse()
 	/* Create a new for in statement object */
 	ForInStmt for_in_stmt{};
 
-	/* No need to use try_consume() as entering this function implies the current token is FOR */
 	/* Consume a FOR token */
 	consume();
 
@@ -614,9 +619,6 @@ void Parser::parse()
 
 	/* Parse and store the loop range expression */
 	for_in_stmt.m_range = parse_expr();
-
-	/* Make the declaration variable act as a constant */
-	for_in_stmt.m_declaration->m_is_constant = true;
 
 	/* Allocate heap memory for the declaration's expression */
 	for_in_stmt.m_declaration->m_expr = std::make_shared<Expr>();
@@ -658,7 +660,6 @@ void Parser::parse()
 	/* Create a new record statement pointer */
 	std::shared_ptr<RecordStmt> record_stmt{std::make_shared<RecordStmt>()};
 
-	/* No need to use try_consume() as entering this function implies the current token is RECORD */
 	/* Consume a RECORD token */
 	consume();
 
@@ -676,7 +677,7 @@ void Parser::parse()
 	m_existing_records.push_back(record_stmt);
 
 	/* Return the record statement */
-	return *m_existing_records.back();
+	return *record_stmt;
 }
 
 [[nodiscard]] FieldStmt Parser::parse_field_stmt()
@@ -684,7 +685,6 @@ void Parser::parse()
 	/* Create a new field statement object */
 	FieldStmt field_stmt{};
 
-	/* No need to use try_consume() as entering this function implies the current token is IDENTIFIER */
 	/* Consume an IDENTIFIER token */
 	field_stmt.m_name = consume().m_value;
 
@@ -705,7 +705,6 @@ void Parser::parse()
 	/* Create a new list access statement object */
 	ListAccessStmt list_access_stmt{};
 
-	/* No need to use try_consume() as entering this function implies the current token is IDENTIFIER */
 	/* Consume and store the name of the list */
 	list_access_stmt.m_name = consume().m_value;
 
@@ -850,9 +849,16 @@ void Parser::parse_func_bodies_2nd_pass()
 
 				/* Parse and store the return expression */
 				func->m_return.m_return_expr = parse_expr();
+			}
 
-				/* Set member boolean to false to indicate that the function is not void */
-				func->m_is_void = false;
+			/* If the type of the current token is not RETURN */
+			else
+			{
+				/* Allocate heap memory for the return expression */
+				func->m_return.m_return_expr = std::make_shared<Expr>();
+
+				/* Set the return expression type to void as nothing is returned */
+				func->m_return.m_return_expr->m_type = DataType::VOID;
 			}
 
 			/* Try to consume a token of type END_SUB_ROUTINE */
@@ -884,16 +890,16 @@ void Parser::parse_unresolved_exprs_2nd_pass()
 
 void Parser::check_arg_count_matches(const std::string_view name, const Args &args)
 {
-	/* Create a pointer to the function declaration statement with the matching name */
-	std::shared_ptr<FuncDeclStmt> func_decl_stmt{existing_func_lookup(name)};
+	/* Create a pointer to the function definition statement with the matching name */
+	std::shared_ptr<FuncDefStmt> func_def_stmt{existing_func_lookup(name)};
 
-	/* If the function declaration parameter count is not equal to the argument count */
-	if (func_decl_stmt->m_params.m_params.size() != args.m_args.size())
+	/* If the function definition parameter count is not equal to the argument count */
+	if (func_def_stmt->m_params.m_params.size() != args.m_args.size())
 	{
 		/* Throw parse error */
 		throw ParseError
 		{
-			"expected '" + std::to_string(func_decl_stmt->m_params.m_params.size()) + "' arguments" +
+			"expected '" + std::to_string(func_def_stmt->m_params.m_params.size()) + "' arguments" +
 			", got '" + std::to_string(args.m_args.size()) + "' arguments",
 			m_tokens[m_token_index].m_row,
 			m_tokens[m_token_index].m_col,
@@ -976,8 +982,9 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 		*lhs = Expr{unary_op_expr, lhs->m_type};
 	}
 
-	/* If the current and next token suggest a function call expression, a record, or a standard library function */
-	else if (peek().m_type == TokenType::IDENTIFIER && peek(1).m_type == TokenType::O_PAREN || is_stdlib(peek().m_value))
+	/* If the current and next token suggest a function call expression, a record, an access, or a standard library function */
+	else if (peek().m_type == TokenType::IDENTIFIER && peek(1).m_type == TokenType::O_PAREN ||
+	         peek(1).m_type == TokenType::DOT || is_stdlib(peek().m_value))
 	{
 		/* If the current token has a value that matches a record name */
 		if (is_record(peek().m_value))
@@ -1205,35 +1212,31 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 
 [[nodiscard]] IntExpr Parser::parse_int_expr()
 {
-	/* No need to use try_consume() as entering this function implies the current token is INT */
 	/* Return an integer expression, constructed using the current token value casted to an integer */
 	return IntExpr{std::stoi(consume().m_value)};
 }
 
 [[nodiscard]] RealExpr Parser::parse_real_expr()
 {
-	/* No need to use try_consume() as entering this function implies the current token is REAL */
 	/* Return a real expression, constructed using the current token value casted to a double */
 	return RealExpr{std::stod(consume().m_value)};
 }
 
 [[nodiscard]] StrExpr Parser::parse_str_expr()
 {
-	/* No need to use try_consume() as entering this function implies the current token is STRING */
 	/* Return a string expression, constructed using the current token value */
 	return StrExpr{consume().m_value};
 }
 
 [[nodiscard]] CharExpr Parser::parse_char_expr()
 {
-	/* No need to use try_consume() as entering this function implies the current token is CHAR */
+
 	/* Return a character expression, constructed using the current token's value at index zero */
 	return CharExpr{consume().m_value[0]};
 }
 
 [[nodiscard]] VarExpr Parser::parse_var_expr()
 {
-	/* No need to use try_consume() as entering this function implies the current token is IDENTIFIER */
 	/* Return a variable expression, constructed using the current token value as the identifier */
 	return VarExpr{consume().m_value};
 }
@@ -1258,11 +1261,9 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Create a new field access expression object */
 	FieldAccessExpr field_access_expr{};
 
-	/* No need to use try_consume() as entering this function implies the current token is IDENTIFIER */
 	/* Consume and store the field access expression variable name */
 	field_access_expr.m_name = consume().m_value;
 
-	/* No need to use try_consume() for the same reason as before */
 	/* Consume a token of type DOT */
 	consume();
 
@@ -1278,11 +1279,9 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Create a new list access expression object */
 	ListAccessExpr list_access_expr{};
 
-	/* No need to use try_consume() as entering this function implies the current token is IDENTIFIER */
 	/* Consume and store the name of the list */
 	list_access_expr.m_name = consume().m_value;
 
-	/* No need to use try_consume() for the same reason as before */
 	/* Consume a token of type SQ_O_BRACKET */
 	consume();
 
@@ -1314,7 +1313,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Create a new function call expression object */
 	FuncCallExpr func_call_expr{};
 
-	/* No need to use try_consume() as entering this function implies the current token is IDENTIFIER */
 	/* Consume and store the name of the called function */
 	func_call_expr.m_name = consume().m_value;
 
@@ -1327,10 +1325,10 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Check that the function has been declared */
 	existing_func_lookup(func_call_expr.m_name);
 
-	/* Check that the function call argument count matches up with the function declaration */
+	/* Check that the function call argument count matches up with the function definition */
 	check_arg_count_matches(func_call_expr.m_name, func_call_expr.m_args);
 
-	/* Deduce the types of the function declaration parameters from the types of the arguments used in this call */
+	/* Deduce the types of the function definition parameters from the types of the arguments used in this call */
 	deduce_func_decl_param_types_from_args(func_call_expr.m_name, func_call_expr.m_args);
 
 	/* Return the function call expression */
@@ -1339,11 +1337,11 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 
 [[nodiscard]] UserInputExpr Parser::parse_user_input_expr()
 {
-	/* No need to use try_consume() as entering this function implies the current token is USERINPUT */
 	/* Consume a USERINPUT token */
 	consume();
 
-	return UserInputExpr{}; /* Return a new user input expression object */
+	/* Return a new user input expression object */
+	return UserInputExpr{};
 }
 
 [[nodiscard]] ObjectCreationExpr Parser::parse_object_creation_expr()
@@ -1351,7 +1349,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Create a new object creation expression object */
 	ObjectCreationExpr object_creation_expr{};
 
-	/* No need to use try_consume() as entering this function implies the current token is a record name */
 	/* Consume and store the name of the record */
 	object_creation_expr.m_record_name = consume().m_value;
 
@@ -1370,7 +1367,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Create a new LEN() expression object */
 	LenCallExpr len_call_expr{};
 
-	/* No need to use try_consume() as entering this function implies the current token is LEN */
 	/* Consume the LEN token */
 	consume();
 
@@ -1392,7 +1388,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Create a new POSITION() expression object */
 	PositionCallExpr position_call_expr{};
 
-	/* No need to use try_consume() as entering this function implies the current token is POSITION */
 	/* Consume the POSITION token */
 	consume();
 
@@ -1420,7 +1415,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Create a new SUBSTRING() expression object */
 	SubStrCallExpr sub_str_call_expr{};
 
-	/* No need to use try_consume() as entering this function implies the current token is SUBSTRING */
 	/* Consume a token of type SUBSTRING */
 	consume();
 
@@ -1454,7 +1448,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Create a new STRING_TO_INT() expression object */
 	StrToIntCallExpr str_to_int_call_expr{};
 
-	/* No need to use try_consume() as entering this function implies the current token is STRING_TO_INT */
 	/* Consume a token of type STRING_TO_INT */
 	consume();
 
@@ -1476,7 +1469,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Create a new STRING_TO_REAL() expression object */
 	StrToRealCallExpr str_to_real_call_expr{};
 
-	/* No need to use try_consume() as entering this function implies the current token is STRING_TO_REAL */
 	/* Consume a token of type STRING_TO_REAL */
 	consume();
 
@@ -1498,7 +1490,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Create a new INT_TO_STRING() expression object */
 	IntToStrCallExpr int_to_str_call_expr{};
 
-	/* No need to use try_consume() as entering this function implies the current token is INT_TO_STRING */
 	/* Consume a token of type INT_TO_STRING */
 	consume();
 
@@ -1520,7 +1511,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Create a new REAL_TO_STRING() expression object */
 	RealToStrCallExpr real_to_str_call_expr{};
 
-	/* No need to use try_consume() as entering this function implies the current token is REAL_TO_STRING */
 	/* Consume a token of type REAL_TO_STRING */
 	consume();
 
@@ -1542,7 +1532,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Create a new CHAR_TO_CODE() expression object */
 	CharToCodeCallExpr char_to_code_call_expr{};
 
-	/* No need to use try_consume() as entering this function implies the current token is CHAR_TO_CODE */
 	/* Consume a token of type CHAR_TO_CODE */
 	consume();
 
@@ -1564,7 +1553,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Create a new CODE_TO_CHAR() expression object */
 	CodeToCharCallExpr code_to_char_call_expr{};
 
-	/* No need to use try_consume() as entering this function implies the current token is CODE_TO_CHAR */
 	/* Consume a token of type CODE_TO_CHAR */
 	consume();
 
@@ -1586,7 +1574,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* Create a new RANDOM_INT() expression object */
 	RandomIntCallExpr random_int_call_expr{};
 
-	/* No need to use try_consume() as entering this function implies the current token is RANDOM_INT */
 	/* Consume a token of type RANDOM_INT */
 	consume();
 
@@ -1969,7 +1956,7 @@ void Parser::remove_var(const std::string_view name)
 	};
 }
 
-std::shared_ptr<FuncDeclStmt> Parser::existing_func_lookup(const std::string_view name)
+std::shared_ptr<FuncDefStmt> Parser::existing_func_lookup(const std::string_view name)
 {
 	/* Loop through the existing functions */
 	for (auto it{m_existing_funcs.begin()}; it != m_existing_funcs.end(); it++)
@@ -2014,15 +2001,15 @@ std::shared_ptr<FuncDeclStmt> Parser::existing_func_lookup(const std::string_vie
 {
 	/* Return whether the name specified matches with the name of any standard library functions */
 	return name == "LEN" ||
-		   name == "POSITION" ||
-		   name == "SUBSTRING" ||
-		   name == "STRING_TO_INT" ||
-		   name == "STRING_TO_REAL" ||
-		   name == "INT_TO_STRING" ||
-		   name == "REAL_TO_STRING" ||
-		   name == "CHAR_TO_CODE" ||
-		   name == "CODE_TO_CHAR" ||
-		   name == "RANDOM_INT";
+	       name == "POSITION" ||
+	       name == "SUBSTRING" ||
+	       name == "STRING_TO_INT" ||
+	       name == "STRING_TO_REAL" ||
+	       name == "INT_TO_STRING" ||
+	       name == "REAL_TO_STRING" ||
+	       name == "CHAR_TO_CODE" ||
+	       name == "CODE_TO_CHAR" ||
+	       name == "RANDOM_INT";
 }
 
 [[nodiscard]] bool Parser::is_data_type(const TokenType token_type)
@@ -2036,8 +2023,8 @@ std::shared_ptr<FuncDeclStmt> Parser::existing_func_lookup(const std::string_vie
 
 void Parser::deduce_func_decl_param_types_from_args(const std::string_view name, const Args& args)
 {
-	/* Store a pointer to the looked up function declaration statement */
-	std::shared_ptr<FuncDeclStmt> func_decl{existing_func_lookup(name)};
+	/* Store a pointer to the looked up function definition statement */
+	std::shared_ptr<FuncDefStmt> func_decl{existing_func_lookup(name)};
 
 	/* If it is the first time that this function is called, deduce types */
 	if (!func_decl->m_is_called)
@@ -2220,8 +2207,8 @@ void Parser::populate_stdlib_funcs()
 
 void Parser::add_stdlib_func(const std::string_view name, const std::initializer_list<DataType>& param_types, const DataType return_type)
 {
-	/* Create a new function declaration pointer and allocate memory for it */
-	std::shared_ptr<FuncDeclStmt> func{std::make_shared<FuncDeclStmt>()};
+	/* Create a new function definition pointer and allocate memory for it */
+	std::shared_ptr<FuncDefStmt> func{std::make_shared<FuncDefStmt>()};
 
 	/* Initialize the function name */
 	func->m_name = name;
@@ -2232,9 +2219,6 @@ void Parser::add_stdlib_func(const std::string_view name, const std::initializer
 		/* Add them to the function parameter list */
 		func->m_params.m_params.push_back(Param{"", param_type});
 	}
-
-	/* Set boolean to false to indicate that the function is not void */
-	func->m_is_void = false;
 
 	/* Allocate heap memory for the return expression */
 	func->m_return.m_return_expr = std::make_shared<Expr>();

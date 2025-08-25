@@ -5,6 +5,7 @@
 #define PARSER_HPP
 
 #include <vector>
+#include <variant>
 #include <utility>
 #include <cassert>
 #include <algorithm>
@@ -22,7 +23,6 @@
 /* Inherits from CompilationStage as syntactic analysis is a compilation stage */
 class Parser : public CompilationStage
 {
-
 /* Public members */
 public:
 
@@ -93,85 +93,66 @@ private:
 	[[nodiscard]] Stmt parse_stmt();
 
 	/* Parses a variable statement */
-	/* E.g. a <- 10 */
 	/* Returns: VarStmt - the variable statement */
 	[[nodiscard]] VarStmt parse_var_stmt();
 
 	/* Parses a field access statement */
-	/* E.g. jake.age <- 20 */
 	/* Returns: FieldAccessStmt - the field access statement */
 	[[nodiscard]] FieldAccessStmt parse_field_access_stmt();
 
 	/* Parses an output statement */
-	/* E.g. OUTPUT 'output' */
 	/* Returns: OutputStmt - the output statement */
 	[[nodiscard]] OutputStmt parse_output_stmt();
 
 	/* Parses a function definition statement */
-	/* E.g. SUBROUTINE func(a, b) ... ENDSUBROUTINE */
 	/* Returns: FuncDefStmt - the function definition statement */
 	[[nodiscard]] FuncDefStmt parse_func_def_stmt();
 
 	/* Parses a return statement */
-	/* E.g. RETURN 420 */
 	/* Returns: ReturnStmt - the return statement */
 	[[nodiscard]] ReturnStmt parse_return_stmt();
 
 	/* Parses a function call statement */
-	/* E.g. func(10, 'str') */
 	/* Returns: FuncCallStmt - the function call statement */
 	[[nodiscard]] FuncCallStmt parse_func_call_stmt();
 
 	/* Parses a repeat until statement */
-	/* E.g. REPEAT ... UNTIL a = 10 */
 	/* Returns: RepeatUntilStmt - the repeat until statement */
 	[[nodiscard]] RepeatUntilStmt parse_repeat_until_stmt();
 
 	/* Parses a while statement */
-	/* E.g. WHILE a < 4 ... ENDWHILE */
 	/* Returns: WhileStmt - the while statement */
 	[[nodiscard]] WhileStmt parse_while_stmt();
 
 	/* Parses an if statement */
-	/* E.g. IF a != 5 THEN ... ENDIF */
 	/* Returns: IfStmt - the if statement */
 	[[nodiscard]] IfStmt parse_if_stmt();
 
 	/* Parses an else if statement */
-	/* E.g. ELSE IF a == 5 THEN ... ENDIF */
 	/* Returns: ElseIfStmt - the else if statement */
 	[[nodiscard]] ElseIfStmt parse_else_if_stmt();
 
 	/* Parses an else statement */
-	/* E.g. ELSE ... ENDIF */
 	/* Returns: ElseStmt - the else statement */
 	[[nodiscard]] ElseStmt parse_else_stmt();
 
 	/* Parses a for to statement */
-	/* E.g. FOR a <- 1 TO 3 ... ENDFOR */
-	/* E.g. FOR a <- 1 TO 5 STEP 2 ... ENDFOR */
 	/* Returns: ForToStmt - the for to statement */
 	[[nodiscard]] ForToStmt parse_for_to_stmt();
 
 	/* Parses a for in statement */
-	/* E.g. FOR c IN message ... ENDFOR */
 	/* Returns: ForInStmt - the for in statement */
 	[[nodiscard]] ForInStmt parse_for_in_stmt();
 
 	/* Parses a record statement */
-	/* E.g. RECORD Human ... ENDRECORD */
 	/* Returns: RecordStmt - the record statement */
 	[[nodiscard]] RecordStmt parse_record_stmt();
 
 	/* Parses a field statement */
-	/* E.g. name : String */
-	/* E.g. age : Integer */
 	/* Returns: FieldStmt - the field statement */
 	[[nodiscard]] FieldStmt parse_field_stmt();
 
 	/* Parses a list access statement */
-	/* E.g. list[1]  <- 200 */
-	/* E.g. list[1][1] <- 200 */
 	/* Returns: ListAccessStmt - the list access statement */
 	[[nodiscard]] ListAccessStmt parse_list_access_stmt();
 
@@ -191,7 +172,7 @@ private:
 	/* Checks function call argument length matches function definition */
 	/* Param: const std::string_view - the name of the function */
 	/* Param: const Args& - the function call arguments */
-	void check_arg_count_matches(const std::string_view name, const Args& args);
+	void check_arg_count_matches(const std::string_view name, const Args& args) const;
 
 	/* Parses an expression */
 	/* Returns: std::shared_ptr<Expr> - the expression */
@@ -202,58 +183,46 @@ private:
 	[[nodiscard]] AtomExpr parse_atom();
 
 	/* Parses an integer expression */
-	/* E.g. 50 */
 	/* Returns: IntExpr - the integer expression */
 	[[nodiscard]] IntExpr parse_int_expr();
 
 	/* Parses a real expression */
-	/* E.g. 3.14 */
 	/* Returns: RealExpr - the real expression */
 	[[nodiscard]] RealExpr parse_real_expr();
 
 	/* Parses a string expression */
-	/* E.g. 'str' */
 	/* Returns: StrExpr - the string expression */
 	[[nodiscard]] StrExpr parse_str_expr();
 
 	/* Parses a character expression */
-	/* E.g. 'c' */
 	/* Returns: CharExpr - the character expression */
 	[[nodiscard]] CharExpr parse_char_expr();
 
 	/* Parses a variable expression */
-	/* E.g. var_name */
 	/* Returns: VarExpr - the variable expression */
 	[[nodiscard]] VarExpr parse_var_expr();
 
 	/* Parses a unary operator expression */
-	/* E.g. -10 */
 	/* Returns: UnaryOpExpr - the unary operator expression */
 	[[nodiscard]] UnaryOpExpr parse_unary_op_expr();
 
 	/* Parses a field access expression */
-	/* E.g. jake.age */
 	/* Returns: FieldAccessExpr - the field access expression */
 	[[nodiscard]] FieldAccessExpr parse_field_access_expr();
 
 	/* Parses a list access expression */
-	/* E.g. list[1] */
-	/* E.g. list[1][1] */
 	/* Returns: ListAccessExpr - the list access expression */
 	[[nodiscard]] ListAccessExpr parse_list_access_expr();
 
 	/* Parses a function call expression */
-	/* E.g. func(10, 'str') */
 	/* Returns: FuncCallExpr - the function call expression */
 	[[nodiscard]] FuncCallExpr parse_func_call_expr();
 
 	/* Parses a user input expression */
-	/* E.g. USERINPUT */
 	/* Returns: UserInputExpr - the user input expression */
 	[[nodiscard]] UserInputExpr parse_user_input_expr();
 
 	/* Parses an object creation expression */
-	/* E.g. Human('Andrew', 25) */
 	/* Returns: ObjectCreationExpr - the object creation expression */
 	[[nodiscard]] ObjectCreationExpr parse_object_creation_expr();
 
@@ -307,7 +276,6 @@ private:
 	/* Returns: FieldStmt - the record fields */
 	[[nodiscard]] Fields parse_fields_until(const std::initializer_list<TokenType>& stop_tokens);
 
-	/* Template makes it possible to reuse the function for different wrapper types via meta programming */
 	template <typename T>
 	/* Parses comma seperated expressions */
 	/* Returns: std::vector<Element> - the expressions wrapper */
@@ -362,32 +330,32 @@ private:
 	/* Checks whether a variable with a certain name is defined previously */
 	/* Param: const std::string_view - the name of the variable */
 	/* Returns: bool - whether the variable was defined previously */
-	[[nodiscard]] bool is_var_defined(const std::string_view name);
+	[[nodiscard]] bool is_var_defined(const std::string_view name) const;
 
 	/* Looks up an existing variable */
 	/* Param: const std::string_view - the name of the variable */
 	/* Returns: std::shared_ptr<VarStmt> - the variable statement */
-	[[nodiscard]] std::shared_ptr<VarStmt> existing_var_lookup(const std::string_view name);
+	[[nodiscard]] std::shared_ptr<VarStmt> existing_var_lookup(const std::string_view name) const;
 
 	/* Looks up an existing function */
 	/* Param: const std::string_view - the name of the function */
 	/* Returns: std::shared_ptr<FuncDefStmt> - the function definition statement */
-	std::shared_ptr<FuncDefStmt> existing_func_lookup(const std::string_view name);
+	std::shared_ptr<FuncDefStmt> existing_func_lookup(const std::string_view name) const;
 
 	/* Checks whether a record with the following name exists */
 	/* Param: const std::string_view - the name of suspected record */
 	/* Returns: bool - whether any record has the same name */
-	[[nodiscard]] bool is_record(const std::string_view name);
+	[[nodiscard]] bool is_record(const std::string_view name) const;
 
 	/* Checks whether a standard library function with the following name exists */
 	/* Param: const std::string_view - the name of suspected standard library function */
 	/* Returns: bool - whether any standard library function has the same name */
-	[[nodiscard]] bool is_stdlib(const std::string_view name);
+	[[nodiscard]] bool is_stdlib(const std::string_view name) const;
 
 	/* Checks whether a given token type could be represented as a data type */
 	/* Param: const TokenType - the type of the token */
 	/* Returns: bool - whether the token type could be represented as a data type */
-	[[nodiscard]] bool is_data_type(const TokenType token_type);
+	[[nodiscard]] bool is_data_type(const TokenType token_type) const;
 
 	/* Deduces function definition parameter types from an argument list */
 	/* Param: const std::string_view - the name of the function */
@@ -397,28 +365,28 @@ private:
 	/* Deduces expression data type from a given token */
 	/* Param: const Token - the token to deduce from */
 	/* Returns: DataType - the data type deduced */
-	[[nodiscard]] DataType deduce_expr_type(const Token token);
+	[[nodiscard]] DataType deduce_expr_type(const Token token) const;
 
 	/* Gets a particular field data type from a field access expression */
 	/* Param: const Token - the token containing the variable name */
 	/* Param: const Token - the token containing the field name */
 	/* Returns: DataType - the field data type */
-	[[nodiscard]] DataType deduce_field_type_from_access(const Token name, const Token field);
+	[[nodiscard]] DataType deduce_field_type_from_access(const Token name, const Token field) const;
 
 	/* Returns the corresponding data type equivalent for a particular token type */
 	/* Param: const TokenType - the token type */
 	/* Returns: DataType - the data type equivalent */
-	[[nodiscard]] DataType tt_to_dt(const TokenType token_type);
+	[[nodiscard]] DataType tt_to_dt(const TokenType token_type) const;
 
 	/* Checks whether a token type indicates the presence of a binary operator */
 	/* Param: const TokenType - the token type */
 	/* Returns: bool - whether the token type indicated the presence of a binary operator */
-	[[nodiscard]] bool is_bin_op(const TokenType token_type);
+	[[nodiscard]] bool is_bin_op(const TokenType token_type) const;
 
 	/* Checks whether a token type indicates the presence of a unary operator */
 	/* Param: const TokenType - the token type */
 	/* Returns: bool - whether the token type indicated the presence of a unary operator */
-	[[nodiscard]] bool is_unary(const TokenType token_type);
+	[[nodiscard]] bool is_unary(const TokenType token_type) const;
 
 	/* Populates the existing function array with the standard library functions */
 	void populate_stdlib_funcs();

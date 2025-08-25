@@ -250,13 +250,13 @@ void Generator::gen_stmt(const Stmt& stmt)
 			gen.require_lib("iostream");
 
 			/* Write the C++ output stream */
-			*gen.m_current_stream << "	std::cout << ";
+			*gen.m_current_stream << "	std::cout << (";
 
 			/* Generate the output statement arguments, separated by insertion operators */
-			gen.gen_args(output_stmt.m_args.m_args, " >> ");
+			gen.gen_args(output_stmt.m_args.m_args, ") << (");
 
 			/* Write a semicolon to end off the statement */
-			*gen.m_current_stream << ";\n";
+			*gen.m_current_stream << ");\n";
 		}
 
 		void operator()(const FuncDefStmt& func_def_stmt)
@@ -446,7 +446,7 @@ void Generator::gen_stmt(const Stmt& stmt)
 			gen.gen_stmt(Stmt{for_to_stmt.m_var_stmt});
 
 			/* Write half of the for to statement condition */
-			*gen.m_current_stream << " " << for_to_stmt.m_var_stmt.m_name << " < ";
+			*gen.m_current_stream << " " << for_to_stmt.m_var_stmt.m_name << "<";
 
 			/* Check that the boundary is an integer expression */
 			gen.check_expr_is_type(*for_to_stmt.m_boundary, DataType::INT);
@@ -455,13 +455,13 @@ void Generator::gen_stmt(const Stmt& stmt)
 			gen.gen_expr(*for_to_stmt.m_boundary);
 
 			/* Write in an additional one iteration to maintain intended functionality as per the specification */
-			*gen.m_current_stream << " + 1";
+			*gen.m_current_stream << "+1";
 
 			/* Close off the for to condition */
 			*gen.m_current_stream << "; ";
 
 			/* Write the start of the loop step */
-			*gen.m_current_stream << for_to_stmt.m_var_stmt.m_name << " += ";
+			*gen.m_current_stream << for_to_stmt.m_var_stmt.m_name << "+=";
 
 			/* If the for to statement step amount has been specified by the programmer */
 			if (for_to_stmt.m_step)
@@ -882,7 +882,7 @@ void Generator::gen_atom_expr(const AtomExpr& atom_expr)
 			gen.gen_expr(*sub_str_call_expr.m_num2_expr);
 
 			/* End off substring one character short to maintain intended functionality as per the specification */
-			*gen.m_current_stream << " - 1";
+			*gen.m_current_stream << "-1";
 
 			/* Write a closed parenthesis */
 			*gen.m_current_stream << ")";
@@ -1309,7 +1309,7 @@ void Generator::gen_type(const DataType type)
 			/* Throw gen error */
 			throw GenError
 			{
-				"a data type could not be generated"
+				"data type could not be generated"
 			};
 	}
 }
@@ -1334,6 +1334,17 @@ DataType Generator::get_field_type_from_access(const FieldAccessStmt& field_acce
 			}
 		}
 	}
+
+	/* If no matches occur */
+	/* Throw gen error */
+	throw GenError
+	{
+		"record '" +
+		existing_var_lookup(field_access_stmt.m_name).m_record_name +
+		"' does not contain field '" +
+		field_access_stmt.m_field_name +
+		"'"
+	};
 }
 
 void Generator::type_check(const DataType type1, const DataType type2) const

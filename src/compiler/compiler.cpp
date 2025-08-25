@@ -52,10 +52,10 @@ void Compiler::compile_to_output_target(const std::string_view cpp_file)
 			/* Set the target compiler to MSVC and the output target to EXE */
 			target = std::make_unique<MSVCTarget>(OutputTarget::EXE);
 
-		/* If the user is using the Apple Clang compiler */
-		#elif defined(__clang__) && defined(__apple_build_version__)
-			/* Set the target compiler to Apple Clang and the output target to EXE */
-			target = std::make_unique<AppleClangTarget>(OutputTarget::EXE);
+		/* If the user is using the Clang compiler */
+		#elif defined(__clang__)
+			/* Set the target compiler to Clang and the output target to EXE */
+			target = std::make_unique<ClangTarget>(OutputTarget::EXE);
 		#endif
 	}
 
@@ -72,10 +72,10 @@ void Compiler::compile_to_output_target(const std::string_view cpp_file)
 			/* Set the target compiler to MSVC and the output target to ASM */
 			target = std::make_unique<MSVCTarget>(OutputTarget::ASM);
 
-		/* If the user is using the Apple Clang compiler */
-		#elif defined(__clang__) && defined(__apple_build_version__)
-			/* Set the target compiler to Apple Clang and the output target to ASM */
-			target = std::make_unique<AppleClangTarget>(OutputTarget::ASM);
+		/* If the user is using the Clang compiler */
+		#elif defined(__clang__)
+			/* Set the target compiler to Clang and the output target to ASM */
+			target = std::make_unique<ClangTarget>(OutputTarget::ASM);
 		#endif
 	}
 
@@ -92,10 +92,10 @@ void Compiler::compile_to_output_target(const std::string_view cpp_file)
 			/* Set the target compiler to MSVC and the output target to OBJ */
 			target = std::make_unique<MSVCTarget>(OutputTarget::OBJ);
 
-		/* If the user is using the Apple Clang compiler */
-		#elif defined(__clang__) && defined(__apple_build_version__)
-			/* Set the target compiler to Apple Clang and the output target to OBJ */
-			target = std::make_unique<AppleClangTarget>(OutputTarget::OBJ);
+		/* If the user is using the Clang compiler */
+		#elif defined(__clang__)
+			/* Set the target compiler to Clang and the output target to OBJ */
+			target = std::make_unique<ClangTarget>(OutputTarget::OBJ);
 		#endif
 	}
 

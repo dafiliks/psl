@@ -8,91 +8,324 @@ std::string_view tt_to_string(const TokenType type)
 	/* Switch through all of the possible token types */
 	switch (type)
 	{
-		/* Simple language constructs */
+		/* If the token is an IDENTIFIER */
+		case TokenType::IDENTIFIER:
+			/* Return string representation */
+			return "identifier";
 
-		case TokenType::IDENTIFIER:         return "identifier";
-		case TokenType::INT:                return "integer";
-		case TokenType::REAL:               return "real";
-		case TokenType::STRING:             return "string";
-		case TokenType::CHAR:               return "char";
+		/* If the token is an INT */
+		case TokenType::INT:
+			/* Return string representation */
+			return "integer";
 
-		/* Single character tokens */
+		/* If the token is a REAL */
+		case TokenType::REAL:
+			/* Return string representation */
+			return "real";
 
-		case TokenType::GREATER_THAN:       return ">";
-		case TokenType::LESS_THAN:          return "<";
-		case TokenType::UNDERSCORE:         return "_";
-		case TokenType::EQUALS:             return "=";
-		case TokenType::EXCLAMATION:        return "!";
-		case TokenType::SQ_O_BRACKET:       return "[";
-		case TokenType::SQ_C_BRACKET:       return "]";
-		case TokenType::O_PAREN:            return "(";
-		case TokenType::C_PAREN:            return ")";
-		case TokenType::ADDITION:           return "+";
-		case TokenType::SUBTRACTION:        return "-";
-		case TokenType::MULTIPLICATION:     return "*";
-		case TokenType::DIVISION:           return "/";
-		case TokenType::COMMA:              return ",";
-		case TokenType::DOT:                return ".";
-		case TokenType::COLON:              return ":";
+		/* If the token is a STRING */
+		case TokenType::STRING:
+			/* Return string representation */
+			return "string";
 
-		/* Keywords */
+		/* If the token is a CHAR */
+		case TokenType::CHAR:
+			/* Return string representation */
+			return "char";
 
-		case TokenType::CONSTANT:           return "CONSTANT";
-		case TokenType::DIV:                return "DIV";
-		case TokenType::MOD:                return "MOD";
-		case TokenType::AND:                return "AND";
-		case TokenType::OR:                 return "OR";
-		case TokenType::NOT:                return "NOT";
-		case TokenType::REPEAT:             return "REPEAT";
-		case TokenType::UNTIL:              return "UNTIL";
-		case TokenType::WHILE:              return "WHILE";
-		case TokenType::END_WHILE:          return "ENDWHILE";
-		case TokenType::FOR:                return "FOR";
-		case TokenType::TO:                 return "TO";
-		case TokenType::IN:                 return "IN";
-		case TokenType::STEP:               return "STEP";
-		case TokenType::END_FOR:            return "ENDFOR";
-		case TokenType::IF:                 return "IF";
-		case TokenType::THEN:               return "THEN";
-		case TokenType::ELSE:               return "ELSE";
-		case TokenType::END_IF:             return "ENDIF";
-		case TokenType::RECORD:             return "RECORD";
-		case TokenType::END_RECORD:         return "ENDRECORD";
-		case TokenType::SUB_ROUTINE:        return "SUBROUTINE";
-		case TokenType::RETURN:             return "RETURN";
-		case TokenType::END_SUB_ROUTINE:    return "ENDSUBROUTINE";
-		case TokenType::USER_INPUT:         return "USERINPUT";
+		/* If the token is GREATER_THAN */
+		case TokenType::GREATER_THAN:
+			/* Return string representation */
+			return ">";
 
-		/* Explicit field data type keywords */
+		/* If the token is LESS_THAN */
+		case TokenType::LESS_THAN:
+			/* Return string representation */
+			return "<";
 
-		case TokenType::STRING_TYPE:        return "String";
-		case TokenType::REAL_TYPE:          return "Real";
-		case TokenType::INT_TYPE:           return "Integer";
-		case TokenType::CHAR_TYPE:          return "Char";
+		/* If the token is UNDERSCORE */
+		case TokenType::UNDERSCORE:
+			/* Return string representation */
+			return "_";
 
-		/* Standard library functions */
+		/* If the token is EQUALS */
+		case TokenType::EQUALS:
+			/* Return string representation */
+			return "=";
 
-		case TokenType::LEN:                return "LEN";
-		case TokenType::POSITION:           return "POSITION";
-		case TokenType::SUBSTRING:          return "SUBSTRING";
-		case TokenType::STRING_TO_INT:      return "STRING_TO_INT";
-		case TokenType::STRING_TO_REAL:     return "STRING_TO_REAL";
-		case TokenType::INT_TO_STRING:      return "INT_TO_STRING";
-		case TokenType::REAL_TO_STRING:     return "REAL_TO_STRING";
-		case TokenType::CHAR_TO_CODE:       return "CHAR_TO_CODE";
-		case TokenType::CODE_TO_CHAR:       return "CODE_TO_CHAR";
-		case TokenType::OUTPUT:             return "OUTPUT";
-		case TokenType::RANDOM_INT:         return "RANDOM_INT";
+		/* If the token is EXCLAMATION */
+		case TokenType::EXCLAMATION:
+			/* Return string representation */
+			return "!";
 
-		/* Extra useful tokens */
+		/* If the token is SQ_O_BRACKET */
+		case TokenType::SQ_O_BRACKET:
+			/* Return string representation */
+			return "[";
 
-		case TokenType::END_OF_FILE:        return "eof";
+		/* If the token is SQ_C_BRACKET */
+		case TokenType::SQ_C_BRACKET:
+			/* Return string representation */
+			return "]";
 
-		/* Unknown token type */
+		/* If the token is O_PAREN */
+		case TokenType::O_PAREN:
+			/* Return string representation */
+			return "(";
 
-		default:                            return "unknown token type";
+		/* If the token is C_PAREN */
+		case TokenType::C_PAREN:
+			/* Return string representation */
+			return ")";
+
+		/* If the token is ADDITION */
+		case TokenType::ADDITION:
+			/* Return string representation */
+			return "+";
+
+		/* If the token is SUBTRACTION */
+		case TokenType::SUBTRACTION:
+			/* Return string representation */
+			return "-";
+
+		/* If the token is MULTIPLICATION */
+		case TokenType::MULTIPLICATION:
+			/* Return string representation */
+			return "*";
+
+		/* If the token is DIVISION */
+		case TokenType::DIVISION:
+			/* Return string representation */
+			return "/";
+
+		/* If the token is COMMA */
+		case TokenType::COMMA:
+			/* Return string representation */
+			return ",";
+
+		/* If the token is DOT */
+		case TokenType::DOT:
+			/* Return string representation */
+			return ".";
+
+		/* If the token is COLON */
+		case TokenType::COLON:
+			/* Return string representation */
+			return ":";
+
+		/* If the token is CONSTANT */
+		case TokenType::CONSTANT:
+			/* Return string representation */
+			return "CONSTANT";
+
+		/* If the token is DIV */
+		case TokenType::DIV:
+			/* Return string representation */
+			return "DIV";
+
+		/* If the token is MOD */
+		case TokenType::MOD:
+			/* Return string representation */
+			return "MOD";
+
+		/* If the token is AND */
+		case TokenType::AND:
+			/* Return string representation */
+			return "AND";
+
+		/* If the token is OR */
+		case TokenType::OR:
+			/* Return string representation */
+			return "OR";
+
+		/* If the token is NOT */
+		case TokenType::NOT:
+			/* Return string representation */
+			return "NOT";
+
+		/* If the token is REPEAT */
+		case TokenType::REPEAT:
+			/* Return string representation */
+			return "REPEAT";
+
+		/* If the token is UNTIL */
+		case TokenType::UNTIL:
+			/* Return string representation */
+			return "UNTIL";
+
+		/* If the token is WHILE */
+		case TokenType::WHILE:
+			/* Return string representation */
+			return "WHILE";
+
+		/* If the token is END_WHILE */
+		case TokenType::END_WHILE:
+			/* Return string representation */
+			return "ENDWHILE";
+
+		/* If the token is FOR */
+		case TokenType::FOR:
+			/* Return string representation */
+			return "FOR";
+
+		/* If the token is TO */
+		case TokenType::TO:
+			/* Return string representation */
+			return "TO";
+
+		/* If the token is IN */
+		case TokenType::IN:
+			/* Return string representation */
+			return "IN";
+
+		/* If the token is STEP */
+		case TokenType::STEP:
+			/* Return string representation */
+			return "STEP";
+
+		/* If the token is END_FOR */
+		case TokenType::END_FOR:
+			/* Return string representation */
+			return "ENDFOR";
+
+		/* If the token is IF */
+		case TokenType::IF:
+			/* Return string representation */
+			return "IF";
+
+		/* If the token is THEN */
+		case TokenType::THEN:
+			/* Return string representation */
+			return "THEN";
+
+		/* If the token is ELSE */
+		case TokenType::ELSE:
+			/* Return string representation */
+			return "ELSE";
+
+		/* If the token is END_IF */
+		case TokenType::END_IF:
+			/* Return string representation */
+			return "ENDIF";
+
+		/* If the token is RECORD */
+		case TokenType::RECORD:
+			/* Return string representation */
+			return "RECORD";
+
+		/* If the token is END_RECORD */
+		case TokenType::END_RECORD:
+			/* Return string representation */
+			return "ENDRECORD";
+
+		/* If the token is SUB_ROUTINE */
+		case TokenType::SUB_ROUTINE:
+			/* Return string representation */
+			return "SUBROUTINE";
+
+		/* If the token is RETURN */
+		case TokenType::RETURN:
+			/* Return string representation */
+			return "RETURN";
+
+		/* If the token is END_SUB_ROUTINE */
+		case TokenType::END_SUB_ROUTINE:
+			/* Return string representation */
+			return "ENDSUBROUTINE";
+
+		/* If the token is USER_INPUT */
+		case TokenType::USER_INPUT:
+			/* Return string representation */
+			return "USERINPUT";
+
+		/* If the token is STRING_TYPE */
+		case TokenType::STRING_TYPE:
+			/* Return string representation */
+			return "String";
+
+		/* If the token is REAL_TYPE */
+		case TokenType::REAL_TYPE:
+			/* Return string representation */
+			return "Real";
+
+		/* If the token is INT_TYPE */
+		case TokenType::INT_TYPE:
+			/* Return string representation */
+			return "Integer";
+
+		/* If the token is CHAR_TYPE */
+		case TokenType::CHAR_TYPE:
+			/* Return string representation */
+			return "Char";
+
+		/* If the token is LEN */
+		case TokenType::LEN:
+			/* Return string representation */
+			return "LEN";
+
+		/* If the token is POSITION */
+		case TokenType::POSITION:
+			/* Return string representation */
+			return "POSITION";
+
+		/* If the token is SUBSTRING */
+		case TokenType::SUBSTRING:
+			/* Return string representation */
+			return "SUBSTRING";
+
+		/* If the token is STRING_TO_INT */
+		case TokenType::STRING_TO_INT:
+			/* Return string representation */
+			return "STRING_TO_INT";
+
+		/* If the token is STRING_TO_REAL */
+		case TokenType::STRING_TO_REAL:
+			/* Return string representation */
+			return "STRING_TO_REAL";
+
+		/* If the token is INT_TO_STRING */
+		case TokenType::INT_TO_STRING:
+			/* Return string representation */
+			return "INT_TO_STRING";
+
+		/* If the token is REAL_TO_STRING */
+		case TokenType::REAL_TO_STRING:
+			/* Return string representation */
+			return "REAL_TO_STRING";
+
+		/* If the token is CHAR_TO_CODE */
+		case TokenType::CHAR_TO_CODE:
+			/* Return string representation */
+			return "CHAR_TO_CODE";
+
+		/* If the token is CODE_TO_CHAR */
+		case TokenType::CODE_TO_CHAR:
+			/* Return string representation */
+			return "CODE_TO_CHAR";
+
+		/* If the token is OUTPUT */
+		case TokenType::OUTPUT:
+			/* Return string representation */
+			return "OUTPUT";
+
+		/* If the token is RANDOM_INT */
+		case TokenType::RANDOM_INT:
+			/* Return string representation */
+			return "RANDOM_INT";
+
+		/* If the token is END_OF_FILE */
+		case TokenType::END_OF_FILE:
+			/* Return string representation */
+			return "eof";
+
+
+		/* If no matches occur */
+		default:
+			/* Return unknown token type */
+			return "unknown token type";
 	}
 }
+
 
 Lexer::Lexer(const CLIArgs& args)
 /* Initialize source related members */
@@ -215,10 +448,10 @@ void Lexer::lex()
 	auto got{value_token_map.find(value)};
 
 	/* If the token was found in the map */
-	if (got != value_token_map.end())
+	if (got)
 	{
-		/* Add the token along with the token type to the token stream */
-		m_tokens.push_back({got->first, got->second, m_row, m_col});
+		/* Add the token value along with the token type to the token stream */
+		m_tokens.push_back({value, *got, m_row, m_col});
 
 		/* Clear the token buffer */
 		m_buffer.clear();

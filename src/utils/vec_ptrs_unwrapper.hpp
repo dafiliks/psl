@@ -1,19 +1,18 @@
-/* utils/vec_ptrs_unwrap.hpp by David Filiks */
+/* utils/vec_ptrs_unwrapper.hpp by David Filiks */
 /* The vector of pointers unwrapper header for the PsL compiler */
+
+#ifndef VEC_PTRS_UNWRAPPER_HPP
+#define VEC_PTRS_UNWRAPPER_HPP
 
 #include <vector>
 #include <memory>
 
 #include "../frontend/ast.hpp"
 
-/* Template to help with meta programming */
-/* Grants the ability to create a unwrapper for a vector of any type of pointer */
 template <typename T>
-
 /* Class to be used to unwrap a vector of pointers */
 class VecPtrsUnwrapper
 {
-
 /* Public members */
 public:
 
@@ -58,3 +57,5 @@ private:
 
 	std::vector<std::shared_ptr<T>> m_vec_ptrs{}; /* The vector of pointers to unwrap */
 };
+
+#endif

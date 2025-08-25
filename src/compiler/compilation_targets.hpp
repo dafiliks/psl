@@ -60,14 +60,14 @@ struct MSVCTarget : public CompilationTarget
 	void compile(const std::string_view cpp_file) override;
 };
 
-/* The Apple Clang target, inherits from CompilationTarget as it is a compilation target */
-struct AppleClangTarget : public CompilationTarget
+/* The Clang target, inherits from CompilationTarget as it is a compilation target */
+struct ClangTarget : public CompilationTarget
 {
-	/* Constructs a AppleClangTarget object */
+	/* Constructs a ClangTarget object */
 	/* Param: const OutputTarget& - the output target */
-	AppleClangTarget(const OutputTarget& target);
+	ClangTarget(const OutputTarget& target);
 
-	/* Compile the ".cpp" file into the output target using XCode */
+	/* Compile the ".cpp" file into the output target using Clang */
 	/* Param: const std::string_view - the name of the ".cpp" file */
 	void compile(const std::string_view cpp_file) override;
 };

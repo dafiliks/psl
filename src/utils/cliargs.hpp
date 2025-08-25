@@ -12,7 +12,6 @@
 
 class CLIArgs
 {
-
 /* Public members */
 public:
 

@@ -16,7 +16,6 @@
 /* Compiler class, responsible for executing all compilation stages and outputting the target ouput */
 class Compiler
 {
-
 /* Public members */
 public:
 

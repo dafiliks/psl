@@ -27,7 +27,6 @@ std::string_view et_to_string(const ErrorType type);
 /* Error class, responsible for erroring out and terminating the program upon fault */
 class Error
 {
-
 /* Public members */
 public:
 

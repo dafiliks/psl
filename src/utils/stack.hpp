@@ -10,14 +10,10 @@
 #include "stack.hpp"
 #include "../utils/error_types.hpp"
 
-/* Template to help with meta programming */
-/* Grants the ability to create a stack of any data type */
 template <typename T>
-
 /* Class to be used as a stack data structure */
 class Stack
 {
-
 /* Public members */
 public:
 
@@ -60,14 +56,14 @@ public:
 
 	/* Gets the data that lies at the top of the stack */
 	/* Returns: T - the data at the top of the stack */
-	[[nodiscard]] T top()
+	[[nodiscard]] T top() const
 	{
-		return m_data[m_size -  1]; /* Return the data at the top of the stack */
+		return m_data[m_size - 1]; /* Return the data at the top of the stack */
 	}
 
 	/* Checks whether the stack is empty or not */
 	/* Returns: bool - whether the stack is empty */
-	[[nodiscard]] bool empty()
+	[[nodiscard]] bool empty() const
 	{
 		/* Return true if size is equal to zero, false if not */
 		return m_size == 0 ? true : false;
@@ -77,21 +73,24 @@ public:
 	/* Returns: std::size_t - the data size */
 	[[nodiscard]] std::size_t get_size() const
 	{
-		return m_size; /* Return the stack size */
+		/* Return the stack size */
+		return m_size;
 	}
 
 	/* Getter function for the data capacity */
 	/* Returns: std::size_t - the data capacity */
 	[[nodiscard]] std::size_t get_capacity() const
 	{
-		return m_capacity; /* Return the stack capacity */
+		/* Return the stack capacity */
+		return m_capacity;
 	}
 
 	/* Getter function for the data */
 	/* Returns: const std::unique_ptr<T>& - the data */
 	[[nodiscard]] const std::unique_ptr<T>& get_data() const
 	{
-		return m_data; /* Return the data held by the stack */
+		/* Return the data held by the stack */
+		return m_data;
 	}
 
 /* Private members */

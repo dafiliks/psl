@@ -6,7 +6,6 @@
 
 #include <string>
 #include <vector>
-#include <unordered_map>
 #include <cctype>
 #include <cstring>
 #include <cassert>
@@ -14,20 +13,16 @@
 #include "../utils/cliargs.hpp"
 #include "../compiler/compilation_stage.hpp"
 #include "../utils/error_types.hpp"
+#include "../utils/hash_table.hpp"
 
 /* Enum class of all the token types used in the language */
 enum class TokenType
 {
-	/* Simple language constructs */
-
-	IDENTIFIER, /* Represents non-keyword names of functions/variables (e.g. pi) */
-	INT, /* Represents whole numbers (e.g. 10) */
-	REAL, /* Represents floating point numbers (e.g. 3.14) */
-	STRING, /* Represents a sequence of characters enclosed by '' (e.g. 'message') */
-	CHAR, /* Represents a single character enclosed by '' (e.g. 'a') */
-
-	/* Single character tokens */
-
+	IDENTIFIER, /* Represents non-keyword names of functions/variables */
+	INT, /* Represents whole numbers */
+	REAL, /* Represents floating point numbers */
+	STRING, /* Represents a sequence of characters enclosed by '' */
+	CHAR, /* Represents a single character enclosed by '' */
 	GREATER_THAN, /* Represents the greater than ">" character */
 	LESS_THAN, /* Represents the less than "<" character */
 	UNDERSCORE, /* Represents the underscore "_" character */
@@ -44,9 +39,6 @@ enum class TokenType
 	COMMA, /* Represents the comma "," character */
 	DOT, /* Represents the full stop "." character */
 	COLON, /* Represents the colon ":" character */
-
-	/* Keywords */
-
 	CONSTANT, /* Represents the "CONSTANT" keyword */
 	DIV, /* Represents the "DIV" keyword */
 	MOD, /* Represents the "MOD" keyword */
@@ -72,16 +64,10 @@ enum class TokenType
 	RETURN, /* Represents the "RETURN" keyword */
 	END_SUB_ROUTINE, /* Represents the "ENDSUBROUTINE" keyword */
 	USER_INPUT, /* Represents the "USERINPUT" keyword */
-
-	/* Explicit field data type keywords */
-
 	STRING_TYPE, /* Represents the "String" data type keyword */
 	REAL_TYPE, /* Represents the "Real" data type keyword */
 	INT_TYPE, /* Represents the "Integer" data type keyword */
 	CHAR_TYPE, /* Represents the "Char" data type keyword */
-
-	/* Standard library functions */
-
 	LEN, /* Represents the "LEN()" standard library function call */
 	POSITION, /* Represents the "POSITION()" standard library function call */
 	SUBSTRING, /* Represents the "SUBSTRING()" standard library function call */
@@ -93,17 +79,12 @@ enum class TokenType
 	CODE_TO_CHAR, /* Represents the "CODE_TO_CHAR()" standard library function call */
 	OUTPUT, /* Represents the "OUTPUT" standard library function call */
 	RANDOM_INT, /* Represents the "RANDOM_INT()" standard library function call */
-
-	/* Extra useful tokens */
-
 	END_OF_FILE, /* Represents the null "\0" character */
 };
 
-/* A map between known symbols, identifiers, and keywords and their TokenType equivalent */
-static const std::unordered_map<std::string, TokenType> value_token_map
+/* Hash table between known symbols, identifiers, and keywords and their TokenType equivalent */
+static const HashTable<std::string, TokenType> value_token_map
 {
-	/* Single character tokens */
-
 	{">", TokenType::GREATER_THAN}, /* Maps ">" to TokenType::GREATER_THAN */
 	{"<", TokenType::LESS_THAN}, /* Maps "<" to TokenType::LESS_THAN */
 	{"_", TokenType::UNDERSCORE}, /* Maps "_" to TokenType::UNDERSCORE */
@@ -120,9 +101,6 @@ static const std::unordered_map<std::string, TokenType> value_token_map
 	{",", TokenType::COMMA}, /* Maps "," to TokenType::COMMA */
 	{".", TokenType::DOT}, /* Maps "." to TokenType::DOT */
 	{":", TokenType::COLON}, /* Maps ":" to TokenType::COLON */
-
-	/* Keywords */
-
 	{"CONSTANT", TokenType::CONSTANT}, /* Maps "CONSTANT" to TokenType::CONSTANT */
 	{"DIV", TokenType::DIV}, /* Maps "DIV" to TokenType::DIV */
 	{"MOD", TokenType::MOD}, /* Maps "MOD" to TokenType::MOD */
@@ -148,16 +126,10 @@ static const std::unordered_map<std::string, TokenType> value_token_map
 	{"RETURN", TokenType::RETURN}, /* Maps "RETURN" to TokenType::RETURN */
 	{"ENDSUBROUTINE", TokenType::END_SUB_ROUTINE}, /* Maps "ENDSUBROUTINE" to TokenType::END_SUB_ROUTINE */
 	{"USERINPUT", TokenType::USER_INPUT}, /* Maps "USERINPUT" to TokenType::USER_INPUT */
-
-	/* Explicit field data type keywords */
-
 	{"String", TokenType::STRING_TYPE}, /* Maps "String" to TokenType::STRING_TYPE */
 	{"Real", TokenType::REAL_TYPE}, /* Maps "Real" to TokenType::REAL_TYPE */
 	{"Integer", TokenType::INT_TYPE}, /* Maps "Integer" to TokenType::INT_TYPE */
 	{"Char", TokenType::CHAR_TYPE}, /* Maps "Char" to TokenType::CHAR_TYPE */
-
-	/* Standard library functions */
-
 	{"LEN", TokenType::LEN}, /* Maps "LEN" to TokenType::LEN */
 	{"POSITION", TokenType::POSITION}, /* Maps "POSITION" to TokenType::POSITION */
 	{"SUBSTRING", TokenType::SUBSTRING}, /* Maps "SUBSTRING" to TokenType::SUBSTRING */
@@ -180,7 +152,7 @@ std::string_view tt_to_string(const TokenType type);
 struct Token
 {
 	std::string m_value{}; /* The string value of the token */
-	TokenType m_type{};  /* The type of the token */
+	TokenType m_type{}; /* The type of the token */
 
 	std::size_t m_row{}; /* Row number of where the token occurs in the file */
 	std::size_t m_col{}; /* Column number of where the token occurs in the file */
@@ -190,7 +162,6 @@ struct Token
 /* Inherits from CompilationStage as lexical analysis is a compilation stage */
 class Lexer : public CompilationStage
 {
-
 /* Public members */
 public:
 

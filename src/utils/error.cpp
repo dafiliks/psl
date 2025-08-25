@@ -5,21 +5,46 @@
 
 std::string_view et_to_string(const ErrorType type)
 {
-	/* Output corresponding string from ErrorType */
+	/* Switch through all of the possible error types */
 	switch (type)
 	{
-		/* Typical error types */
-		case (ErrorType::CLI_ARGS): return "cli args";
-		case (ErrorType::LEX):      return "lex";
-		case (ErrorType::PARSE):    return "parse";
-		case (ErrorType::STACK):    return "stack";
-		case (ErrorType::GEN):      return "gen";
-		case (ErrorType::COMPILE):  return "compile";
+		/* If the error type is CLI_ARGS */
+		case (ErrorType::CLI_ARGS):
+			/* Return string representation */
+			return "cli args";
 
-		/* Unknown error type */
-		default:                    return "unknown";
+		/* If the error type is LEX */
+		case (ErrorType::LEX):
+			/* Return string representation */
+			return "lex";
+
+		/* If the error type is PARSE */
+		case (ErrorType::PARSE):
+			/* Return string representation */
+			return "parse";
+
+		/* If the error type is STACK */
+		case (ErrorType::STACK):
+			/* Return string representation */
+			return "stack";
+
+		/* If the error type is GEN */
+		case (ErrorType::GEN):
+			/* Return string representation */
+			return "gen";
+
+		/* If the error type is COMPILE */
+		case (ErrorType::COMPILE):
+			/* Return string representation */
+			return "compile";
+
+		/* If no matches occur */
+		default:
+			/* Return unknown error type */
+			return "unknown error type";
 	}
 }
+
 
 Error::Error(const std::string_view message, const ErrorType type)
 /* Initialize error type */
@@ -43,17 +68,20 @@ Error::Error(const std::string_view message, const std::size_t row, const std::s
 
 [[nodiscard]] const std::string& Error::get_source() const
 {
-	return m_source; /* Return the source contents */
+	/* Return the source contents */
+	return m_source;
 }
 
 [[nodiscard]] const ErrorType& Error::get_type() const
 {
-	return m_type; /* Return error type */
+	/* Return error type */
+	return m_type;
 }
 
 [[nodiscard]] std::string Error::what() const
 {
-	return m_error.str(); /* Return final error message */
+	/* Return final error message */
+	return m_error.str();
 }
 
 std::ostringstream Error::add_source_error(const std::size_t row, const std::size_t col) const

@@ -33,57 +33,68 @@ void Parser::parse()
 
 [[nodiscard]] const AST& Parser::get_ast() const
 {
-	return m_ast; /* Return the AST */
+	/* Return the AST */
+	return m_ast;
 }
 
 [[nodiscard]] const std::vector<Token>& Parser::get_tokens() const
 {
-	return m_tokens; /* Return the used token stream */;
+	/* Return the used token stream */
+	return m_tokens;
 }
 
 [[nodiscard]] const std::size_t& Parser::get_token_index() const
 {
-	return m_token_index; /* Return the current index within the token stream */
+	/* Return the current index within the token stream */
+	return m_token_index;
 }
 
 [[nodiscard]] const std::string& Parser::get_source() const
 {
-	return m_source; /* Return the source contents */
+	/* Return the source contents */
+	return m_source;
 }
 
 [[nodiscard]] const std::string& Parser::get_source_path() const
 {
-	return m_source_path; /* Return the source path */
+	/* Return the source path */
+	return m_source_path;
 }
 
 [[nodiscard]] const std::vector<std::shared_ptr<VarStmt>>& Parser::get_existing_vars() const
 {
-	return m_existing_vars; /* Return the existing variables list */
+	/* Return the existing variables list */
+	return m_existing_vars;
 }
 
 [[nodiscard]] const std::vector<std::shared_ptr<FuncDefStmt>>& Parser::get_existing_funcs() const
 {
-	return m_existing_funcs; /* Return the existing functions list */
+	/* Return the existing functions list */
+	return m_existing_funcs;
 }
 
 [[nodiscard]] const std::vector<std::shared_ptr<RecordStmt>>& Parser::get_existing_records() const
 {
-	return m_existing_records; /* Return the existing records list */
+	/* Return the existing records list */
+	return m_existing_records;
 }
 
 [[nodiscard]] const std::vector<std::pair<std::shared_ptr<Expr>, const std::string>>& Parser::get_unresolved_exprs() const
 {
-	return m_unresolved_exprs; /* Return the unresolved expressions list */
+	/* Return the unresolved expressions list */
+	return m_unresolved_exprs;
 }
 
 [[nodiscard]] const std::vector<std::pair<std::shared_ptr<Expr>, const std::string>>& Parser::get_unresolved_decls() const
 {
-	return m_unresolved_exprs; /* Return the unresolved declarations list */
+	/* Return the unresolved declarations list */
+	return m_unresolved_exprs;
 }
 
 [[nodiscard]] const Stack<std::size_t>& Parser::get_var_scope_stack() const
 {
-	return m_var_scope_stack; /* Return the variable scope stack */
+	/* Return the variable scope stack */
+	return m_var_scope_stack;
 }
 
 [[nodiscard]] Stmt Parser::parse_stmt()
@@ -171,7 +182,8 @@ void Parser::parse()
 
 			/* In the case of no matches */
 			default:
-				break; /* Fall through to error */
+				/* Fall through to error */
+				break;
 		}
 	}
 
@@ -401,6 +413,9 @@ void Parser::parse()
 
 	/* Parse and store the return expression */
 	return_stmt.m_return_expr = parse_expr();
+
+	/* Set the return statement expression of the current function to the parsed return statement expression */
+	m_existing_funcs.back()->m_return.m_return_expr = return_stmt.m_return_expr;
 
 	/* Return the return statement */
 	return return_stmt;
@@ -839,20 +854,10 @@ void Parser::parse_func_bodies_2nd_pass()
 			}
 
 			/* Parse and store the function body */
-			func->m_body = std::make_shared<Body>(parse_body_until({TokenType::RETURN, TokenType::END_SUB_ROUTINE}));
+			func->m_body = std::make_shared<Body>(parse_body_until({TokenType::END_SUB_ROUTINE}));
 
-			/* If the type of the current token is RETURN */
-			if (peek().m_type == TokenType::RETURN)
-			{
-				/* Consume the RETURN token */
-				consume();
-
-				/* Parse and store the return expression */
-				func->m_return.m_return_expr = parse_expr();
-			}
-
-			/* If the type of the current token is not RETURN */
-			else
+			/* If the function contains no return statement */
+			if (!func->m_return.m_return_expr)
 			{
 				/* Allocate heap memory for the return expression */
 				func->m_return.m_return_expr = std::make_shared<Expr>();
@@ -888,7 +893,7 @@ void Parser::parse_unresolved_exprs_2nd_pass()
 	}
 }
 
-void Parser::check_arg_count_matches(const std::string_view name, const Args &args)
+void Parser::check_arg_count_matches(const std::string_view name, const Args &args) const
 {
 	/* Create a pointer to the function definition statement with the matching name */
 	std::shared_ptr<FuncDefStmt> func_def_stmt{existing_func_lookup(name)};
@@ -899,8 +904,12 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 		/* Throw parse error */
 		throw ParseError
 		{
-			"expected '" + std::to_string(func_def_stmt->m_params.m_params.size()) + "' arguments" +
-			", got '" + std::to_string(args.m_args.size()) + "' arguments",
+			"expected '" +
+			std::to_string(func_def_stmt->m_params.m_params.size()) +
+			"' arguments" +
+			", got '" +
+			std::to_string(args.m_args.size()) +
+			"' arguments",
 			m_tokens[m_token_index].m_row,
 			m_tokens[m_token_index].m_col,
 			m_source
@@ -1786,7 +1795,7 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
 	/* If the current token type is EXCLAMATION and if the next token type is EQUALS */
 	else if (peek().m_type == TokenType::EXCLAMATION && peek(1).m_type == TokenType::EQUALS)
 	{
-		/* Consume the EXCLAIMATION and EQUALS tokens */
+		/* Consume the EXCLAMATION and EQUALS tokens */
 		consume(2);
 
 		/* Return the NOT_EQUALS operator */
@@ -1903,7 +1912,7 @@ void Parser::remove_var(const std::string_view name)
 	}
 }
 
-[[nodiscard]] bool Parser::is_var_defined(const std::string_view name)
+[[nodiscard]] bool Parser::is_var_defined(const std::string_view name) const
 {
 	/* Create the loop stop index */
 	std::size_t stop_index{};
@@ -1931,7 +1940,7 @@ void Parser::remove_var(const std::string_view name)
 	return false;
 }
 
-[[nodiscard]] std::shared_ptr<VarStmt> Parser::existing_var_lookup(const std::string_view name)
+[[nodiscard]] std::shared_ptr<VarStmt> Parser::existing_var_lookup(const std::string_view name) const
 {
 	/* Loop backwards through the existing variables */
 	/* This is because a variable is likely to be used close to where it is declared */
@@ -1956,7 +1965,7 @@ void Parser::remove_var(const std::string_view name)
 	};
 }
 
-std::shared_ptr<FuncDefStmt> Parser::existing_func_lookup(const std::string_view name)
+std::shared_ptr<FuncDefStmt> Parser::existing_func_lookup(const std::string_view name) const
 {
 	/* Loop through the existing functions */
 	for (auto it{m_existing_funcs.begin()}; it != m_existing_funcs.end(); it++)
@@ -1980,7 +1989,7 @@ std::shared_ptr<FuncDefStmt> Parser::existing_func_lookup(const std::string_view
 	};
 }
 
-[[nodiscard]] bool Parser::is_record(const std::string_view name)
+[[nodiscard]] bool Parser::is_record(const std::string_view name) const
 {
 	/* Loop through all the existing records */
 	for (const auto& record : m_existing_records)
@@ -1997,7 +2006,7 @@ std::shared_ptr<FuncDefStmt> Parser::existing_func_lookup(const std::string_view
 	return false;
 }
 
-[[nodiscard]] bool Parser::is_stdlib(const std::string_view name)
+[[nodiscard]] bool Parser::is_stdlib(const std::string_view name) const
 {
 	/* Return whether the name specified matches with the name of any standard library functions */
 	return name == "LEN" ||
@@ -2012,7 +2021,7 @@ std::shared_ptr<FuncDefStmt> Parser::existing_func_lookup(const std::string_view
 	       name == "RANDOM_INT";
 }
 
-[[nodiscard]] bool Parser::is_data_type(const TokenType token_type)
+[[nodiscard]] bool Parser::is_data_type(const TokenType token_type) const
 {
 	/* Return whether the token type could be represented as a data type */
 	return token_type == TokenType::REAL ||
@@ -2041,7 +2050,7 @@ void Parser::deduce_func_decl_param_types_from_args(const std::string_view name,
 	}
 }
 
-[[nodiscard]] DataType Parser::deduce_expr_type(const Token token)
+[[nodiscard]] DataType Parser::deduce_expr_type(const Token token) const
 {
 	/* If the current token type could be represented as a data type */
 	if (is_data_type(token.m_type))
@@ -2076,7 +2085,7 @@ void Parser::deduce_func_decl_param_types_from_args(const std::string_view name,
 	};
 }
 
-[[nodiscard]] DataType Parser::deduce_field_type_from_access(const Token name, const Token field)
+[[nodiscard]] DataType Parser::deduce_field_type_from_access(const Token name, const Token field) const
 {
 	/* Store the name of the record, which is deduced by an existing variable lookup */
 	const std::string_view record_name{existing_var_lookup(name.m_value)->m_record_name};
@@ -2114,7 +2123,7 @@ void Parser::deduce_func_decl_param_types_from_args(const std::string_view name,
 	};
 }
 
-[[nodiscard]] DataType Parser::tt_to_dt(const TokenType token_type)
+[[nodiscard]] DataType Parser::tt_to_dt(const TokenType token_type) const
 {
 	/* Switch through all of the possible token types that can be converted directly into a data type */
 	switch (token_type)
@@ -2166,7 +2175,7 @@ void Parser::deduce_func_decl_param_types_from_args(const std::string_view name,
 	};
 }
 
-[[nodiscard]] bool Parser::is_bin_op(const TokenType token_type)
+[[nodiscard]] bool Parser::is_bin_op(const TokenType token_type) const
 {
 	/* Return whether the current token type indicates a binary operator is present */
 	return token_type == TokenType::ADDITION ||
@@ -2183,7 +2192,7 @@ void Parser::deduce_func_decl_param_types_from_args(const std::string_view name,
 	       token_type == TokenType::AND;
 }
 
-[[nodiscard]] bool Parser::is_unary(const TokenType token_type)
+[[nodiscard]] bool Parser::is_unary(const TokenType token_type) const
 {
 	/* Return whether the current token type indicates a unary operator is present */
 	return token_type == TokenType::NOT ||

@@ -3,7 +3,10 @@
 
 #include "../utils/cliargs.hpp"
 
-CLIArgs::CLIArgs(int argc, char **argv) : m_argc(argc), m_argv(argv) /* Initializes members, argc and argv */ {}
+CLIArgs::CLIArgs(int argc, char **argv)
+/* Initialize argc and argv members */
+: m_argc(argc),
+  m_argv(argv) {}
 
 void CLIArgs::handle()
 {
@@ -16,27 +19,32 @@ void CLIArgs::handle()
 
 [[nodiscard]] int CLIArgs::get_argc() const
 {
-	return m_argc; /* Return argc (the argument count) */
+	/* Return argc (the argument count) */
+	return m_argc;
 }
 
 [[nodiscard]] char** CLIArgs::get_argv() const
 {
-	return m_argv; /* Return argv (the arguemnt strings) */
+	/* Return argv (the arguemnt strings) */
+	return m_argv;
 }
 
 [[nodiscard]] const std::string& CLIArgs::get_source() const
 {
-	return m_source; /* Return the source contents */
+	/* Return the source contents */
+	return m_source;
 }
 
 [[nodiscard]] std::string CLIArgs::get_source_path() const
 {
-	return std::string{m_argv[1]}; /* Return string copy of the source path */
+	/* Return string copy of the source path */
+	return std::string{m_argv[1]};
 }
 
 [[nodiscard]] std::string CLIArgs::get_target_output_flag() const
 {
-	return std::string{m_argv[2]}; /* Return string copy of the target output flag */
+	/* Return string copy of the target output flag */
+	return std::string{m_argv[2]};
 }
 
 void CLIArgs::validate_args()

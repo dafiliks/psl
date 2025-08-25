@@ -1,8 +1,8 @@
 /* backend/gen.hpp by David Filiks */
 /* The generator header for the PsL compiler */
 
-#ifndef GEN_H
-#define GEN_H
+#ifndef GEN_HPP
+#define GEN_HPP
 
 #include <fstream>
 #include <sstream>
@@ -16,14 +16,13 @@
 #include "../frontend/parser.hpp"
 #include "../compiler/compilation_stage.hpp"
 #include "../utils/error_types.hpp"
-#include "../utils/vec_ptrs_unwrap.hpp"
+#include "../utils/vec_ptrs_unwrapper.hpp"
 
 /* The main generator class, responsible for converting the valid AST into a C++20 source file */
 /* Due to the nature of AQA pseudocode, semantic analysis is performed here */
 /* Inherits from CompilationStage as code generation is a compilation stage */
 class Generator : public CompilationStage
 {
-
 /* Public members */
 public:
 

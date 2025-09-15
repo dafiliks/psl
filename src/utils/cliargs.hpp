@@ -37,8 +37,6 @@ public:
 	/* Returns: const std::string& - the source contents */
 	[[nodiscard]] const std::string& get_source() const;
 
-	/* Extra Misc */
-
 	/* Getter function for the source path */
 	/* Returns: std::string - the source path */
 	[[nodiscard]] std::string get_source_path() const;

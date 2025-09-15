@@ -11,37 +11,37 @@ std::string_view et_to_string(const ErrorType type)
 		/* If the error type is CLI_ARGS */
 		case (ErrorType::CLI_ARGS):
 			/* Return string representation */
-			return "cli args";
+			return "Cli Args";
 
 		/* If the error type is LEX */
 		case (ErrorType::LEX):
 			/* Return string representation */
-			return "lex";
+			return "Lex";
 
 		/* If the error type is PARSE */
 		case (ErrorType::PARSE):
 			/* Return string representation */
-			return "parse";
+			return "Parse";
 
 		/* If the error type is STACK */
 		case (ErrorType::STACK):
 			/* Return string representation */
-			return "stack";
+			return "Stack";
 
 		/* If the error type is GEN */
 		case (ErrorType::GEN):
 			/* Return string representation */
-			return "gen";
+			return "Gen";
 
 		/* If the error type is COMPILE */
 		case (ErrorType::COMPILE):
 			/* Return string representation */
-			return "compile";
+			return "Compile";
 
 		/* If no matches occur */
 		default:
 			/* Return unknown error type */
-			return "unknown error type";
+			return "Unknown";
 	}
 }
 
@@ -51,7 +51,7 @@ Error::Error(const std::string_view message, const ErrorType type)
 : m_type(type)
 {
 	/* Store appropriate error message */
-	m_error << et_to_string(m_type) << " error: " <<  message << "\n";
+	m_error << et_to_string(m_type) << " Error: " <<  message << "\n";
 }
 
 Error::Error(const std::string_view message, const std::size_t row, const std::size_t col, const std::string& source, const ErrorType type)
@@ -60,7 +60,7 @@ Error::Error(const std::string_view message, const std::size_t row, const std::s
   m_type(type)
 {
 	/* Store appropriate error message */
-	m_error << et_to_string(m_type) << " error: " << row << ":" << col << ": " << message << "\n";
+	m_error << et_to_string(m_type) << " Error: " << row << ":" << col << ": " << message << "\n";
 
 	/* Add the part of the source code which caused the error */
 	m_error << add_source_error(row, col).str();

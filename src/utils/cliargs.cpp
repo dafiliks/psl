@@ -49,13 +49,16 @@ void CLIArgs::handle()
 
 void CLIArgs::validate_args()
 {
+	std::cout << std::filesystem::path(get_source_path()).extension();
 	/* If the argument count is not equal to two */
 	if (m_argc != 3)
 	{
 		/* Throw cli args error */
 		throw CLIArgsError
 		{
-			"wrong number of arguments provided"
+			"expected '3' arguments, got '" +
+			std::to_string(m_argc) +
+			"'"
 		};
 	}
 
@@ -121,6 +124,7 @@ void CLIArgs::file_to_source(const std::string& path)
 {
 	/* Return whether the output target is valid */
 	return output_target == "-exe" ||
+	       output_target == "-cpp" ||
 	       output_target == "-asm" ||
 	       output_target == "-obj";
 }

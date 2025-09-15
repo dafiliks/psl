@@ -23,6 +23,8 @@ void GCCTarget::compile(const std::string_view cpp_file)
 	/* Switch through all the possible output targets */
 	switch (m_target)
 	{
+		/* No case for the CPP target as it is the default output from the generator and requires no C++ compiler calls */
+
 		/* If the output target is EXE */
 		case (OutputTarget::EXE):
 			/* Store the command that compiles the ".cpp" file to EXE with GCC */
@@ -79,6 +81,8 @@ void MSVCTarget::compile(const std::string_view cpp_file)
 	/* Switch through all the possible output targets */
 	switch (m_target)
 	{
+		/* No case for the CPP target as it is the default output from the generator and requires no C++ compiler calls */
+
 		/* If the output target is EXE */
 		case (OutputTarget::EXE):
 			/* Store the command that compiles the ".cpp" file to EXE with MSVC */
@@ -135,6 +139,8 @@ void ClangTarget::compile(const std::string_view cpp_file)
 	/* Switch through all the possible output targets */
 	switch (m_target)
 	{
+	/* No case for the CPP target as it is the default output from the generator and requires no C++ compiler calls */
+
 		/* If the output target is EXE */
 		case (OutputTarget::EXE):
 			/* Store the command that compiles the ".cpp" file to EXE with Clang */

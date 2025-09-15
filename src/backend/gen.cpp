@@ -24,7 +24,7 @@ void Generator::gen()
 	const std::string cpp_output_path
 	{
 		/* Replace the source file path with a ".cpp" extension */
-		std::filesystem::path{m_source_path}.replace_extension(std::filesystem::path{".cpp"})
+        std::filesystem::path{m_source_path}.replace_extension(std::filesystem::path{".cpp"}).string()
 	};
 
 	/* Change the output stream to the main stream */
@@ -422,7 +422,7 @@ void Generator::gen_stmt(const Stmt& stmt)
 		void operator()(const ElseStmt& else_stmt)
 		{
 			/* Write the else statement and the start of the body */
-			*gen.m_current_stream << "	else\n{\n";
+			*gen.m_current_stream << "	else\n	{\n";
 
 			/* Generate the else statement body */
 			gen.gen_stmts(else_stmt.m_body->m_stmts);

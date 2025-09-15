@@ -59,6 +59,26 @@ void Compiler::compile_to_output_target(const std::string_view cpp_file)
 		#endif
 	}
 
+	/* If the target output flag is "-cpp" */
+	else if (m_args.get_target_output_flag() == "-cpp")
+	{
+		/* If the user is using the G++ compiler */
+		#if defined(__GNUG__)
+			/* Set the target compiler to GCC (G++) and the output target to CPP */
+			target = std::make_unique<GCCTarget>(OutputTarget::CPP);
+
+		/* If the user is using the MSVC compiler */
+		#elif defined(_MSC_VER)
+			/* Set the target compiler to MSVC and the output target to CPP */
+			target = std::make_unique<MSVCTarget>(OutputTarget::CPP);
+
+		/* If the user is using the Clang compiler */
+		#elif defined(__clang__)
+			/* Set the target compiler to Clang and the output target to CPP */
+			target = std::make_unique<ClangTarget>(OutputTarget::CPP);
+		#endif
+	}
+
 	/* If the target output flag is "-asm" */
 	else if (m_args.get_target_output_flag() == "-asm")
 	{
@@ -78,6 +98,7 @@ void Compiler::compile_to_output_target(const std::string_view cpp_file)
 			target = std::make_unique<ClangTarget>(OutputTarget::ASM);
 		#endif
 	}
+
 
 	/* If the target output flag is "-obj" */
 	else if (m_args.get_target_output_flag() == "-obj")

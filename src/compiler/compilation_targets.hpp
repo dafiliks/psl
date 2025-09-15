@@ -13,6 +13,7 @@
 enum class OutputTarget
 {
 	EXE, /* Represents a desired output target of an executable */
+	CPP, /* Represents a desired output target of a C++ file */
 	ASM, /* Represents a desired output target of assembly language */
 	OBJ, /* Represents a desired output target of an object file */
 };

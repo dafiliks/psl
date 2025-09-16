@@ -149,6 +149,16 @@ void psl::on_actionExit_triggered()
 
 void psl::on_compileButton_clicked()
 {
+    /* If the source file extension is not ".pseudo" */
+    if (std::filesystem::path{source_path.toStdString()}.extension() != ".pseudo")
+    {
+        /* Open an error box indicating the issue */
+        QMessageBox::critical(this, "Error", "File lacks the .pseudo extension");
+
+        /* Return from the function early */
+        return;
+    }
+
     /* If no source path has been set */
     if (source_path.isEmpty())
     {

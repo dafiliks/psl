@@ -168,7 +168,7 @@ public:
 	/* Functions */
 
 	/* Constructs a Lexer object */
-	/* Param: const CLIArgs& - cli args passed to the program */
+	/* Param: const CLIArgs& - the cli args passed to the program */
 	Lexer(const CLIArgs& args);
 
 	/* Executes the lex() function */

@@ -114,7 +114,7 @@ private:
 			/* Loop through each character in the string */
 			for (char character : key)
 			{
-				/* Perform the hashing operation */
+				/* Perform the djb2 hashing operation */
 				seed = ((seed << 5) + seed) + character;
 			}
 
@@ -125,7 +125,7 @@ private:
 		/* If the key is not a string */
 		else
 		{
-			/* Use standard C++ hashing */
+			/* Use the appropriate standard C++ hashing algorithm instead */
 			return std::hash<T1>{}(key) % m_buckets;
 		}
 	}

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 project(psl LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets LinguistTools)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
 
 qt_standard_project_setup()
 
@@ -19,11 +19,6 @@ qt_add_executable(psl
     ../src/compiler/compilation_targets.cpp
     psl.h
     psl.ui
-)
-
-qt_add_translations(
-    TARGETS psl
-    TS_FILES psl_en_150.ts
 )
 
 target_link_libraries(psl

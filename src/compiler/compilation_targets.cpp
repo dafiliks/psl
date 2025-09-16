@@ -28,7 +28,17 @@ void GCCTarget::compile(const std::string_view cpp_file)
 		/* If the output target is EXE */
 		case (OutputTarget::EXE):
 			/* Store the command that compiles the ".cpp" file to EXE with GCC */
-			command_str = "g++ " + output_file.string() + ".cpp -std=c++20 -o " + output_file.string() + " && ./" + output_file.string();
+			command_str = "g++ " + output_file.string() + ".cpp -std=c++20 -o " + output_file.string() + " && ";
+
+			/* If the user is using EITHER 32-bit or 64-bit Windows */
+			#if defined(_WIN32)
+				/* Add a ".exe" to the end of the executable name for obvious reasons */
+				command_str += output_file.string() + ".exe";
+			/* If the user is not using Windows */
+			#else
+				/* Prepend a "./" to the executable name on MacOS and Linux */
+				command_str += "./" + output_file.string();
+			#endif
 
 			/* Break from the switch case */
 			break;
@@ -143,8 +153,18 @@ void ClangTarget::compile(const std::string_view cpp_file)
 
 		/* If the output target is EXE */
 		case (OutputTarget::EXE):
-			/* Store the command that compiles the ".cpp" file to EXE with Clang */
-			command_str = "clang++ " + output_file.string() + ".cpp -std=c++20 -o " + output_file.string() + " && ./" + output_file.string();
+			/* Store the base command which compiles the ".cpp" file to EXE with Clang */
+			command_str = "clang++ " + output_file.string() + ".cpp -std=c++20 -o " + output_file.string() + " && ";
+
+			/* If the user is using EITHER 32-bit or 64-bit Windows */
+			#if defined(_WIN32)
+				/* Add a ".exe" to the end of the executable name for obvious reasons */
+				command_str += output_file.string() + ".exe";
+			/* If the user is not using Windows */
+			#else
+				/* Prepend a "./" to the executable name on MacOS and Linux */
+				command_str += "./" + output_file.string();
+			#endif
 
 			/* Break from the switch case */
 			break;

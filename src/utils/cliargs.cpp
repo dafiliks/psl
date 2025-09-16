@@ -49,7 +49,6 @@ void CLIArgs::handle()
 
 void CLIArgs::validate_args()
 {
-	std::cout << std::filesystem::path(get_source_path()).extension();
 	/* If the argument count is not equal to two */
 	if (m_argc != 3)
 	{
@@ -96,10 +95,10 @@ void CLIArgs::validate_args()
 
 void CLIArgs::file_to_source(const std::string& path)
 {
-	/* Creates new ifstream object for the file */
+	/* Create new ifstream object for the file */
 	std::ifstream file{};
 
-	/* Creates a handle to the file from the path */
+	/* Create a handle to the file from the path */
 	file.open(path);
 
 	/* If the file did not open properly */

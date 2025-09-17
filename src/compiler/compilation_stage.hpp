@@ -6,9 +6,9 @@
 
 /* Struct representing a stage in the compilation cycle */
 struct CompilationStage {
-	/* Executes the particular compilation stage */
-	/* Each stage will override this function and implement stage specific execution behavior */
-	virtual void execute() = 0;
+    /* Executes the particular compilation stage */
+    /* Each stage will override this function and implement stage specific execution behavior */
+    virtual void execute() = 0;
 };
 
 #endif

@@ -7,9 +7,6 @@
 #include <QMessageBox>
 
 #include "psl.h"
-#include "ui_psl.h"
-#include "../src/utils/cliargs.hpp"
-#include "../src/compiler/compiler.hpp"
 
 psl::psl(QWidget *parent)
 /* Initialize the main window and UI object */

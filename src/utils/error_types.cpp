@@ -2,7 +2,6 @@
 /* The error types implementation for the PsL compiler */
 
 #include "error_types.hpp"
-#include "error.hpp"
 
 CLIArgsError::CLIArgsError(const std::string_view message)
 /* Initialize Error object */

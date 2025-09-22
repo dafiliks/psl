@@ -7,6 +7,9 @@
 #include <QMainWindow>
 #include <filesystem>
 
+#include "../src/utils/cliargs.hpp"
+#include "../src/compiler/compiler.hpp"
+
 /* Macro which begins a Qt namespace */
 QT_BEGIN_NAMESPACE
 

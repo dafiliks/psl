@@ -7,8 +7,6 @@
 #include <vector>
 #include <memory>
 
-#include "../frontend/ast.hpp"
-
 template <typename T>
 /* Class to be used to unwrap a vector of pointers */
 class VecPtrsUnwrapper

@@ -7,7 +7,6 @@
 #include <iostream>
 #include <memory>
 
-#include "stack.hpp"
 #include "../utils/error_types.hpp"
 
 template <typename T>

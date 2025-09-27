@@ -7,6 +7,7 @@
 #include <QMainWindow>
 #include <filesystem>
 
+#include "ui_psl.h"
 #include "../src/utils/cliargs.hpp"
 #include "../src/compiler/compiler.hpp"
 

@@ -18,6 +18,10 @@
 #include "../utils/error_types.hpp"
 #include "../utils/vec_ptrs_unwrapper.hpp"
 
+/* The type of the variable statement which is currently being generated */
+/* Global because the same variable needs to be accessible to different class instantiations */
+static DataType current_var_stmt_type{};
+
 /* The main generator class, responsible for converting the valid AST into a C++20 source file */
 /* Due to the nature of AQA pseudocode, semantic analysis is performed here */
 /* Inherits from CompilationStage as code generation is a compilation stage */

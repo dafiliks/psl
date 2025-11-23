@@ -1028,7 +1028,8 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
         }
 
         /* Set the lhs to the atom expression */
-        *lhs = Expr{parse_atom(), lhs->m_type};
+        //*lhs = Expr{parse_atom(), lhs->m_type};
+        lhs->m_expr = parse_atom();
     }
 
     /* If the expression type can be deduced easily */
@@ -1325,8 +1326,19 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
     /* Consume and store the name of the called function */
     func_call_expr.m_name = consume().m_value;
 
-    /* Parse and store the function call arguments */
-    func_call_expr.m_args.m_args = parse_cse<Arg>();
+    /* If the argument list is not empty */
+    if (peek(1).m_type != TokenType::C_PAREN)
+    {
+        /* Parse and store the function call arguments */
+        func_call_expr.m_args.m_args = parse_cse<Arg>();
+    }
+
+    /* If the argument list is empty */
+    else
+    {
+        /* Try to consume a token of type O_PAREN */
+        try_consume(TokenType::O_PAREN);
+    }
 
     /* Try to consume a token of type C_PAREN */
     try_consume(TokenType::C_PAREN);

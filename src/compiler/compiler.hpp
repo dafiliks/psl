@@ -28,6 +28,22 @@ public:
     /* Carry out all of the compilation stages */
     void compile();
 
+    /* Getter function for the cli arguments */
+    /* Returns: const CLIArgs& - the cli arguments */
+    [[nodiscard]] const CLIArgs& get_args() const;
+
+    /* Getter function for the lexer object */
+    /* Returns: const Lexer& - the lexer object */
+    [[nodiscard]] const Lexer& get_lexer() const;
+
+    /* Getter function for the parser object */
+    /* Returns: const Parser& - the parser object */
+    [[nodiscard]] const Parser& get_parser() const;
+
+    /* Getter function for the generator object */
+    /* Returns: const Generator& - the generator object */
+    [[nodiscard]] const Generator& get_gen() const;
+
 /* Private members */
 private:
 

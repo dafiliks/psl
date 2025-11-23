@@ -226,6 +226,9 @@ void Generator::gen_stmt(const Stmt& stmt)
                     /* Generate the corresponding C++ data type */
                     gen.gen_type(var_stmt.m_expr->m_type);
 
+                    /* Store the type of the variable statement currently being generated */
+                    current_var_stmt_type = var_stmt.m_expr->m_type;
+
                     /* Write a space for readability */
                     *gen.m_current_stream << " ";
                 }
@@ -442,11 +445,21 @@ void Generator::gen_stmt(const Stmt& stmt)
             /* Check that the variable holds an integer expression */
             gen.check_expr_is_type(*for_to_stmt.m_var_stmt.m_expr, DataType::INT);
 
-            /* Generate the variable statement */
-            gen.gen_stmt(Stmt{for_to_stmt.m_var_stmt});
+            /* Generate the for to statement variable type */
+            /* Not using the gen_stmt function here for correct indentation */
+            gen.gen_type(for_to_stmt.m_var_stmt.m_expr->m_type);
+
+            /* Generate the for to statement variable name */
+            *gen.m_current_stream << " " << for_to_stmt.m_var_stmt.m_name;
+
+            /* Generate the assignment operator */
+            *gen.m_current_stream << "=";
+
+            /* Generate the for to statement variable expression */
+            gen.gen_expr(*for_to_stmt.m_var_stmt.m_expr);
 
             /* Write half of the for to statement condition */
-            *gen.m_current_stream << " " << for_to_stmt.m_var_stmt.m_name << "<";
+            *gen.m_current_stream << "; " << for_to_stmt.m_var_stmt.m_name << "<";
 
             /* Check that the boundary is an integer expression */
             gen.check_expr_is_type(*for_to_stmt.m_boundary, DataType::INT);
@@ -664,6 +677,14 @@ void Generator::gen_expr(const Expr& expr)
 
         void operator()(const BinOpExpr& bin_op_expr)
         {
+            /* If the left hand side of the expression is of type UNRESOLVED */
+            /* This means that the lhs contains a function call expression which has not been resolved yet */
+            if (bin_op_expr.m_lhs->m_type == DataType::UNRESOLVED)
+            {
+                /* Set the lhs of the expression to the type of the variable statement which is currently being generated  */
+                bin_op_expr.m_lhs->m_type = current_var_stmt_type;
+            }
+
             /* If the operator used is not a boolean operator that takes two operands */
             if (bin_op_expr.m_op != Operator::AND && bin_op_expr.m_op != Operator::OR)
             {
@@ -999,13 +1020,13 @@ void Generator::gen_atom_expr(const AtomExpr& atom_expr)
                 *gen.m_current_stream << "    static std::random_device rd{};\n";
 
                 /* Create a Mersenne Twister pseudo-random generator, initialized with rd */
-                *gen.m_current_stream << "    static std::mt19937 gen{rd{}};\n";
+                *gen.m_current_stream << "    static std::mt19937 gen{rd()};\n";
 
                 /* Produce a uniform distribution on the closed interval [min, max] */
                 *gen.m_current_stream << "    std::uniform_int_distribution<int> distrib{min, max};\n";
 
                 /* Return the randomly generated number */
-                *gen.m_current_stream << "    return distrib{gen};\n";
+                *gen.m_current_stream << "    return distrib(gen);\n";
 
                 /* Close off the function body */
                 *gen.m_current_stream << "}\n";

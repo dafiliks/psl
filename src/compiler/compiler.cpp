@@ -19,6 +19,30 @@ void Compiler::compile()
     compile_to_output_target(m_args.get_source_path());
 }
 
+[[nodiscard]] const CLIArgs& Compiler::get_args() const
+{
+    /* Return the cli arguments */
+    return m_args;
+}
+
+[[nodiscard]] const Lexer& Compiler::get_lexer() const
+{
+    /* Return the lexer object */
+    return m_lexer;
+}
+
+[[nodiscard]] const Parser& Compiler::get_parser() const
+{
+    /* Return the parser object */
+    return m_parser;
+}
+
+[[nodiscard]] const Generator& Compiler::get_gen() const
+{
+    /* Return the generator object */
+    return m_gen;
+}
+
 void Compiler::compile_to_cpp()
 {
     /* Construct and execute lexing process */

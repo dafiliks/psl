@@ -387,7 +387,7 @@ struct Stmt
     std::variant<VarStmt,
                  OutputStmt,
                  FuncDefStmt,
-             ReturnStmt,
+                 ReturnStmt,
                  FuncCallStmt,
                  RepeatUntilStmt,
                  WhileStmt,

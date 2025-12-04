@@ -384,7 +384,7 @@ void Parser::parse()
     try_consume(TokenType::O_PAREN);
 
     /* Parse the function definition parameters */
-    func_def_stmt->m_params = parse_func_decl_params();
+    func_def_stmt->m_params = parse_func_def_params();
 
     /* Consume a C_PAREN token */
     consume();
@@ -442,7 +442,7 @@ void Parser::parse()
     check_arg_count_matches(func_call_stmt.m_name, func_call_stmt.m_args);
 
     /* Deduce the types of the function definition parameters from the types of the arguments used in this call */
-    deduce_func_decl_param_types_from_args(func_call_stmt.m_name, func_call_stmt.m_args);
+    deduce_func_def_param_types_from_args(func_call_stmt.m_name, func_call_stmt.m_args);
 
     /* Return the function call statement */
     return func_call_stmt;
@@ -770,7 +770,7 @@ void Parser::skip_over_function_body()
     }
 }
 
-[[nodiscard]] Params Parser::parse_func_decl_params()
+[[nodiscard]] Params Parser::parse_func_def_params()
 {
     /* Create parameter list */
     std::vector<Param> params{};
@@ -1350,7 +1350,7 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
     check_arg_count_matches(func_call_expr.m_name, func_call_expr.m_args);
 
     /* Deduce the types of the function definition parameters from the types of the arguments used in this call */
-    deduce_func_decl_param_types_from_args(func_call_expr.m_name, func_call_expr.m_args);
+    deduce_func_def_param_types_from_args(func_call_expr.m_name, func_call_expr.m_args);
 
     /* Return the function call expression */
     return func_call_expr;
@@ -2042,23 +2042,23 @@ std::shared_ptr<FuncDefStmt> Parser::existing_func_lookup(const std::string_view
            token_type == TokenType::CHAR;
 }
 
-void Parser::deduce_func_decl_param_types_from_args(const std::string_view name, const Args& args)
+void Parser::deduce_func_def_param_types_from_args(const std::string_view name, const Args& args)
 {
     /* Store a pointer to the looked up function definition statement */
-    std::shared_ptr<FuncDefStmt> func_decl{existing_func_lookup(name)};
+    std::shared_ptr<FuncDefStmt> func_def{existing_func_lookup(name)};
 
     /* If it is the first time that this function is called, deduce types */
-    if (!func_decl->m_is_called)
+    if (!func_def->m_is_called)
     {
         /* Loop through all of the function parameters */
-        for (std::size_t i{}; i < func_decl->m_params.m_params.size(); i++)
+        for (std::size_t i{}; i < func_def->m_params.m_params.size(); i++)
         {
             /* Set each parameter type to the corresponding call argument type */
-            func_decl->m_params.m_params[i].m_type = args.m_args[i].m_expr->m_type;
+            func_def->m_params.m_params[i].m_type = args.m_args[i].m_expr->m_type;
         }
 
         /* Set boolean to true to indicate that this function was called */
-        func_decl->m_is_called = true;
+        func_def->m_is_called = true;
     }
 }
 

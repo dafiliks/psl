@@ -161,7 +161,7 @@ private:
 
     /* Parses function definition parameters */
     /* Returns: Params - the function definition parameters */
-    [[nodiscard]] Params parse_func_decl_params();
+    [[nodiscard]] Params parse_func_def_params();
 
     /* Parses function bodies on the second pass, after previous skip */
     void parse_func_bodies_2nd_pass();
@@ -360,7 +360,7 @@ private:
     /* Deduces function definition parameter types from an argument list */
     /* Param: const std::string_view - the name of the function */
     /* Param: const Args& - the argument list */
-    void deduce_func_decl_param_types_from_args(const std::string_view name, const Args& args);
+    void deduce_func_def_param_types_from_args(const std::string_view name, const Args& args);
 
     /* Deduces expression data type from a given token */
     /* Param: const Token - the token to deduce from */

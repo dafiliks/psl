@@ -1,5 +1,5 @@
 /* frontend/ast.hpp by David Filiks */
-/* The ast header for the PsL compiler */
+/* The AST header for the PsL compiler */
 
 #ifndef AST_HPP
 #define AST_HPP

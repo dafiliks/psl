@@ -248,13 +248,13 @@ private:
     void check_record_has_field(const std::string_view record_name, const std::string_view field_name) const;
 
     template <typename T>
-    /* Counts the number of occurences of elements with a given name within a list */
+    /* Counts the number of occurrences of elements with a given name within a list */
     /* Param: const std::string_view - the name of the elements to count */
     /* Param: const std::vector<T>& - the list */
-    /* Returns: std::size_t - the occurence count */
-    [[nodiscard]] std::size_t count_name_occurences_in_list(const std::string_view name, const std::vector<T>& list) const
+    /* Returns: std::size_t - the occurrence count */
+    [[nodiscard]] std::size_t count_name_occurrences_in_list(const std::string_view name, const std::vector<T>& list) const
     {
-        /* Store the count (number) of name occurences within the list */
+        /* Store the count (number) of name occurrences within the list */
         std::size_t count{};
 
         /* Loop through the whole list */
@@ -263,12 +263,12 @@ private:
             /* If the current element name matches the desired element name */
             if (element.m_name == name)
             {
-                /* Increment the occurence count */
+                /* Increment the occurrence count */
                 count++;
             }
         }
 
-        /* Return the occurence count */
+        /* Return the occurrence count */
         return count;
     }
 

@@ -1028,7 +1028,6 @@ void Parser::check_arg_count_matches(const std::string_view name, const Args &ar
         }
 
         /* Set the lhs to the atom expression */
-        //*lhs = Expr{parse_atom(), lhs->m_type};
         lhs->m_expr = parse_atom();
     }
 

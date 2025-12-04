@@ -1594,7 +1594,7 @@ void Generator::check_record_has_field(const std::string_view record_name, const
 void Generator::check_func_defined_once(const std::string_view name) const
 {
     /* If the function name occurs more or less than once in the existing functions list */
-    if (count_name_occurences_in_list(name, m_existing_funcs) != 1)
+    if (count_name_occurrences_in_list(name, m_existing_funcs) != 1)
     {
         /* Throw gen error */
         throw GenError
@@ -1609,7 +1609,7 @@ void Generator::check_func_defined_once(const std::string_view name) const
 void Generator::check_record_defined_once(const std::string_view name) const
 {
     /* If the record name occurs more or less than once in the existing records list */
-    if (count_name_occurences_in_list(name, m_existing_records) != 1)
+    if (count_name_occurrences_in_list(name, m_existing_records) != 1)
     {
         /* Throw gen error */
         throw GenError

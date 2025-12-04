@@ -25,7 +25,7 @@ public:
         /* If the stack is at capacity already */
         if (m_size == m_capacity)
         {
-            /* Resize the stack capacity to two times it's current capacity */
+            /* Resize the stack capacity to two times its current capacity */
             resize(m_capacity * 2);
         }
 

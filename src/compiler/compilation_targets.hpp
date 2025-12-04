@@ -28,7 +28,7 @@ struct CompilationTarget
     CompilationTarget(const OutputTarget& target);
 
     /* Compile the ".cpp" file into the output target */
-    /* Each target will override this function and implement it's own execution behavior */
+    /* Each target will override this function and implement its own execution behavior */
     /* Param: const std::string_view - the name of the ".cpp" file */
     virtual void compile(const std::string_view cpp_file) = 0;
 

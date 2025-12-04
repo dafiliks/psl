@@ -25,7 +25,7 @@ void CLIArgs::handle()
 
 [[nodiscard]] char** CLIArgs::get_argv() const
 {
-    /* Return argv (the arguemnt strings) */
+    /* Return argv (the argument vector) */
     return m_argv;
 }
 

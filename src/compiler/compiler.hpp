@@ -13,7 +13,7 @@
 #include "../backend/gen.hpp"
 #include "../utils/error_types.hpp"
 
-/* Compiler class, responsible for executing all compilation stages and outputting the target ouput */
+/* Compiler class, responsible for executing all compilation stages and outputting the target output */
 class Compiler
 {
 /* Public members */

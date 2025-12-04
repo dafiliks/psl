@@ -197,7 +197,6 @@ struct RelationalOpExpr; /* Declaration for the RelationOpExpr struct */
 struct AtomExpr; /* Declaration for the AtomExpr struct */
 
 /* Struct representing a variable statement */
-/* Inherits from Node to store row and col information */
 struct VarStmt
 {
     std::string m_name{}; /* The name of the variable */
@@ -215,7 +214,6 @@ struct VarStmt
 };
 
 /* Struct representing a parameter */
-/* Inherits from Node to store row and col information */
 struct Param
 {
     std::string m_name{}; /* The name of the parameter */
@@ -223,42 +221,36 @@ struct Param
 };
 
 /* Struct representing a collection of parameters */
-/* Inherits from Node to store row and col information */
 struct Params
 {
     std::vector<Param> m_params{}; /* The list of parameters */
 };
 
 /* Struct representing a single argument */
-/* Inherits from Node to store row and col information */
 struct Arg
 {
     std::shared_ptr<Expr> m_expr{}; /* The argument expression */
 };
 
 /* Struct representing a collection of arguments */
-/* Inherits from Node to store row and col information */
 struct Args
 {
     std::vector<Arg> m_args{}; /* The list of argument expressions */
 };
 
 /* Struct representing an output statement */
-/* Inherits from Node to store row and col information */
 struct OutputStmt
 {
     Args m_args{}; /* The arguments to be output */
 };
 
 /* Struct representing a return statement */
-/* Inherits from Node to store row and col information */
 struct ReturnStmt
 {
     std::shared_ptr<Expr> m_return_expr{}; /* The return expression */
 };
 
 /* Struct representing a function definition */
-/* Inherits from Node to store row and col information */
 struct FuncDefStmt
 {
     std::string m_name{}; /* The name of the function */
@@ -273,7 +265,6 @@ struct FuncDefStmt
 };
 
 /* Struct representing a function call */
-/* Inherits from Node to store row and col information */
 struct FuncCallStmt
 {
     std::string m_name{}; /* The name of the function */
@@ -281,7 +272,6 @@ struct FuncCallStmt
 };
 
 /* Struct representing a repeat until statement */
-/* Inherits from Node to store row and col information */
 struct RepeatUntilStmt
 {
     std::shared_ptr<Expr> m_condition_expr{}; /* The loop condition */
@@ -289,7 +279,6 @@ struct RepeatUntilStmt
 };
 
 /* Struct representing a while loop statement */
-/* Inherits from Node to store row and col information */
 struct WhileStmt
 {
     std::shared_ptr<Expr> m_condition_expr{}; /* The loop condition */
@@ -297,7 +286,6 @@ struct WhileStmt
 };
 
 /* Struct representing an if statement */
-/* Inherits from Node to store row and col information */
 struct IfStmt
 {
     std::shared_ptr<Expr> m_condition_expr{}; /* The condition for the if statement */
@@ -305,7 +293,6 @@ struct IfStmt
 };
 
 /* Struct representing an else if statement */
-/* Inherits from Node to store row and col information */
 struct ElseIfStmt
 {
     std::shared_ptr<Expr> m_condition_expr{}; /* The condition for the else if statement */
@@ -313,14 +300,12 @@ struct ElseIfStmt
 };
 
 /* Struct representing an else statement */
-/* Inherits from Node to store row and col information */
 struct ElseStmt
 {
     std::shared_ptr<Body> m_body{}; /* The body of the else statement */
 };
 
 /* Struct representing a for to loop statement */
-/* Inherits from Node to store row and col information */
 struct ForToStmt
 {
     VarStmt m_var_stmt{}; /* The variable declaration or initialization */
@@ -330,7 +315,6 @@ struct ForToStmt
 };
 
 /* Struct representing a for in loop statement */
-/* Inherits from Node to store row and col information */
 struct ForInStmt
 {
     std::shared_ptr<VarStmt> m_declaration{}; /* The variable declaration */
@@ -339,7 +323,6 @@ struct ForInStmt
 };
 
 /* Struct representing a list access assignment statement */
-/* Inherits from Node to store row and col information */
 struct ListAccessStmt
 {
     std::string m_name{}; /* The name of the list variable */
@@ -349,7 +332,6 @@ struct ListAccessStmt
 };
 
 /* Struct representing a field declaration inside a record */
-/* Inherits from Node to store row and col information */
 struct FieldStmt
 {
     std::string m_name{}; /* The name of the field */
@@ -357,14 +339,12 @@ struct FieldStmt
 };
 
 /* Struct representing a collection of fields */
-/* Inherits from Node to store row and col information */
 struct Fields
 {
     std::vector<FieldStmt> m_fields{}; /* The list of field declarations */
 };
 
 /* Struct representing a record declaration */
-/* Inherits from Node to store row and col information */
 struct RecordStmt
 {
     std::string m_name{}; /* The name of the record */
@@ -372,7 +352,6 @@ struct RecordStmt
 };
 
 /* Struct representing a field access assignment */
-/* Inherits from Node to store row and col information */
 struct FieldAccessStmt
 {
     std::string m_name{}; /* The name of the record variable */
@@ -381,7 +360,6 @@ struct FieldAccessStmt
 };
 
 /* Struct representing a statement */
-/* Inherits from Node to store row and col information */
 struct Stmt
 {
     std::variant<VarStmt,
@@ -403,54 +381,46 @@ struct Stmt
 };
 
 /* Struct representing a body (list of statements) */
-/* Inherits from Node to store row and col information */
 struct Body
 {
     std::vector<Stmt> m_stmts{}; /* The list of statements in the body */
 };
 
 /* Struct representing an integer expression */
-/* Inherits from Node to store row and col information */
 struct IntExpr
 {
     int m_value{}; /* The integer value */
 };
 
 /* Struct representing a real number expression */
-/* Inherits from Node to store row and col information */
 struct RealExpr
 {
     double m_value{}; /* The real number value */
 };
 
 /* Struct representing a string expression */
-/* Inherits from Node to store row and col information */
 struct StrExpr
 {
     std::string m_value{}; /* The string value */
 };
 
 /* Struct representing a character expression */
-/* Inherits from Node to store row and col information */
 struct CharExpr
 {
     char m_value{}; /* The character value */
 };
 
 /* Struct representing a variable expression */
-/* Inherits from Node to store row and col information */
 struct VarExpr
 {
     std::string m_name{}; /* The name of the variable */
 };
 
 /* Struct representing a user input expression */
-/* Inherits from Node to store row and col information */
 struct UserInputExpr
 {};
 
 /* Struct representing a function call expression */
-/* Inherits from Node to store row and col information */
 struct FuncCallExpr
 {
     std::string m_name{}; /* The name of the function */
@@ -458,14 +428,12 @@ struct FuncCallExpr
 };
 
 /* Struct representing a LEN() function call */
-/* Inherits from Node to store row and col information */
 struct LenCallExpr
 {
     std::shared_ptr<Expr> m_expr{}; /* The expression to get the length of */
 };
 
 /* Struct representing a POSITION() function call */
-/* Inherits from Node to store row and col information */
 struct PositionCallExpr
 {
     std::shared_ptr<Expr> m_str_expr{}; /* The string expression */
@@ -473,7 +441,6 @@ struct PositionCallExpr
 };
 
 /* Struct representing a SUBSTRING() function call */
-/* Inherits from Node to store row and col information */
 struct SubStrCallExpr
 {
     std::shared_ptr<Expr> m_num1_expr{}; /* The starting position */
@@ -482,49 +449,42 @@ struct SubStrCallExpr
 };
 
 /* Struct representing a STRING_TO_INT() function call */
-/* Inherits from Node to store row and col information */
 struct StrToIntCallExpr
 {
     std::shared_ptr<Expr> m_str_expr{}; /* The string to convert to integer */
 };
 
 /* Struct representing a STRING_TO_REAL() function call */
-/* Inherits from Node to store row and col information */
 struct StrToRealCallExpr
 {
     std::shared_ptr<Expr> m_str_expr{}; /* The string to convert to real */
 };
 
 /* Struct representing an INT_TO_STRING() function call */
-/* Inherits from Node to store row and col information */
 struct IntToStrCallExpr
 {
     std::shared_ptr<Expr> m_int_expr{}; /* The integer to convert to string */
 };
 
 /* Struct representing a REAL_TO_STRING() function call */
-/* Inherits from Node to store row and col information */
 struct RealToStrCallExpr
 {
     std::shared_ptr<Expr> m_real_expr{}; /* The real number to convert to string */
 };
 
 /* Struct representing a CHAR_TO_CODE() function call */
-/* Inherits from Node to store row and col information */
 struct CharToCodeCallExpr
 {
     std::shared_ptr<Expr> m_char_expr{}; /* The character to convert to ASCII code */
 };
 
 /* Struct representing a CODE_TO_CHAR() function call */
-/* Inherits from Node to store row and col information */
 struct CodeToCharCallExpr
 {
     std::shared_ptr<Expr> m_int_expr{}; /* The ASCII code to convert to character */
 };
 
 /* Struct representing a RANDOM_INT() function call */
-/* Inherits from Node to store row and col information */
 struct RandomIntCallExpr
 {
     std::shared_ptr<Expr> m_int1_expr{}; /* The minimum integer value */
@@ -532,7 +492,6 @@ struct RandomIntCallExpr
 };
 
 /* Struct representing a list access expression */
-/* Inherits from Node to store row and col information */
 struct ListAccessExpr
 {
     std::string m_name{}; /* The name of the list variable */
@@ -541,7 +500,6 @@ struct ListAccessExpr
 };
 
 /* Struct representing a field access expression */
-/* Inherits from Node to store row and col information */
 struct FieldAccessExpr
 {
     std::string m_name{}; /* The name of the record variable */
@@ -549,7 +507,6 @@ struct FieldAccessExpr
 };
 
 /* Struct representing an object creation */
-/* Inherits from Node to store row and col information */
 struct ObjectCreationExpr
 {
     std::string m_record_name{}; /* The name of the record type */
@@ -557,7 +514,6 @@ struct ObjectCreationExpr
 };
 
 /* Struct representing an atom expression */
-/* Inherits from Node to store row and col information */
 struct AtomExpr
 {
     std::variant<IntExpr,
@@ -583,7 +539,6 @@ struct AtomExpr
 };
 
 /* Struct representing a binary operation expression */
-/* Inherits from Node to store row and col information */
 struct BinOpExpr
 {
     std::shared_ptr<Expr> m_lhs{}; /* The lhs of the binary expression */
@@ -592,7 +547,6 @@ struct BinOpExpr
 };
 
 /* Struct representing a unary operation expression */
-/* Inherits from Node to store row and col information */
 struct UnaryOpExpr
 {
     std::shared_ptr<Expr> m_unary_expr{}; /* The expression to apply the unary operator to */
@@ -600,35 +554,30 @@ struct UnaryOpExpr
 };
 
 /* Struct representing a parenthesized expression */
-/* Inherits from Node to store row and col information */
 struct ParenExpr
 {
     std::shared_ptr<Expr> m_expr{}; /* The expression inside parentheses */
 };
 
 /* Struct representing a list element */
-/* Inherits from Node to store row and col information */
 struct Element
 {
     std::shared_ptr<Expr> m_expr{}; /* The expression held by the element */
 };
 
 /* Struct representing a list of elements */
-/* Inherits from Node to store row and col information */
 struct List
 {
     std::vector<Element> m_list{}; /* The list of elements */
 };
 
 /* Struct representing a list of expressions */
-/* Inherits from Node to store row and col information */
 struct ListExpr
 {
     List m_list{}; /* The list of expressions */
 };
 
 /* Struct representing a general expression */
-/* Inherits from Node to store row and col information */
 struct Expr
 {
     std::variant<AtomExpr,
@@ -641,7 +590,6 @@ struct Expr
 };
 
 /* Struct representing the abstract syntax tree */
-/* Inherits from Node to store row and col information */
 struct AST
 {
     Body m_body{}; /* The body of the program */

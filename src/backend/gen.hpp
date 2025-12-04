@@ -110,7 +110,7 @@ private:
     template <typename T>
     /* Generates output code for any type of arguments */
     /* Param: const std::vector<T>& - the arguments */
-    /* Param: const std::string_view - the delimeter */
+    /* Param: const std::string_view - the delimiter */
     void gen_args(const std::vector<T>& args, const std::string_view delim)
     {
         /* Loop through all of the passed arguments */
@@ -122,7 +122,7 @@ private:
             /* If the current index is not the last index in the list */
             if (i < args.size() - 1)
             {
-                /* Separate the generated arguments with a delimeter */
+                /* Separate the generated arguments with a delimiter */
                 *m_current_stream << delim;
             }
         }

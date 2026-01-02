@@ -40,8 +40,10 @@ void GCCTarget::compile(const std::string_view cpp_file)
                 command_str += output_file.string();
             #endif
 
-            /* Pipe the output into a file, which is useful for the GUI output box */
-            command_str += " > __psl_out.txt";
+            #if defined(QT_GUI_LIB)
+                /* Pipe the output into a file, which is useful for the GUI output box */
+                command_str += " > __psl_out.txt";
+            #endif
 
             /* Break from the switch case */
             break;
@@ -101,8 +103,10 @@ void MSVCTarget::compile(const std::string_view cpp_file)
             /* Store the command that compiles the ".cpp" file to EXE with MSVC */
             command_str = "cl /std:c++20 /EHsc " + output_file.string() + ".cpp /Fe:" + output_file.string() + " && " + output_file.string() + ".exe";
 
-            /* Pipe the output into a file, which is useful for the GUI output box */
-            command_str += " > __psl_out.txt";
+            #if defined(QT_GUI_LIB)
+                /* Pipe the output into a file, which is useful for the GUI output box */
+                command_str += " > __psl_out.txt";
+            #endif
 
             /* Break from the switch case */
             break;
@@ -172,8 +176,10 @@ void ClangTarget::compile(const std::string_view cpp_file)
                 command_str += output_file.string();
             #endif
 
-            /* Pipe the output into a file, which is useful for the GUI output box */
-            command_str += " > __psl_out.txt";
+            #if defined(QT_GUI_LIB)
+                /* Pipe the output into a file, which is useful for the GUI output box */
+                command_str += " > __psl_out.txt";
+            #endif
 
             /* Break from the switch case */
             break;

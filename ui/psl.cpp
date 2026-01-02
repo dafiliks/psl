@@ -261,8 +261,8 @@ void psl::on_compileButton_clicked()
         QFile output_file{"__psl_out.txt"};
 
         /* Open the file to only read text */
-        /* If the file did not open correctly */
-        if (!file.open(QFile::ReadOnly | QFile::Text))
+        /* If the output file did not open correctly */
+        if (!output_file.open(QFile::ReadOnly | QFile::Text))
         {
             /* Open an error box indicating the issue */
             QMessageBox::critical(this, "Error", "Output file could not be opened");

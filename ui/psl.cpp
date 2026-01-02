@@ -257,30 +257,31 @@ void psl::on_compileButton_clicked()
     /* If the user has just compiled their AQA pseudocode to an executable */
     if (ui->targetBox->currentText() == "Executable")
     {
-        QFile file{"__psl_out.txt"};
+        /* Create a file object from the output file path */
+        QFile output_file{"__psl_out.txt"};
 
         /* Open the file to only read text */
         /* If the file did not open correctly */
         if (!file.open(QFile::ReadOnly | QFile::Text))
         {
             /* Open an error box indicating the issue */
-            QMessageBox::critical(this, "Error", "File could not be opened");
+            QMessageBox::critical(this, "Error", "Output file could not be opened");
 
             /* Return from the function early */
             return;
         }
 
-        /* Open a text stream to the file */
-        QTextStream in{&file};
+        /* Open a text stream to the output file */
+        QTextStream in{&output_file};
 
-        /* Store all of the text in the source file */
-        QString source{in.readAll()};
+        /* Store all of the text in the output source file */
+        QString output{in.readAll()};
 
-        /* Set the input text edit to the contents of the source file */
-        ui->outputEdit->setText(source);
+        /* Set the output text edit to the contents of the output file */
+        ui->outputEdit->setText(output);
 
-        /* Close the file handle */
-        file.close();
+        /* Close the output file handle */
+        output_file.close();
     }
 
     /* If the user has just compiled their AQA pseudocode to C++ */

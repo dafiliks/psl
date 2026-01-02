@@ -36,9 +36,12 @@ void GCCTarget::compile(const std::string_view cpp_file)
                 command_str += output_file.string() + ".exe";
             /* If the user is not using Windows */
             #else
-                /* Prepend a "./" to the executable name on MacOS and Linux */
-                command_str += "./" + output_file.string();
+                /* Only prepend the output file path on MacOS and Linux */
+                command_str += output_file.string();
             #endif
+
+            /* Pipe the output into a file, which is useful for the GUI output box */
+            command_str += " > __psl_out.txt";
 
             /* Break from the switch case */
             break;
@@ -162,9 +165,12 @@ void ClangTarget::compile(const std::string_view cpp_file)
                 command_str += output_file.string() + ".exe";
             /* If the user is not using Windows */
             #else
-                /* Prepend a "./" to the executable name on MacOS and Linux */
-                command_str += "./" + output_file.string();
+                /* Only prepend the output file path on MacOS and Linux */
+                command_str += output_file.string();
             #endif
+
+            /* Pipe the output into a file, which is useful for the GUI output box */
+            command_str += " > __psl_out.txt";
 
             /* Break from the switch case */
             break;

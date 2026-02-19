@@ -429,11 +429,22 @@ void Parser::parse()
     /* Consume and store the function name */
     func_call_stmt.m_name = consume().m_value;
 
-    /* Parse the function call arguments */
-    func_call_stmt.m_args.m_args = parse_cse<Arg>();
+    /* If the function call argument list is empty */
+    if (peek(1).m_type == TokenType::C_PAREN)
+    {
+        /* Consume the O_PAREN and C_PAREN tokens */
+        consume(2);
+    }
 
-    /* Try consume a token of type C_PAREN */
-    try_consume(TokenType::C_PAREN);
+    /* If the function call argument list is not empty*/
+    else
+    {
+        /* Parse the function call arguments */
+        func_call_stmt.m_args.m_args = parse_cse<Arg>();
+
+        /* Try consume a token of type C_PAREN */
+        try_consume(TokenType::C_PAREN);
+    }
 
     /* Check that the function has been declared */
     existing_func_lookup(func_call_stmt.m_name);

@@ -714,9 +714,8 @@ void Parser::parse()
     /* Consume an IDENTIFIER token */
     field_stmt.m_name = consume().m_value;
 
-    /* No try_consume() used for the same reason as before */
-    /* Consume a COLON token */
-    consume();
+    /* Try to consume a token of type COLON */
+    try_consume(TokenType::COLON);
 
     /* Set the field to a valid data type */
     /* tt_to_dt() errors out if the token is unable to represent a valid data type */

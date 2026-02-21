@@ -282,6 +282,13 @@ void psl::on_compileButton_clicked()
 
         /* Close the output file handle */
         output_file.close();
+
+        /* If the output file was not removed successfully */
+        if (!QFile::remove("__psl_out.txt"))
+        {
+            /* Open an error box indicating the issue */
+            QMessageBox::warning(this, "Error", "Failed to delete the output file");
+        }
     }
 
     /* If the user has just compiled their AQA pseudocode to C++ */

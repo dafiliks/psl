@@ -403,13 +403,6 @@ void Lexer::lex()
     /* Add the end of file token - this allows for easier parsing */
     m_tokens.push_back({"", TokenType::END_OF_FILE, m_row, m_col});
 
-    int k = 0;
-    for (const auto& i : m_tokens)
-    {
-        k++;
-        std::cout << "Token " << k << ": {\"" << i.m_value << "\", " << tt_to_string(i.m_type) << "}\n";
-    }
-
     /* Clear the token buffer */
     m_buffer.clear();
 }
